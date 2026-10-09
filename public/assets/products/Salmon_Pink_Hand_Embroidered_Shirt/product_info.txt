@@ -1,0 +1,21 @@
+Product Name: Salmon Pink Hand Embroidered Shirt
+Product ID: 69b938bc07dee5c7ea02d68c
+Brand: M26/SS/CON/SF/15
+Category: Contemporary / 
+Price: Rs. 1899 (Original: Rs. 2299, Discount: 17%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Pink']
+In Stock: True
+
+Description:
+A soft salmon pink full-sleeve shirt beautifully adorned with hand embroidery featuring sun, floral, pot, and bird motifs. The playful yet artistic detailing adds a lively charm, making it a standout piece with a touch of nature-inspired elegance.
+
+Specifications / Occasion:
+  - Occasion: Casual outings, brunch dates, day events, vacations, and creative everyday styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773815651/products/x7jm2uvn6lr9jhhl659j.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746361/products/qtjqwydb7thsstigfocj.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746362/products/c8c01ri5ss6i6ony7ivp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746362/products/cbo3ogmtc7b41gok6u9x.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746364/products/jaetckjaynfpry7qzdjy.jpg

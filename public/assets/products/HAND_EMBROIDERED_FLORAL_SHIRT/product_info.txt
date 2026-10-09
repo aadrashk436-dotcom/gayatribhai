@@ -1,0 +1,25 @@
+Product Name: HAND EMBROIDERED FLORAL SHIRT
+Product ID: 69b9118607dee5c7ea02cd18
+Brand: M26/SS/FLORAL/CS/01
+Category: Floral / 
+Price: Rs. 2799 (Original: Rs. 2999, Discount: 7%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Off White']
+In Stock: True
+
+Description:
+Cuban collar relax fit half sleeve shirt made from a linen and cotton blend fabric. Featuring a front side symmetrical dedicated handworked floral motif inspired from the Indian historical arts.
+
+Specifications / Occasion:
+  - Fabric: Cotton 80% and Linen 20%, 100% Natural fabric
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773736317/products/bqomlvvbhucdihmkoqga.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736319/products/jrqff39vhsso1gepsuvr.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736320/products/jqz0zrltakjrxl5bqabp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736323/products/kpa1omyd29biliacca50.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736322/products/rpxst8h5rbeqrvjayizd.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736323/products/wtz5gu9o1ki84sfvievr.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736324/products/xjl76vjhccxe3igvmncg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736324/products/floruy2wnf2ddhx4abzx.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773736325/products/oyy3xiposliowbigdtes.jpg

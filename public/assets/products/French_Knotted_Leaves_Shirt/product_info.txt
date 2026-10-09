@@ -1,0 +1,23 @@
+Product Name: French Knotted Leaves Shirt
+Product ID: 69b9298e07dee5c7ea02d1c0
+Brand: M26/SS/NATURE/CS/11
+Category: Nature / 
+Price: Rs. 1699 (Original: Rs. 1999, Discount: 15%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Red']
+In Stock: True
+
+Description:
+Elegant red handmade shirt featuring delicate French knot leaf embroidery. Each tiny leaf is intricately crafted, giving the piece a subtle textured charm. Perfect for adding a touch of artisanal beauty to your everyday style.
+
+Specifications / Occasion:
+  - Occasion: Perfect for brunches, casual meet-ups, small festive occasions, and effortless daily wear.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773742472/products/utlccpkf41rzf8muelzr.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742475/products/d5zjfw6uas4fcvvq9wuo.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742474/products/oysdbna3swgaoncddvla.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742475/products/fddi3pngaa1kzwbyccf7.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742476/products/yj5qnztjxi0limf8pf6a.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742477/products/s8elvuuvnqm7r7bbg792.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773742477/products/t5w6drukbndfpu6sqrcz.jpg

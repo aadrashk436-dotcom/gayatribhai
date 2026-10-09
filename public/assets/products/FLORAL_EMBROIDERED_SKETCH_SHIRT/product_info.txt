@@ -1,0 +1,19 @@
+Product Name: FLORAL EMBROIDERED SKETCH SHIRT
+Product ID: 69b914be07dee5c7ea02cd8d
+Brand: M26/SS/FLORAL/CS/02
+Category: Floral / 
+Price: Rs. 1899 (Original: Rs. 1999, Discount: 5%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['PEACH PINK']
+In Stock: True
+
+Description:
+ Peach pink handcrafted mens shirt featuring sketch inspired intricate hand embroidered detailing, loose fit pattern to allow fluid movement and a subtle visual flow. Natural cotton fabric is durable and breathable, amplified with  A structured, relaxed fit and easily stiffed  for ample room for statement view.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773813746/products/mcijpp2nqtw6ijgccbo8.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773737142/products/nqv3pvkdglpdcgphxevf.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773737144/products/klgvxaegsvh2ocylnysc.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773737147/products/oio9rhb1frlhbnod2qgp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773737147/products/mqswfotrbtppherbzzye.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773737150/products/jj9f3ztu12fthwhonwyy.jpg

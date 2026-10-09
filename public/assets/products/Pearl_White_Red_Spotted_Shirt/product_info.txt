@@ -1,0 +1,21 @@
+Product Name: Pearl White Red Spotted Shirt
+Product ID: 69b93e1e07dee5c7ea02d7b1
+Brand: M26/SS/CON/CS/18
+Category: Contemporary / 
+Price: Rs. 1399 (Original: Rs. 1599, Discount: 13%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Pearl White']
+In Stock: True
+
+Description:
+A crisp pearl white shirt accented with delicate red embroidered lines, creating a subtle spotted effect. The fine detailing adds a touch of elegance while keeping the look clean and versatile—perfect for effortless styling.
+
+Specifications / Occasion:
+  - Occasion: Workwear, casual outings, brunch dates, and minimal everyday styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773747737/products/c1neftg9nhzg0e4crqax.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747738/products/gbecztpylkmyee6owisf.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747738/products/msmn6manzy9zde7oguua.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747740/products/ahyb4weetjrqifgofkly.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747741/products/fasxzsvzjluhksgczgle.jpg

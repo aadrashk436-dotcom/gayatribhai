@@ -1,0 +1,21 @@
+Product Name: MAROON HANDCRAFTED SHIRT
+Product ID: 69b9184807dee5c7ea02ce0b
+Brand: M26/SS/FLORAL/CS/04
+Category: Floral / 
+Price: Rs. 1399 (Original: Rs. 1599, Discount: 13%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['MAROON']
+In Stock: True
+
+Description:
+Regular fit shirt made from a cotton and linen blend fabric. Featuring a hand embroidered motif at the above side of your beautiful heart. Patterns include shirt collar and long sleeves with buttoned cuffs
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773738051/products/z3rgclai5gcqofp8zpkk.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738052/products/kxs1xxgl3du3cwiwdawy.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738053/products/tfn0v2lf4gdvafz3jpcr.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738053/products/q6r8bllolskc4vompsve.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/ma9idlmmrr4jogpcv1rf.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738054/products/jdpgtnmbwmaju1iy0osf.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/wox7h8nmywoooi6ljlog.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/nq7qv95ucg36wxjfmlio.jpg

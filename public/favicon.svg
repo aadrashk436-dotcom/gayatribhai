@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#0c0d0e"/>
+  <!-- Gold border accent -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#c5a880" stroke-width="1.5" stroke-opacity="0.4"/>
+  <!-- Luxury monogram 'A' -->
+  <path d="M32 14 L46 48 H39.5 L36.2 39.5 H27.8 L24.5 48 H18 L32 14 Z M32 23.5 L29.5 34.5 H34.5 L32 23.5 Z" fill="#d4af37"/>
+  <!-- Subtle diamond spark -->
+  <circle cx="32" cy="11" r="1.5" fill="#f7e7ce"/>
+</svg>

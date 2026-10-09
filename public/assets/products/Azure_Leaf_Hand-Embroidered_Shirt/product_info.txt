@@ -1,0 +1,20 @@
+Product Name: Azure Leaf Hand-Embroidered Shirt
+Product ID: 69ba28a30b819d3f52ce23a2
+Brand: M26/SS/CON/CS/23
+Category: Contemporary / 
+Price: Rs. 2100 (Original: Rs. 2390, Discount: 12%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Sky Blue']
+In Stock: True
+
+Description:
+A breezy sky-blue shirt adorned with intricate, oversized leaf embroidery, capturing the essence of nature in elegant threads. Perfect for adding a fresh, artistic touch to your wardrobe.
+
+Specifications / Occasion:
+  - Occasion: Casual outings, garden parties, beach brunches, or daytime events where you want a relaxed yet stylish look.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773807776/products/sav3yaan8zuaqptnpnsg.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773807777/products/hpyg5cqgzqyd0ovrrgrt.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773807778/products/kex6oosaeqzsrxwssrms.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773807778/products/hyacqigivlutwoxfxqhy.jpg

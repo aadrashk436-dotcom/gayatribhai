@@ -1,0 +1,27 @@
+Product Name: THE SOLSTICE HAND EMBROIDERED ARTISAN SHIRT
+Product ID: 69b924c107dee5c7ea02d0c3
+Brand: M26/SS/NATURE/SF/09
+Category: Nature / 
+Price: Rs. 1899 (Original: Rs. 2299, Discount: 17%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['SALMON PINK']
+In Stock: True
+
+Description:
+Embrace effortless summer style with this Handcrafted Short-Sleeve Button-Down. Meticulously designed for the modern individual who appreciates artisanal detail, this shirt features a unique hand-embroidered sunburst motif on the chest, rendered in contrasting teal and white threads.
+
+The charm lies in the craftsmanship: visible kantha-style pick stitching runs along the placket, adding a rugged, bespoke texture that sets it apart from mass-produced apparel. Cut from a breathable, lightweight fabric with a natural matte finish, it’s designed to keep you cool while looking polished.
+
+Specifications / Occasion:
+  - Occasion: Perfect for golden hour gatherings, beachside brunches, or elevated daily wear.
+  - Fit: Relaxed, casual fit.
+  - Details: Wood-tone buttons, reinforced collar, and intricate hand-embroidery.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773815271/products/prra79iaavv0wfxox0vq.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741243/products/efn2yswgy6gq1fmkibyp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741243/products/tfjooyh9yaotpxkpasoo.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/iwha0kodoadoxc6wifv8.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/zaa7iac8dmatp3diyaz3.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/j99xm9aucjprxxg5qjbg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741248/products/mndtgiztvdinlmxdksxm.jpg

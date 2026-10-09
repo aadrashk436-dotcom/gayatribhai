@@ -1,0 +1,20 @@
+Product Name: FLORAL POCKET SHIRT
+Product ID: 69b91f8e07dee5c7ea02cf5d
+Brand: M26/SS/FLORAL/CS/07
+Category: Floral / 
+Price: Rs. 1399 (Original: Rs. 1599, Discount: 13%)
+Available Sizes: S, M, L, XXL, XL
+Color: ['White']
+In Stock: True
+
+Description:
+The french knotted embellished floral motif on a patch pocket.
+Featuring cuban collar half sleeve off white colored loose fit casual wear shirt.
+Comfortable and breathable natural fabric for your breezy summers.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773739915/products/ufecsmfahtzlqchrxdse.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773739916/products/nlchoykcpybsqusun71o.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773739917/products/bbzwibw3svagadkxpdcp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773739917/products/gvwwxcova8mazt7sxzyp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773739916/products/kppidywe0lufployjv9a.jpg

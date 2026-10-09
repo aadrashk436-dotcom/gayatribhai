@@ -1,0 +1,24 @@
+Product Name: Maroon Handcrafted Arro Shirt
+Product ID: 69b9376907dee5c7ea02d625
+Brand: M26/SS/CON/SS/14
+Category: Contemporary / 
+Price: Rs. 1399 (Original: Rs. 1599, Discount: 13%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Maroon']
+In Stock: True
+
+Description:
+A rich maroon handcrafted shirt featuring subtle arrow-inspired embroidery. The fine detailing adds a unique geometric charm while keeping the look minimal and versatile. Perfect for those who appreciate understated craftsmanship with a modern touch.
+
+Specifications / Occasion:
+  - Occasion: Casual outings, workwear, evening meet-ups, and smart everyday styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773815415/products/wfgbhxuqeh6dhyfnua4z.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746021/products/jggureeycogaq5stk9hl.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746022/products/gtbdv0rrwlpdnimlmkcp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746022/products/r2clg2ub3cbtr1pt8byi.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/xwghvg1mvgsp2rh0j5ia.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/biktcvg7clmxdfqzbrea.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/pfl3gml3dr5pva4aonhb.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/g0ikdtufipkiudspuqs1.jpg

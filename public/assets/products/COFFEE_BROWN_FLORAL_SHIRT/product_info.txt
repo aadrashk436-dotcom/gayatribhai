@@ -1,0 +1,17 @@
+Product Name: COFFEE BROWN FLORAL SHIRT
+Product ID: 69b916a807dee5c7ea02cddb
+Brand: M26/SS/FLORAL/CS/06
+Category: Floral / 
+Price: Rs. 1299 (Original: Rs. 1599, Discount: 19%)
+Available Sizes: S, M, L, XXL, XL
+Color: ['COFFEE BROWN']
+In Stock: True
+
+Description:
+The cuban collar relaxed fit shirt with loose fit short sleeves for more moments to enjoy your casual moments at work or at the vacation. Spotted beautiful and elegant contrast  hand embroidered floral vel pattern motif. 
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773811688/products/vaxbejd8r5otzxeqn1zc.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773811691/products/ycn7k9ikdtdmibjbklrg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773811690/products/xfauufsteih3fklobkbh.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773811693/products/bvrctyf7mbjerqtwwbzl.jpg

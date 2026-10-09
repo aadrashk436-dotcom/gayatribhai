@@ -1,0 +1,22 @@
+Product Name: Deep Sea COCO Hand Embroidered Shirt
+Product ID: 69b945bd07dee5c7ea02d951
+Brand: M26/SS/Beach/SF/22
+Category: BeachSide / 
+Price: Rs. 2399 (Original: Rs. 2499, Discount: 4%)
+Available Sizes: S, M, L, XXL, XL
+Color: ['Deep Sea Mint']
+In Stock: True
+
+Description:
+A rich sea blue shirt featuring elegant coconut tree hand embroidery. The deep tone combined with tropical detailing creates a calm yet striking look, perfect for effortless style with a coastal touch.
+
+Specifications / Occasion:
+  - Occasion: Vacations, beach days, resort wear, casual outings, and relaxed evening styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773749686/products/ijc85w6opaocl8mkkwby.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749686/products/qeowjirdtehysuyvnh2b.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749688/products/orhrea2tr8ghukww6mci.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749688/products/jbjewu5wg4icfdrwnqfy.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749689/products/nhqxyb0fjuxv0nyw48wa.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749693/products/ar57wld2hnozwfrsvtiv.jpg

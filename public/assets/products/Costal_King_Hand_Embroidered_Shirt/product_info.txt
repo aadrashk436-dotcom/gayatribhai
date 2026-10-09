@@ -1,0 +1,23 @@
+Product Name: Costal King Hand Embroidered Shirt
+Product ID: 69b9401907dee5c7ea02d82c
+Brand: M26/SS/Beach/SF/19
+Category: BeachSide / 
+Price: Rs. 2199 (Original: Rs. 2390, Discount: 8%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Snow White']
+In Stock: True
+
+Description:
+A pristine snow white shirt brought to life with intricate hand embroidery inspired by the sea. Featuring charming motifs like fish, sun, bottle, bird, and boat, each element adds a playful yet artistic touch, capturing the essence of coastal living in a unique and stylish way.
+
+Specifications / Occasion:
+  - Occasion: Vacations, beach days, casual outings, resort wear, and relaxed day styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773994735/products/btk34k7zhb3eaf26onq1.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748242/products/wd4xpuvzdxhyinhms5at.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/wkzv1ojvnvxsq5wqjahl.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/pbvoitmy5ir7xc3305jg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/w9vsk9hjfp4yv1dodu7u.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748246/products/wkerdfq0dzqp0byxzsfg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748248/products/d2vjiahfwvhaox7dmbnc.jpg

@@ -1,0 +1,23 @@
+Product Name: Matcha Green Artistic Shirt
+Product ID: 69b93ac507dee5c7ea02d6f8
+Brand: M26/SS/CON/SF/16
+Category: Contemporary / 
+Price: Rs. 1899 (Original: Rs. 2299, Discount: 17%)
+Available Sizes: S, M, XL, XXL, L
+Color: ['Matcha Green']
+In Stock: True
+
+Description:
+A refreshing matcha green shirt featuring unique hand embroidery of a scooter, coconut trees, and chairs. The artistic, travel-inspired design brings a relaxed and playful vibe, making it a standout piece with a story to tell.
+
+Specifications / Occasion:
+  - Occasion: Vacations, casual outings, brunch dates, day trips, and laid-back everyday styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773746874/products/gctwaq0nqzbyq8wu2eln.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746876/products/yidqchbux4ydzl3ecucq.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746878/products/xrhklckczylp7bo1dmsp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746877/products/pgkpbtbceu3czlxstgjg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746881/products/kxezamhfu0iakpzefy6h.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746878/products/qzwrj5wqzn9bkaytibuh.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773746879/products/vbcgdlumbwfg2y4vrmyg.jpg

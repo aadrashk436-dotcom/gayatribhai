@@ -1,0 +1,23 @@
+Product Name: The Bract hand Embroidered Rust Cotton linen Shirt
+Product ID: 69b935a907dee5c7ea02d5c3
+Brand: M26/SS/NATURE/SF/13
+Category: Nature / 
+Price: Rs. 1699 (Original: Rs. 1999, Discount: 15%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Rust Color']
+In Stock: True
+
+Description:
+A beautifully handcrafted rust cotton linen shirt adorned with two statement leaf embroideries. The bold yet minimal design adds a natural, earthy charm, making it a perfect blend of elegance and comfort for everyday wear.
+
+Specifications / Occasion:
+  - Occasion: Ideal for workdays, casual meet-ups, brunches, and understated festive styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773745541/products/g0jw601whryehcbhpg84.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745543/products/ejmvkg8mdz3fpoxsoyns.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745543/products/dudy1ov2cm47qay2c59s.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745544/products/tcjvsa6mokr9mjb04wez.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745544/products/pn4uelee6xpfubto4d70.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745547/products/ewfx4t9lzu4ptuvqp6fa.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773745554/products/sxxgjt3xshuhventsnno.jpg

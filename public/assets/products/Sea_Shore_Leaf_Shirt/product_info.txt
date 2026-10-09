@@ -1,0 +1,23 @@
+Product Name: Sea Shore Leaf Shirt
+Product ID: 69b93c7907dee5c7ea02d769
+Brand: M26/SS/CON/SF/12
+Category: Contemporary / 
+Price: Rs. 1699 (Original: Rs. 1999, Discount: 15%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Sea Green']
+In Stock: True
+
+Description:
+A soothing sky blue full-sleeve shirt with sea green tones, featuring delicate leaf embroidery above the pocket. The minimal yet refreshing design captures a calm, coastal vibe, making it effortlessly stylish and easy to wear.
+
+Specifications / Occasion:
+  - Occasion: Casual outings, beach days, vacations, day wear, and relaxed everyday styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773747305/products/jfythfttnzyvy8j0bpsm.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747306/products/jqd1amm4f7vbspq6nwfv.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747307/products/ef75lldukjgvwtl4mqms.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747314/products/oz3imy1or9mcufjxfzwp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747311/products/jzp6371yvxznnv5fdqz9.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747312/products/hz1qjtj09wzuihng9wjv.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773747321/products/czypnyl7lnu4bejwwgqb.jpg

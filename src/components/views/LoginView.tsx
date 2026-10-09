@@ -1,0 +1,264 @@
+"use client"
+
+import { useRef, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { gsap } from "gsap"
+import { useGSAP } from "@gsap/react"
+import type { User, View } from "../../types"
+import Icon from "../common/Icon"
+
+gsap.registerPlugin(useGSAP)
+
+export interface LoginViewProps {
+  mode?: "login" | "signup"
+  onLogin: (user: User) => void
+  go: (v: View) => void
+  showToast: (msg: string) => void
+}
+
+function Field({
+  id,
+  label,
+  type = "text",
+  value,
+  onChange,
+  autoComplete,
+  error,
+  trailing,
+  inputMode,
+}: {
+  id: string
+  label: string
+  type?: string
+  value: string
+  onChange: (v: string) => void
+  autoComplete?: string
+  error?: string
+  trailing?: React.ReactNode
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]
+}) {
+  return (
+    <div data-auth-item>
+      <div className={`group relative rounded-sm border bg-surface transition-colors focus-within:border-foreground ${error ? "border-[#b4321f]" : "border-border"}`}>
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          placeholder=" "
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className="peer h-14 w-full bg-transparent px-4 pb-1.5 pt-5 text-[15px] text-foreground outline-none"
+        />
+        <label
+          htmlFor={id}
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-muted-foreground transition-all duration-200 peer-focus:top-4 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.12em] peer-[:not(:placeholder-shown)]:top-4 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:font-semibold peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-[0.12em]"
+        >
+          {label}
+        </label>
+        {trailing && <div className="absolute right-2 top-1/2 -translate-y-1/2">{trailing}</div>}
+      </div>
+      {error && (
+        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-[#b4321f]">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps) {
+  const isSignup = mode === "signup"
+  const root = useRef<HTMLDivElement>(null)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [agree, setAgree] = useState(true)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
+
+  useGSAP(
+    () => {
+      gsap
+        .timeline()
+        .fromTo(".auth-visual", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.2, ease: "expo.inOut" })
+        .fromTo(".auth-visual img", { scale: 1.25 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
+        .from("[data-auth-item]", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0.3)
+    },
+    { scope: root, dependencies: [mode], revertOnUpdate: true },
+  )
+
+  const validate = () => {
+    const next: Record<string, string> = {}
+    if (isSignup && name.trim().length < 2) next.name = "Please enter your full name"
+    if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter a valid email address"
+    if (isSignup && phone && !/^[0-9+\s-]{10,15}$/.test(phone)) next.phone = "Enter a valid phone number"
+    if (password.length < 8) next.password = "Password must be at least 8 characters"
+    if (isSignup && !agree) next.agree = "Please accept the terms to continue"
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validate()) return
+    setLoading(true)
+    window.setTimeout(() => {
+      const displayName = isSignup ? name.trim() : email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      onLogin({
+        id: `usr_${Date.now()}`,
+        name: displayName,
+        email: email.trim(),
+        phone: phone.trim(),
+        joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+        membershipTier: "Silver",
+        points: isSignup ? 250 : 1240,
+      })
+      showToast(isSignup ? "Welcome to AVYR. 250 points added." : "Welcome back")
+      setLoading(false)
+    }, 700)
+  }
+
+  return (
+    <div ref={root} className="grid min-h-[calc(100svh-100px)] bg-background text-foreground md:min-h-[calc(100svh-112px)] lg:grid-cols-2">
+      <div className="auth-visual relative h-56 overflow-hidden sm:h-72 lg:h-auto">
+        <Image
+          src="/assets/banners/auth-portrait.jpg"
+          alt="Model in a sage linen shirt against a terracotta wall"
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover object-[center_25%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute bottom-6 left-5 right-5 text-white md:bottom-10 md:left-10 lg:bottom-14 lg:left-14">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] opacity-85">AVYR Inner Circle</p>
+          <p className="mt-2 font-display text-3xl leading-tight md:text-5xl">
+            {isSignup ? "Join for early drops." : "Good to see you."}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-start justify-center px-5 pb-28 pt-8 md:px-10 md:pb-16 md:pt-14 lg:items-center lg:px-16">
+        <div className="w-full max-w-md">
+          <div data-auth-item className="relative mb-8 grid grid-cols-2 rounded-full border border-border p-1">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${
+                isSignup ? "translate-x-full" : "translate-x-0"
+              }`}
+            />
+            <Link
+              href="/login"
+              replace
+              className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
+              aria-current={!isSignup ? "page" : undefined}
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              replace
+              className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
+              aria-current={isSignup ? "page" : undefined}
+            >
+              Create account
+            </Link>
+          </div>
+
+          <h1 data-auth-item className="font-display text-4xl leading-tight md:text-5xl">
+            {isSignup ? "Create account" : "Sign in"}
+          </h1>
+          <p data-auth-item className="mt-2 text-[15px] text-muted-foreground">
+            {isSignup ? "Track orders, save favourites and get 10% off." : "Access your orders, wishlist and addresses."}
+          </p>
+
+          <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-4">
+            {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" error={errors.name} />}
+            <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" error={errors.email} />
+            {isSignup && (
+              <Field id="phone" label="Phone (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" error={errors.phone} />
+            )}
+            <Field
+              id="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={setPassword}
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              error={errors.password}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                </button>
+              }
+            />
+
+            {isSignup ? (
+              <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+                <span>
+                  I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
+                  <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
+                  {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
+                </span>
+              </label>
+            ) : (
+              <div data-auth-item className="flex justify-end">
+                <button type="button" onClick={() => showToast("Reset link sent to your email")} className="text-sm font-medium text-foreground underline underline-offset-4">
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            <button
+              data-auth-item
+              type="submit"
+              disabled={loading}
+              className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
+              {!loading && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                  <path d="M5 12h14m-5-5 5 5-5 5" />
+                </svg>
+              )}
+            </button>
+          </form>
+
+          <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">
+            {isSignup ? "Already have an account? " : "New to AVYR? "}
+            <Link href={isSignup ? "/login" : "/signup"} replace className="font-semibold text-foreground underline underline-offset-4">
+              {isSignup ? "Sign in" : "Create account"}
+            </Link>
+          </p>
+
+          <ul data-auth-item className="mt-10 grid grid-cols-3 gap-3 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+            {[
+              ["truck", "Free shipping"],
+              ["refresh", "7-day returns"],
+              ["shield", "Secure checkout"],
+            ].map(([icon, label]) => (
+              <li key={label} className="flex flex-col items-center gap-2">
+                <Icon name={icon as "truck"} size={18} />
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default LoginView

@@ -1,0 +1,23 @@
+Product Name: True Red havana Beach Embroidered Shirt
+Product ID: 69b9439007dee5c7ea02d8fd
+Brand: M26/SS/Beach/SF/21
+Category: BeachSide / 
+Price: Rs. 1899 (Original: Rs. 2299, Discount: 17%)
+Available Sizes: S, M, L, XXL, XL
+Color: ['True Red']
+In Stock: True
+
+Description:
+A bold true red shirt featuring elegant coconut tree embroidery, inspired by tropical Havana vibes. The striking color paired with minimal beach-inspired detailing creates a perfect balance of statement and sophistication.
+
+Specifications / Occasion:
+  - Occasion: Vacations, beach outings, resort wear, evening get-togethers, and standout casual styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773749129/products/eybukwxhdngymj1c3w2y.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749131/products/qrkv0qcru0xlmjczk2ca.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749132/products/y9ls6ukhk1ixrxo9fsxi.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749131/products/pqcwkogfpdvz1idoajym.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749133/products/sga3c52nh2hx69ukwfrj.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749135/products/tueqpgrsnfsdbzjmpfvm.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773749136/products/qqo2oawccgvnldlggctt.jpg

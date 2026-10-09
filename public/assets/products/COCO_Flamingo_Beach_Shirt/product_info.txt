@@ -1,0 +1,23 @@
+Product Name: COCO Flamingo Beach Shirt
+Product ID: 69b941d407dee5c7ea02d8ac
+Brand: M26/SS/Beach/CS/20
+Category: BeachSide / 
+Price: Rs. 2799 (Original: Rs. 2999, Discount: 7%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Off White']
+In Stock: True
+
+Description:
+An off-white shirt featuring beautiful coconut tree embroidery on the front and back. The tropical-inspired design adds a breezy, beachy charm, making it a perfect blend of minimal style and vacation vibes.
+
+Specifications / Occasion:
+  - Occasion: Beach days, vacations, resort wear, casual outings, and relaxed summer styling.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773748675/products/cmc4z8d0tgffxrva90gm.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748679/products/p630ud7bh477sbulxvdj.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748678/products/mjxgiqldzokrjdnnbyht.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748678/products/zvgspslwzvp2y3xqbsno.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748681/products/ykafnpcjghck9etpmcvs.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748691/products/ibgh4q0xrhlqonopdyzd.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773748689/products/srcd7vfkkyhxpzmt31lr.jpg

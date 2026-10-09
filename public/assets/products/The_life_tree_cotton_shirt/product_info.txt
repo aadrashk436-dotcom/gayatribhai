@@ -1,0 +1,23 @@
+Product Name: The life tree cotton shirt
+Product ID: 69b927a207dee5c7ea02d173
+Brand: M26/SS/NATURE/CS/10
+Category: Nature / 
+Price: Rs. 2799 (Original: Rs. 3099, Discount: 10%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Rust']
+In Stock: True
+
+Description:
+Trees give peace to the souls of men to stay somewhere long.
+This exquisite hand-embroidered shirt features two deeply rooted trees—one delicately stitched onto the front patch pocket, and its companion gracing the back. Like steadfast friends who have chosen their perfect place, these embroidered motifs work together to balance the garment, creating a beautiful and lasting sense of harmony.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773741966/products/zluz7db4oirjmobrvrq6.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741975/products/yjvwl5imu71e0fr2sitg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741981/products/vjqfpe1qwlzisgtyaeci.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741981/products/b6ynhtx43leiuxbhsc0k.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741983/products/rbzrdkukui4v66kzeohs.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741983/products/hsa8vqmr39bcpfkhohgp.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741984/products/ydfsoqzqk8wpjg6vxkku.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741984/products/aeaisinptg3tehkjkdzw.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773741985/products/gcdqtswnhrcwqsta2anp.jpg

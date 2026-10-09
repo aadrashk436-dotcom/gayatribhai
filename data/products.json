@@ -1,0 +1,973 @@
+[
+  {
+    "_id": "69ba28a30b819d3f52ce23a2",
+    "name": "Azure Leaf Hand-Embroidered Shirt",
+    "description": "A breezy sky-blue shirt adorned with intricate, oversized leaf embroidery, capturing the essence of nature in elegant threads. Perfect for adding a fresh, artistic touch to your wardrobe.",
+    "price": 2100,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "2390",
+    "discount": "12",
+    "gender": "men",
+    "brand": "M26/SS/CON/CS/23",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Sky Blue"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773807776/products/sav3yaan8zuaqptnpnsg.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773807777/products/hpyg5cqgzqyd0ovrrgrt.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773807778/products/kex6oosaeqzsrxwssrms.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773807778/products/hyacqigivlutwoxfxqhy.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773807747864,
+        "name": "Occasion",
+        "value": "Casual outings, garden parties, beach brunches, or daytime events where you want a relaxed yet stylish look.",
+        "_id": "69ba28a30b819d3f52ce23a3"
+      }
+    ],
+    "createdAt": "2026-03-18T04:22:59.040Z",
+    "updatedAt": "2026-03-18T04:22:59.040Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b945bd07dee5c7ea02d951",
+    "name": "Deep Sea COCO Hand Embroidered Shirt",
+    "description": "A rich sea blue shirt featuring elegant coconut tree hand embroidery. The deep tone combined with tropical detailing creates a calm yet striking look, perfect for effortless style with a coastal touch.",
+    "price": 2399,
+    "category": "BeachSide",
+    "subCategory": "",
+    "originalPrice": "2499",
+    "discount": "4",
+    "gender": "men",
+    "brand": "M26/SS/Beach/SF/22",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "Deep Sea Mint"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749686/products/ijc85w6opaocl8mkkwby.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749686/products/qeowjirdtehysuyvnh2b.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749688/products/orhrea2tr8ghukww6mci.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749688/products/jbjewu5wg4icfdrwnqfy.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749689/products/nhqxyb0fjuxv0nyw48wa.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749693/products/ar57wld2hnozwfrsvtiv.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773749672268,
+        "name": "Occasion",
+        "value": "Vacations, beach days, resort wear, casual outings, and relaxed evening styling.",
+        "_id": "69b945bd07dee5c7ea02d952"
+      }
+    ],
+    "createdAt": "2026-03-17T12:14:53.546Z",
+    "updatedAt": "2026-03-20T19:14:51.086Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9439007dee5c7ea02d8fd",
+    "name": "True Red havana Beach Embroidered Shirt",
+    "description": "A bold true red shirt featuring elegant coconut tree embroidery, inspired by tropical Havana vibes. The striking color paired with minimal beach-inspired detailing creates a perfect balance of statement and sophistication.",
+    "price": 1899,
+    "category": "BeachSide",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "17",
+    "gender": "men",
+    "brand": "M26/SS/Beach/SF/21",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "True Red"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749129/products/eybukwxhdngymj1c3w2y.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749131/products/qrkv0qcru0xlmjczk2ca.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749132/products/y9ls6ukhk1ixrxo9fsxi.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749131/products/pqcwkogfpdvz1idoajym.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749133/products/sga3c52nh2hx69ukwfrj.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749135/products/tueqpgrsnfsdbzjmpfvm.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773749136/products/qqo2oawccgvnldlggctt.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773749114823,
+        "name": "Occasion",
+        "value": "Vacations, beach outings, resort wear, evening get-togethers, and standout casual styling.",
+        "_id": "69b9439007dee5c7ea02d8fe"
+      }
+    ],
+    "createdAt": "2026-03-17T12:05:36.631Z",
+    "updatedAt": "2026-03-17T12:05:36.631Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b941d407dee5c7ea02d8ac",
+    "name": "COCO Flamingo Beach Shirt",
+    "description": "An off-white shirt featuring beautiful coconut tree embroidery on the front and back. The tropical-inspired design adds a breezy, beachy charm, making it a perfect blend of minimal style and vacation vibes.",
+    "price": 2799,
+    "category": "BeachSide",
+    "subCategory": "",
+    "originalPrice": "2999",
+    "discount": "7",
+    "gender": "men",
+    "brand": "M26/SS/Beach/CS/20",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Off White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748675/products/cmc4z8d0tgffxrva90gm.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748679/products/p630ud7bh477sbulxvdj.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748678/products/mjxgiqldzokrjdnnbyht.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748678/products/zvgspslwzvp2y3xqbsno.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748681/products/ykafnpcjghck9etpmcvs.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748691/products/ibgh4q0xrhlqonopdyzd.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748689/products/srcd7vfkkyhxpzmt31lr.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773748662220,
+        "name": "Occasion",
+        "value": "Beach days, vacations, resort wear, casual outings, and relaxed summer styling.",
+        "_id": "69b941d407dee5c7ea02d8ad"
+      }
+    ],
+    "createdAt": "2026-03-17T11:58:12.188Z",
+    "updatedAt": "2026-03-17T11:58:12.188Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9401907dee5c7ea02d82c",
+    "name": "Costal King Hand Embroidered Shirt",
+    "description": "A pristine snow white shirt brought to life with intricate hand embroidery inspired by the sea. Featuring charming motifs like fish, sun, bottle, bird, and boat, each element adds a playful yet artistic touch, capturing the essence of coastal living in a unique and stylish way.",
+    "price": 2199,
+    "category": "BeachSide",
+    "subCategory": "",
+    "originalPrice": "2390",
+    "discount": "8",
+    "gender": "men",
+    "brand": "M26/SS/Beach/SF/19",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Snow White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773994735/products/btk34k7zhb3eaf26onq1.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748242/products/wd4xpuvzdxhyinhms5at.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/wkzv1ojvnvxsq5wqjahl.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/pbvoitmy5ir7xc3305jg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748244/products/w9vsk9hjfp4yv1dodu7u.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748246/products/wkerdfq0dzqp0byxzsfg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773748248/products/d2vjiahfwvhaox7dmbnc.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773748222749,
+        "name": "Occasion",
+        "value": "Vacations, beach days, casual outings, resort wear, and relaxed day styling.",
+        "_id": "69b9401907dee5c7ea02d82d"
+      }
+    ],
+    "createdAt": "2026-03-17T11:50:49.715Z",
+    "updatedAt": "2026-03-20T08:18:58.273Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b93e1e07dee5c7ea02d7b1",
+    "name": "Pearl White Red Spotted Shirt",
+    "description": "A crisp pearl white shirt accented with delicate red embroidered lines, creating a subtle spotted effect. The fine detailing adds a touch of elegance while keeping the look clean and versatile—perfect for effortless styling.",
+    "price": 1399,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "1599",
+    "discount": "13",
+    "gender": "men",
+    "brand": "M26/SS/CON/CS/18",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Pearl White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747737/products/c1neftg9nhzg0e4crqax.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747738/products/gbecztpylkmyee6owisf.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747738/products/msmn6manzy9zde7oguua.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747740/products/ahyb4weetjrqifgofkly.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747741/products/fasxzsvzjluhksgczgle.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773747717644,
+        "name": "Occasion",
+        "value": "Workwear, casual outings, brunch dates, and minimal everyday styling.",
+        "_id": "69b93e1e07dee5c7ea02d7b2"
+      }
+    ],
+    "createdAt": "2026-03-17T11:42:22.492Z",
+    "updatedAt": "2026-03-17T11:42:22.492Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b93c7907dee5c7ea02d769",
+    "name": "Sea Shore Leaf Shirt",
+    "description": "A soothing sky blue full-sleeve shirt with sea green tones, featuring delicate leaf embroidery above the pocket. The minimal yet refreshing design captures a calm, coastal vibe, making it effortlessly stylish and easy to wear.",
+    "price": 1699,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "15",
+    "gender": "men",
+    "brand": "M26/SS/CON/SF/12",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Sea Green"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747305/products/jfythfttnzyvy8j0bpsm.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747306/products/jqd1amm4f7vbspq6nwfv.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747307/products/ef75lldukjgvwtl4mqms.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747314/products/oz3imy1or9mcufjxfzwp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747311/products/jzp6371yvxznnv5fdqz9.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747312/products/hz1qjtj09wzuihng9wjv.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773747321/products/czypnyl7lnu4bejwwgqb.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773747293020,
+        "name": "Occasion",
+        "value": "Casual outings, beach days, vacations, day wear, and relaxed everyday styling.",
+        "_id": "69b93c7907dee5c7ea02d76a"
+      }
+    ],
+    "createdAt": "2026-03-17T11:35:21.688Z",
+    "updatedAt": "2026-03-17T11:35:21.688Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b93ac507dee5c7ea02d6f8",
+    "name": "Matcha Green Artistic Shirt",
+    "description": "A refreshing matcha green shirt featuring unique hand embroidery of a scooter, coconut trees, and chairs. The artistic, travel-inspired design brings a relaxed and playful vibe, making it a standout piece with a story to tell.",
+    "price": 1899,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "17",
+    "gender": "men",
+    "brand": "M26/SS/CON/SF/16",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "XL",
+      "XXL",
+      "L"
+    ],
+    "color": [
+      "Matcha Green"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746874/products/gctwaq0nqzbyq8wu2eln.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746876/products/yidqchbux4ydzl3ecucq.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746878/products/xrhklckczylp7bo1dmsp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746877/products/pgkpbtbceu3czlxstgjg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746881/products/kxezamhfu0iakpzefy6h.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746878/products/qzwrj5wqzn9bkaytibuh.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746879/products/vbcgdlumbwfg2y4vrmyg.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773746850837,
+        "name": "Occasion",
+        "value": "Vacations, casual outings, brunch dates, day trips, and laid-back everyday styling.",
+        "_id": "69b93ac507dee5c7ea02d6f9"
+      }
+    ],
+    "createdAt": "2026-03-17T11:28:05.357Z",
+    "updatedAt": "2026-03-17T11:28:05.357Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b938bc07dee5c7ea02d68c",
+    "name": "Salmon Pink Hand Embroidered Shirt",
+    "description": "A soft salmon pink full-sleeve shirt beautifully adorned with hand embroidery featuring sun, floral, pot, and bird motifs. The playful yet artistic detailing adds a lively charm, making it a standout piece with a touch of nature-inspired elegance.",
+    "price": 1899,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "17",
+    "gender": "men",
+    "brand": "M26/SS/CON/SF/15",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Pink"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773815651/products/x7jm2uvn6lr9jhhl659j.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746361/products/qtjqwydb7thsstigfocj.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746362/products/c8c01ri5ss6i6ony7ivp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746362/products/cbo3ogmtc7b41gok6u9x.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746364/products/jaetckjaynfpry7qzdjy.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773746348930,
+        "name": "Occasion",
+        "value": "Casual outings, brunch dates, day events, vacations, and creative everyday styling.",
+        "_id": "69b938bc07dee5c7ea02d68d"
+      }
+    ],
+    "createdAt": "2026-03-17T11:19:24.779Z",
+    "updatedAt": "2026-03-18T06:34:11.713Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9376907dee5c7ea02d625",
+    "name": "Maroon Handcrafted Arro Shirt",
+    "description": "A rich maroon handcrafted shirt featuring subtle arrow-inspired embroidery. The fine detailing adds a unique geometric charm while keeping the look minimal and versatile. Perfect for those who appreciate understated craftsmanship with a modern touch.",
+    "price": 1399,
+    "category": "Contemporary",
+    "subCategory": "",
+    "originalPrice": "1599",
+    "discount": "13",
+    "gender": "men",
+    "brand": "M26/SS/CON/SS/14",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Maroon"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773815415/products/wfgbhxuqeh6dhyfnua4z.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746021/products/jggureeycogaq5stk9hl.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746022/products/gtbdv0rrwlpdnimlmkcp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746022/products/r2clg2ub3cbtr1pt8byi.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/xwghvg1mvgsp2rh0j5ia.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/biktcvg7clmxdfqzbrea.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/pfl3gml3dr5pva4aonhb.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773746025/products/g0ikdtufipkiudspuqs1.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773745999405,
+        "name": "Occasion",
+        "value": "Casual outings, workwear, evening meet-ups, and smart everyday styling.",
+        "_id": "69b9376907dee5c7ea02d626"
+      }
+    ],
+    "createdAt": "2026-03-17T11:13:45.851Z",
+    "updatedAt": "2026-03-18T06:30:15.508Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b935a907dee5c7ea02d5c3",
+    "name": "The Bract hand Embroidered Rust Cotton linen Shirt",
+    "description": "A beautifully handcrafted rust cotton linen shirt adorned with two statement leaf embroideries. The bold yet minimal design adds a natural, earthy charm, making it a perfect blend of elegance and comfort for everyday wear.",
+    "price": 1699,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "15",
+    "gender": "unisex",
+    "brand": "M26/SS/NATURE/SF/13",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Rust Color"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745541/products/g0jw601whryehcbhpg84.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745543/products/ejmvkg8mdz3fpoxsoyns.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745543/products/dudy1ov2cm47qay2c59s.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745544/products/tcjvsa6mokr9mjb04wez.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745544/products/pn4uelee6xpfubto4d70.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745547/products/ewfx4t9lzu4ptuvqp6fa.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773745554/products/sxxgjt3xshuhventsnno.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773745518791,
+        "name": "Occasion",
+        "value": "Ideal for workdays, casual meet-ups, brunches, and understated festive styling.",
+        "_id": "69b935a907dee5c7ea02d5c4"
+      }
+    ],
+    "createdAt": "2026-03-17T11:06:17.572Z",
+    "updatedAt": "2026-03-31T10:47:34.413Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b92ba507dee5c7ea02d213",
+    "name": "FLYING IN THE AIR HANDCRAFTED SHIRT",
+    "description": "The design follows the journey of a bird in flight. On the chest, a hand-embroidered bird takes off, while at the bottom corner, a second motif grounded in intricate Kantha work adds a touch of playful asymmetry. The true soul of the piece lies on the back yoke, where the hand-stitched words \"Flying in the Air\" serve as a quiet reminder to embrace the breeze and the beauty of the present moment.",
+    "price": 1799,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "10",
+    "gender": "unisex",
+    "brand": "M26/SS/NATURE/SF/12",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "XL",
+      "XXL",
+      "L"
+    ],
+    "color": [
+      "White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773996903/products/eqosvaiivtcbunyg5nyn.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743005/products/cmhioyyfweu7kcwyhgv1.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743006/products/nd8lpzlmkalba2kcyzmi.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743006/products/k2kgbantedfd2inbdss1.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743008/products/v76zaejmptioxfdjtw64.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743007/products/fbe5zfva9y0o0s31cspg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773743011/products/ghxr8vmjkhifguaisxib.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773742958718,
+        "name": "Fabric",
+        "value": "A premium blend of cotton and linen in an earthy, unbleached natural white—breathable, soft, and perfect for any climate.",
+        "_id": "69b92ba507dee5c7ea02d214"
+      },
+      {
+        "id": 1773742982588,
+        "name": "Occasion",
+        "value": "Casual outings, brunch dates, festive gatherings, and everyday elegance.",
+        "_id": "69b92ba507dee5c7ea02d215"
+      }
+    ],
+    "createdAt": "2026-03-17T10:23:33.014Z",
+    "updatedAt": "2026-03-20T08:55:05.272Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9298e07dee5c7ea02d1c0",
+    "name": "French Knotted Leaves Shirt",
+    "description": "Elegant red handmade shirt featuring delicate French knot leaf embroidery. Each tiny leaf is intricately crafted, giving the piece a subtle textured charm. Perfect for adding a touch of artisanal beauty to your everyday style.",
+    "price": 1699,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "15",
+    "gender": "men",
+    "brand": "M26/SS/NATURE/CS/11",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Red"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742472/products/utlccpkf41rzf8muelzr.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742475/products/d5zjfw6uas4fcvvq9wuo.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742474/products/oysdbna3swgaoncddvla.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742475/products/fddi3pngaa1kzwbyccf7.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742476/products/yj5qnztjxi0limf8pf6a.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742477/products/s8elvuuvnqm7r7bbg792.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773742477/products/t5w6drukbndfpu6sqrcz.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773742431228,
+        "name": "Occasion",
+        "value": "Perfect for brunches, casual meet-ups, small festive occasions, and effortless daily wear.",
+        "_id": "69b9298e07dee5c7ea02d1c1"
+      }
+    ],
+    "createdAt": "2026-03-17T10:14:39.237Z",
+    "updatedAt": "2026-03-17T10:14:39.237Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b927a207dee5c7ea02d173",
+    "name": "The life tree cotton shirt",
+    "description": "Trees give peace to the souls of men to stay somewhere long.\r\nThis exquisite hand-embroidered shirt features two deeply rooted trees—one delicately stitched onto the front patch pocket, and its companion gracing the back. Like steadfast friends who have chosen their perfect place, these embroidered motifs work together to balance the garment, creating a beautiful and lasting sense of harmony.",
+    "price": 2799,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "3099",
+    "discount": "10",
+    "gender": "men",
+    "brand": "M26/SS/NATURE/CS/10",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Rust"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741966/products/zluz7db4oirjmobrvrq6.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741975/products/yjvwl5imu71e0fr2sitg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741981/products/vjqfpe1qwlzisgtyaeci.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741981/products/b6ynhtx43leiuxbhsc0k.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741983/products/rbzrdkukui4v66kzeohs.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741983/products/hsa8vqmr39bcpfkhohgp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741984/products/ydfsoqzqk8wpjg6vxkku.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741984/products/aeaisinptg3tehkjkdzw.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741985/products/gcdqtswnhrcwqsta2anp.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T10:06:26.778Z",
+    "updatedAt": "2026-03-17T10:06:26.778Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b924c107dee5c7ea02d0c3",
+    "name": "THE SOLSTICE HAND EMBROIDERED ARTISAN SHIRT",
+    "description": "Embrace effortless summer style with this Handcrafted Short-Sleeve Button-Down. Meticulously designed for the modern individual who appreciates artisanal detail, this shirt features a unique hand-embroidered sunburst motif on the chest, rendered in contrasting teal and white threads.\r\n\r\nThe charm lies in the craftsmanship: visible kantha-style pick stitching runs along the placket, adding a rugged, bespoke texture that sets it apart from mass-produced apparel. Cut from a breathable, lightweight fabric with a natural matte finish, it’s designed to keep you cool while looking polished.",
+    "price": 1899,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "17",
+    "gender": "men",
+    "brand": "M26/SS/NATURE/SF/09",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "SALMON PINK"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773815271/products/prra79iaavv0wfxox0vq.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741243/products/efn2yswgy6gq1fmkibyp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741243/products/tfjooyh9yaotpxkpasoo.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/iwha0kodoadoxc6wifv8.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/zaa7iac8dmatp3diyaz3.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741246/products/j99xm9aucjprxxg5qjbg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773741248/products/mndtgiztvdinlmxdksxm.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773741186379,
+        "name": "Occasion",
+        "value": "Perfect for golden hour gatherings, beachside brunches, or elevated daily wear.",
+        "_id": "69b924c107dee5c7ea02d0c4"
+      },
+      {
+        "id": 1773741196943,
+        "name": "Fit",
+        "value": "Relaxed, casual fit.",
+        "_id": "69b924c107dee5c7ea02d0c5"
+      },
+      {
+        "id": 1773741213394,
+        "name": "Details",
+        "value": "Wood-tone buttons, reinforced collar, and intricate hand-embroidery.",
+        "_id": "69b924c107dee5c7ea02d0c6"
+      }
+    ],
+    "createdAt": "2026-03-17T09:54:09.019Z",
+    "updatedAt": "2026-03-18T06:27:52.430Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9236307dee5c7ea02d09d",
+    "name": "THE SOLAR SOL SHIRT",
+    "description": "Capture the essence of a warm Mediterranean sunset with this striking brown cotton-linen shirt. Designed for the man who appreciates artisanal detail, this piece features a hand-embroidered sun motif on the chest, radiating a relaxed, soulful energy. The Cuban collar and half-sleeves provide a classic, airy silhouette, while the intricate zigzag embroidery along the placket and hem adds a unique, handcrafted touch that sets it apart from the ordinary.",
+    "price": 1799,
+    "category": "Nature",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "10",
+    "gender": "men",
+    "brand": "M26/SS/NATURE/CS/08",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "Brown"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773812175/products/afqq6tvyu1weovckmsnd.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740895/products/sitx95aljzlgtlznmxnl.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740894/products/zxl1dpnzxzmosa7l8aqo.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740896/products/ml0ieuutsq5brui8onqt.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740895/products/vihdd083uj70nj47dx6m.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740897/products/tnpu7vxkjjlw2puzcm3i.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740896/products/oe2rubc88rsbrdw2whrw.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773740898/products/tabzussyzg1yesrpov2d.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T09:48:19.641Z",
+    "updatedAt": "2026-03-18T06:14:49.371Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b91f8e07dee5c7ea02cf5d",
+    "name": "FLORAL POCKET SHIRT",
+    "description": "The french knotted embellished floral motif on a patch pocket.\r\nFeaturing cuban collar half sleeve off white colored loose fit casual wear shirt.\r\nComfortable and breathable natural fabric for your breezy summers.",
+    "price": 1399,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "1599",
+    "discount": "13",
+    "gender": "men",
+    "brand": "M26/SS/FLORAL/CS/07",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739915/products/ufecsmfahtzlqchrxdse.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739916/products/nlchoykcpybsqusun71o.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739917/products/bbzwibw3svagadkxpdcp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739917/products/gvwwxcova8mazt7sxzyp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739916/products/kppidywe0lufployjv9a.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T09:31:58.291Z",
+    "updatedAt": "2026-03-17T09:31:58.291Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b91c7107dee5c7ea02ce85",
+    "name": "The \"Aether\" Sky Blue Hand-Stitched Artisan Shirt",
+    "description": "A Breath of Artisanal Air\r\n\r\nInspired by the clear, expansive skies of a summer morning, this handcrafted sustainable cotton shirt is designed for the man who values both style and substance. Every inch of the garment tells a story of \"slow fashion,\" where traditional techniques are repurposed for a modern, breezy silhouette.\r\n\r\nThe shirt features a delicate dance of textures: all-over French knot \"butties\" in a contrasting navy thread are hand-stitched across the body, creating a subtle 3D effect that catches the light. To ground the design, Kantha-work parallel stripes run vertically alongside the front placket, extending to the collar and back yoke. These rhythmic, hand-run stitches provide a structural elegance that highlights the shirt’s bespoke nature. Finished with natural wooden buttons, this piece isn't just a shirt—it's a wearable piece of art that keeps you cool while making a conscious statement.\r\n",
+    "price": 1899,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "17",
+    "gender": "men",
+    "brand": "M26/SS/NATURE/CS/06",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "Sky Blue"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739108/products/eyxoqq6otwq9ayem4bfs.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739110/products/fpnbxwzkgznxyj0witaw.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739109/products/hnkylwwz4nrn0or1knjv.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739112/products/h9ykq8yuslm3wdt5ymvr.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739113/products/pqzd6jyoa3ejhcvdvlfp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739113/products/iij5osh5yvp4mzpqa2e1.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739115/products/jxbaa6ah5n5fylqsmcbl.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773739120/products/kyblgymwadfod4otawnq.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773739011443,
+        "name": "Fabric",
+        "value": "Premium, breathable sustainable cotton in a vibrant Pastel Sky Blue.",
+        "_id": "69b91c7107dee5c7ea02ce86"
+      },
+      {
+        "id": 1773739032385,
+        "name": "Artistry",
+        "value": "Hand-embroidered French knot motifs and traditional Kantha pick-stitching.",
+        "_id": "69b91c7107dee5c7ea02ce87"
+      },
+      {
+        "id": 1773739065846,
+        "name": "Design Details",
+        "value": "Parallel Kantha stripes on the collar and front placket.",
+        "_id": "69b91c7107dee5c7ea02ce88"
+      },
+      {
+        "id": 1773739088379,
+        "name": "Occasion",
+        "value": "Ideal for beach weddings, garden parties, or elevated weekend brunches.",
+        "_id": "69b91c7107dee5c7ea02ce89"
+      }
+    ],
+    "createdAt": "2026-03-17T09:18:41.358Z",
+    "updatedAt": "2026-03-17T09:18:41.358Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b91a3607dee5c7ea02ce5b",
+    "name": "Mustard Floral Shirt",
+    "description": "",
+    "price": 2099,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "2299",
+    "discount": "9",
+    "gender": "men",
+    "brand": "M26/SS/FLORAL/CS/05",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Brown"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738542/products/pwrmxgravlobekjtpar5.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738545/products/upmwijvqvpit21tzdghq.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738544/products/zq5idyl4kxmiafuvg5xs.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738546/products/fpfw0rzxottu4jyswzzg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738547/products/xxk0zhoni4vhff7gtfno.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738549/products/zpxz443pwfagedqsu1xn.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738550/products/hiv6hmfurgi0ahyb2377.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738549/products/x9gxmkbi67uze6svinpo.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T09:09:10.684Z",
+    "updatedAt": "2026-03-17T09:09:10.684Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9184807dee5c7ea02ce0b",
+    "name": "MAROON HANDCRAFTED SHIRT",
+    "description": "Regular fit shirt made from a cotton and linen blend fabric. Featuring a hand embroidered motif at the above side of your beautiful heart. Patterns include shirt collar and long sleeves with buttoned cuffs",
+    "price": 1399,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "1599",
+    "discount": "13",
+    "gender": "unisex",
+    "brand": "M26/SS/FLORAL/CS/04",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "MAROON"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738051/products/z3rgclai5gcqofp8zpkk.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738052/products/kxs1xxgl3du3cwiwdawy.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738053/products/tfn0v2lf4gdvafz3jpcr.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738053/products/q6r8bllolskc4vompsve.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/ma9idlmmrr4jogpcv1rf.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738054/products/jdpgtnmbwmaju1iy0osf.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/wox7h8nmywoooi6ljlog.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773738055/products/nq7qv95ucg36wxjfmlio.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T09:00:56.147Z",
+    "updatedAt": "2026-03-17T09:00:56.147Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b916a807dee5c7ea02cddb",
+    "name": " COFFEE BROWN FLORAL SHIRT",
+    "description": "The cuban collar relaxed fit shirt with loose fit short sleeves for more moments to enjoy your casual moments at work or at the vacation. Spotted beautiful and elegant contrast  hand embroidered floral vel pattern motif. ",
+    "price": 1299,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "1599",
+    "discount": "19",
+    "gender": "men",
+    "brand": "M26/SS/FLORAL/CS/06",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XXL",
+      "XL"
+    ],
+    "color": [
+      "COFFEE BROWN"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773811688/products/vaxbejd8r5otzxeqn1zc.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773811691/products/ycn7k9ikdtdmibjbklrg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773811690/products/xfauufsteih3fklobkbh.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773811693/products/bvrctyf7mbjerqtwwbzl.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T08:54:00.489Z",
+    "updatedAt": "2026-03-18T06:05:48.852Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b914be07dee5c7ea02cd8d",
+    "name": " FLORAL EMBROIDERED SKETCH SHIRT",
+    "description": " Peach pink handcrafted mens shirt featuring sketch inspired intricate hand embroidered detailing, loose fit pattern to allow fluid movement and a subtle visual flow. Natural cotton fabric is durable and breathable, amplified with  A structured, relaxed fit and easily stiffed  for ample room for statement view.",
+    "price": 1899,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "1999",
+    "discount": "5",
+    "gender": "men",
+    "brand": "M26/SS/FLORAL/CS/02",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "PEACH PINK"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773813746/products/mcijpp2nqtw6ijgccbo8.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773737142/products/nqv3pvkdglpdcgphxevf.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773737144/products/klgvxaegsvh2ocylnysc.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773737147/products/oio9rhb1frlhbnod2qgp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773737147/products/mqswfotrbtppherbzzye.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773737150/products/jj9f3ztu12fthwhonwyy.jpg"
+    ],
+    "productDetails": [],
+    "createdAt": "2026-03-17T08:45:50.739Z",
+    "updatedAt": "2026-03-20T08:20:17.924Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b9118607dee5c7ea02cd18",
+    "name": "HAND EMBROIDERED FLORAL SHIRT",
+    "description": "Cuban collar relax fit half sleeve shirt made from a linen and cotton blend fabric. Featuring a front side symmetrical dedicated handworked floral motif inspired from the Indian historical arts.",
+    "price": 2799,
+    "category": "Floral",
+    "subCategory": "",
+    "originalPrice": "2999",
+    "discount": "7",
+    "gender": "men",
+    "brand": "M26/SS/FLORAL/CS/01",
+    "inStock": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "color": [
+      "Off White"
+    ],
+    "mainImage": "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736317/products/bqomlvvbhucdihmkoqga.jpg",
+    "otherImages": [
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736319/products/jrqff39vhsso1gepsuvr.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736320/products/jqz0zrltakjrxl5bqabp.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736323/products/kpa1omyd29biliacca50.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736322/products/rpxst8h5rbeqrvjayizd.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736323/products/wtz5gu9o1ki84sfvievr.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736324/products/xjl76vjhccxe3igvmncg.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736324/products/floruy2wnf2ddhx4abzx.jpg",
+      "https://res.cloudinary.com/dgelzajqz/image/upload/v1773736325/products/oyy3xiposliowbigdtes.jpg"
+    ],
+    "productDetails": [
+      {
+        "id": 1773736297755,
+        "name": "Fabric",
+        "value": "Cotton 80% and Linen 20%, 100% Natural fabric",
+        "_id": "69b9118607dee5c7ea02cd19"
+      }
+    ],
+    "createdAt": "2026-03-17T08:32:06.223Z",
+    "updatedAt": "2026-03-17T08:32:06.223Z",
+    "__v": 0
+  }
+]

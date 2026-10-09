@@ -1,0 +1,24 @@
+Product Name: FLYING IN THE AIR HANDCRAFTED SHIRT
+Product ID: 69b92ba507dee5c7ea02d213
+Brand: M26/SS/NATURE/SF/12
+Category: Nature / 
+Price: Rs. 1799 (Original: Rs. 1999, Discount: 10%)
+Available Sizes: S, M, XL, XXL, L
+Color: ['White']
+In Stock: True
+
+Description:
+The design follows the journey of a bird in flight. On the chest, a hand-embroidered bird takes off, while at the bottom corner, a second motif grounded in intricate Kantha work adds a touch of playful asymmetry. The true soul of the piece lies on the back yoke, where the hand-stitched words "Flying in the Air" serve as a quiet reminder to embrace the breeze and the beauty of the present moment.
+
+Specifications / Occasion:
+  - Fabric: A premium blend of cotton and linen in an earthy, unbleached natural white—breathable, soft, and perfect for any climate.
+  - Occasion: Casual outings, brunch dates, festive gatherings, and everyday elegance.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773996903/products/eqosvaiivtcbunyg5nyn.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743005/products/cmhioyyfweu7kcwyhgv1.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743006/products/nd8lpzlmkalba2kcyzmi.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743006/products/k2kgbantedfd2inbdss1.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743008/products/v76zaejmptioxfdjtw64.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743007/products/fbe5zfva9y0o0s31cspg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773743011/products/ghxr8vmjkhifguaisxib.jpg

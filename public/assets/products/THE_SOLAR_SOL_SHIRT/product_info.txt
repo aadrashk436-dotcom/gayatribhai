@@ -1,0 +1,21 @@
+Product Name: THE SOLAR SOL SHIRT
+Product ID: 69b9236307dee5c7ea02d09d
+Brand: M26/SS/NATURE/CS/08
+Category: Nature / 
+Price: Rs. 1799 (Original: Rs. 1999, Discount: 10%)
+Available Sizes: S, M, L, XXL, XL
+Color: ['Brown']
+In Stock: True
+
+Description:
+Capture the essence of a warm Mediterranean sunset with this striking brown cotton-linen shirt. Designed for the man who appreciates artisanal detail, this piece features a hand-embroidered sun motif on the chest, radiating a relaxed, soulful energy. The Cuban collar and half-sleeves provide a classic, airy silhouette, while the intricate zigzag embroidery along the placket and hem adds a unique, handcrafted touch that sets it apart from the ordinary.
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773812175/products/afqq6tvyu1weovckmsnd.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740895/products/sitx95aljzlgtlznmxnl.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740894/products/zxl1dpnzxzmosa7l8aqo.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740896/products/ml0ieuutsq5brui8onqt.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740895/products/vihdd083uj70nj47dx6m.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740897/products/tnpu7vxkjjlw2puzcm3i.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740896/products/oe2rubc88rsbrdw2whrw.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773740898/products/tabzussyzg1yesrpov2d.jpg

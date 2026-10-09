@@ -1,0 +1,21 @@
+Product Name: Mustard Floral Shirt
+Product ID: 69b91a3607dee5c7ea02ce5b
+Brand: M26/SS/FLORAL/CS/05
+Category: Floral / 
+Price: Rs. 2099 (Original: Rs. 2299, Discount: 9%)
+Available Sizes: S, M, L, XL, XXL
+Color: ['Brown']
+In Stock: True
+
+Description:
+
+
+Main Image URL: https://res.cloudinary.com/dgelzajqz/image/upload/v1773738542/products/pwrmxgravlobekjtpar5.jpg
+Other Image URLs:
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738545/products/upmwijvqvpit21tzdghq.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738544/products/zq5idyl4kxmiafuvg5xs.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738546/products/fpfw0rzxottu4jyswzzg.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738547/products/xxk0zhoni4vhff7gtfno.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738549/products/zpxz443pwfagedqsu1xn.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738550/products/hiv6hmfurgi0ahyb2377.jpg
+  - https://res.cloudinary.com/dgelzajqz/image/upload/v1773738549/products/x9gxmkbi67uze6svinpo.jpg
