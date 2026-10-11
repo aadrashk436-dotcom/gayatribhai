@@ -696,14 +696,17 @@ export function ProductDetailView({
           </span>
         </div>
         <div className="mobile-sticky-buttons">
-          <button
-            type="button"
-            className={`mobile-sticky-wish-btn ${wishlisted ? "active" : ""}`}
-            onClick={toggleWish}
-            aria-label="Wishlist item"
-          >
-            <Icon name="heart" size={17} filled={wishlisted} />
-          </button>
+          {/* Wishlist Button: only shown if product is not in bag */}
+          {pdpCartQty === 0 && (
+            <button
+              type="button"
+              className={`mobile-sticky-wish-btn ${wishlisted ? "active" : ""}`}
+              onClick={toggleWish}
+              aria-label="Wishlist item"
+            >
+              <Icon name="heart" size={17} filled={wishlisted} />
+            </button>
+          )}
           <button
             type="button"
             className="mobile-sticky-share-btn"
@@ -716,7 +719,7 @@ export function ProductDetailView({
             <div className="mobile-sticky-qty-stepper">
               <button
                 type="button"
-                className="sticky-qty-btn sticky-qty-minus"
+                className={`sticky-qty-btn sticky-qty-minus ${pdpCartQty === 1 ? "trash" : ""}`}
                 onClick={() =>
                   updateQuantity(product.id, -1, currentCartItem?.size)
                 }
@@ -724,26 +727,32 @@ export function ProductDetailView({
               >
                 {pdpCartQty === 1 ? (
                   <svg
-                    width="13"
-                    height="13"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.4"
+                    strokeWidth="2.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
                   </svg>
                 ) : (
                   <svg
-                    width="13"
-                    height="13"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.4"
                     strokeLinecap="round"
+                    aria-hidden="true"
                   >
                     <path d="M5 12h14" />
                   </svg>
@@ -761,13 +770,14 @@ export function ProductDetailView({
                 aria-label="Increase quantity"
               >
                 <svg
-                  width="13"
-                  height="13"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.4"
                   strokeLinecap="round"
+                  aria-hidden="true"
                 >
                   <path d="M12 5v14m-7-7h14" />
                 </svg>
@@ -778,7 +788,7 @@ export function ProductDetailView({
               className={`mobile-sticky-submit-btn ${!size ? "need-size" : ""}`}
               onClick={handleAddToCart}
             >
-              {size ? "Add to bag" : "Select size"}
+              {size ? "Add" : "Select size"}
             </Button>
           )}
         </div>

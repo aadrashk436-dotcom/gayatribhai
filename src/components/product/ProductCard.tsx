@@ -413,7 +413,7 @@ export function ProductCard({
 
         {/* Dedicated Modern Add To Bag / Amazon Quantity Controller Action */}
         <div
-          className="product-card-action"
+          className={`product-card-action ${cartQty > 0 ? "has-cart-qty" : ""}`}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -436,26 +436,32 @@ export function ProductCard({
               >
                 {cartQty === 1 ? (
                   <svg
-                    width="12"
-                    height="12"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.4"
+                    strokeWidth="2.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
                   </svg>
                 ) : (
                   <svg
-                    width="12"
-                    height="12"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.4"
                     strokeLinecap="round"
+                    aria-hidden="true"
                   >
                     <path d="M5 12h14" />
                   </svg>
@@ -473,13 +479,14 @@ export function ProductCard({
                 title="Add another piece"
               >
                 <svg
-                  width="12"
-                  height="12"
+                  width="13"
+                  height="13"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.4"
                   strokeLinecap="round"
+                  aria-hidden="true"
                 >
                   <path d="M12 5v14m-7-7h14" />
                 </svg>
@@ -493,21 +500,30 @@ export function ProductCard({
               aria-label={`Add ${product.name} to bag`}
             >
               <Icon name={isAdded ? "check" : "bag"} size={13} />
-              <span>{isAdded ? "Added to Bag" : "Add to Bag"}</span>
+              <span className="card-btn-text-desktop">
+                {isAdded ? "Added to Bag" : "Add to Bag"}
+              </span>
+              <span className="card-btn-text-mobile">
+                {isAdded ? "Added" : "Add"}
+              </span>
             </button>
           )}
-          <button
-            type="button"
-            className={`card-wish-action-btn ${wishlisted ? "active" : ""}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onWish()
-            }}
-            aria-label="Toggle wishlist"
-            title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <Icon name="heart" size={15} filled={wishlisted} />
-          </button>
+
+          {/* Wishlist button: Only shown when product is NOT in bag, hides once added so qty stepper has 100% full width */}
+          {cartQty === 0 && (
+            <button
+              type="button"
+              className={`card-wish-action-btn ${wishlisted ? "active" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onWish()
+              }}
+              aria-label="Toggle wishlist"
+              title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Icon name="heart" size={15} filled={wishlisted} />
+            </button>
+          )}
         </div>
       </div>
     </article>
