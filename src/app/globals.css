@@ -4571,35 +4571,230 @@ h2 {
 
 .search-overlay {
   position: fixed;
-  z-index: 90;
+  z-index: 95;
   inset: 0;
-  overflow: auto;
-  padding: 40px 8vw;
-  background: var(--surface-glass);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 36px clamp(16px, 6vw, 60px) 60px;
+  padding-top: max(28px, env(safe-area-inset-top, 28px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+  background: var(--surface-glass, rgba(250, 248, 245, 0.96));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: searchOverlayFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes searchOverlayFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .search-box {
   max-width: 950px;
-  margin: auto;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 20px;
-  border-bottom: 1px solid var(--ink);
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--border, rgba(0, 0, 0, 0.15));
+  transition: border-color 0.2s ease;
 }
 
-.search-box input {
+.search-box:focus-within {
+  border-bottom-color: var(--foreground, #111);
+}
+
+/* Back button on the left (phone & desktop navigation) */
+.search-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 8px 10px;
+  margin-left: -6px;
+  cursor: pointer;
+  color: var(--foreground, #111);
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  min-height: 44px;
+}
+
+.search-back-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.search-back-btn:active {
+  transform: scale(0.94);
+}
+
+.search-back-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Search input wrapper */
+.search-input-wrap {
   flex: 1;
-  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 2px;
+  color: var(--muted, #767676);
+  pointer-events: none;
+  transition: color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.search-input-wrap:focus-within .search-input-icon {
+  color: var(--foreground, #111);
+}
+
+.search-box input.search-input {
+  width: 100%;
+  padding: 12px 38px 12px 34px;
   border: 0;
   outline: 0;
   background: transparent;
   font-family: var(--font-display);
-  font-size: clamp(25px, 4vw, 45px);
+  font-size: clamp(20px, 3.2vw, 36px);
+  color: var(--foreground, #111);
+  letter-spacing: -0.01em;
+  -webkit-appearance: none;
 }
 
-.search-box button {
-  border: 0;
+.search-box input.search-input::-webkit-search-cancel-button,
+.search-box input.search-input::-webkit-search-decoration,
+.search-box input.search-input::-webkit-search-results-button,
+.search-box input.search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  display: none;
+}
+
+.search-box input.search-input::placeholder {
+  color: var(--muted, #999);
+  font-family: var(--font-body, inherit);
+  font-size: clamp(16px, 2.5vw, 24px);
+  font-weight: 300;
+  opacity: 0.7;
+}
+
+/* Cut / Clear button inside input */
+.search-cut-btn {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--foreground, #222);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.search-cut-btn:hover {
+  background: rgba(0, 0, 0, 0.18);
+  transform: scale(1.08);
+}
+
+.search-cut-btn:active {
+  transform: scale(0.92);
+}
+
+/* Close / Cancel Button */
+.search-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--foreground, #111);
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  min-height: 44px;
+}
+
+.search-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.search-close-btn:active {
+  transform: scale(0.94);
+}
+
+.search-close-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.search-close-esc {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  color: var(--muted, #666);
+}
+
+.search-close-icon {
+  display: none;
+}
+
+/* Results header with clear inline link */
+.search-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.search-clear-inline-link {
+  background: none;
+  border: none;
+  color: var(--accent, #a66a38);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.search-clear-inline-link:hover {
+  opacity: 0.7;
 }
 
 .search-content {
@@ -6483,7 +6678,59 @@ footer.legacy-footer>div>button {
   }
 
   .search-overlay {
-    padding: 20px 15px 80px;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 14px max(80px, env(safe-area-inset-bottom, 80px));
+  }
+
+  .search-box {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .search-back-btn {
+    padding: 8px 6px;
+    margin-left: -4px;
+    min-height: 42px;
+  }
+
+  .search-back-text {
+    display: none;
+  }
+
+  .search-close-esc {
+    display: none;
+  }
+
+  .search-close-label {
+    display: none;
+  }
+
+  .search-close-icon {
+    display: inline-flex;
+  }
+
+  .search-close-btn {
+    padding: 8px 6px;
+    margin-right: -4px;
+    min-height: 42px;
+  }
+
+  .search-box input.search-input {
+    padding: 8px 32px 8px 28px;
+    font-size: 17px;
+  }
+
+  .search-input-icon {
+    left: 2px;
+  }
+
+  .search-cut-btn {
+    width: 24px;
+    height: 24px;
+    right: 2px;
+  }
+
+  .search-content {
+    margin: 24px auto 60px;
   }
 
   .popular-searches {

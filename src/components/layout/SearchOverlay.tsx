@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { products } from "../../products"
 import type { Product } from "../../types"
 import { money } from "../../utils/format"
@@ -19,6 +20,32 @@ export function SearchOverlay({
   onClose,
   openProduct,
 }: SearchOverlayProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // Focus input on mount with slight delay for smooth transition
+    const timer = setTimeout(() => {
+      inputRef.current?.focus()
+    }, 60)
+
+    // Close on Escape key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [onClose])
+
+  const handleClear = () => {
+    setQuery("")
+    inputRef.current?.focus()
+  }
+
   const results = query
     ? products
         .filter((p) =>
@@ -30,23 +57,85 @@ export function SearchOverlay({
     : []
 
   return (
-    <div className="search-overlay">
+    <div
+      className="search-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search shirts"
+    >
       <div className="search-box">
-        <Icon name="search" size={26} />
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search handcrafted shirts..."
-        />
-        <button onClick={onClose} aria-label="Close search" type="button">
-          <Icon name="close" />
+        {/* Back Button (←) for phone / mobile screen navigation */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="search-back-btn"
+          aria-label="Back / Close search"
+          title="Back"
+        >
+          <Icon name="arrow-left" size={22} />
+          <span className="search-back-text">Back</span>
+        </button>
+
+        {/* Input Container with Search Icon & Cut/Clear Button */}
+        <div className="search-input-wrap">
+          <Icon name="search" size={20} className="search-input-icon" />
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search handcrafted shirts..."
+            className="search-input"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+            aria-label="Search shirts"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="search-cut-btn"
+              aria-label="Cut / Clear text"
+              title="Clear search text"
+            >
+              <Icon name="close" size={12} />
+            </button>
+          ) : null}
+        </div>
+
+        {/* Close / Cancel Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="search-close-btn"
+          aria-label="Close search"
+          title="Close search"
+        >
+          <span className="search-close-label">Cancel</span>
+          <span className="search-close-esc">ESC</span>
+          <Icon name="close" size={18} className="search-close-icon" />
         </button>
       </div>
+
       <div className="search-content">
         {query ? (
           <>
-            <span className="eyebrow">{results.length} Results</span>
+            <div className="search-results-header">
+              <span className="eyebrow">{results.length} Results</span>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="search-clear-inline-link"
+              >
+                Clear
+              </button>
+            </div>
             {results.length ? (
               <div className="search-results">
                 {results.map((p) => (
