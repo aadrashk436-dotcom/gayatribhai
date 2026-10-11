@@ -88,7 +88,8 @@ function SlidePicture({ slide, priority }: { slide: Slide; priority: boolean }) 
       <img
         {...rest}
         alt={slide.alt}
-        className="hero-img absolute inset-0 h-full w-full object-cover object-[center_30%] will-change-transform md:object-[70%_center]"
+        className="hero-img absolute inset-0 h-full w-full object-cover object-[center_18%] will-change-transform md:object-[72%_top]"
+        style={{ transformOrigin: "72% top" }}
       />
     </picture>
   )
@@ -163,8 +164,8 @@ export default function HeroSlider() {
         .to(curImg, { xPercent: -16 * dir, duration: 1.25 }, 0.1)
         .fromTo(
           nxtImg,
-          { scale: 1.28, xPercent: 12 * dir },
-          { scale: 1.06, xPercent: 0, duration: 1.7, ease: "expo.out" },
+          { scale: 1.15, xPercent: 12 * dir },
+          { scale: 1, xPercent: 0, duration: 1.7, ease: "expo.out" },
           0.1,
         )
         .to(nxtLines, { yPercent: 0, duration: 1.1, stagger: 0.07, ease: "expo.out" }, 0.75)
@@ -185,8 +186,8 @@ export default function HeroSlider() {
         .timeline({ onComplete: () => startProgress(0) })
         .fromTo(
           first.querySelector(".hero-img"),
-          { scale: 1.3 },
-          { scale: 1.06, duration: 2, ease: "expo.out" },
+          { scale: 1.15 },
+          { scale: 1, duration: 2, ease: "expo.out" },
         )
         .from(
           first.querySelectorAll(".hero-reveal"),

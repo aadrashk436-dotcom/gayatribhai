@@ -20,7 +20,7 @@ export function WideBanner() {
             alt="Model in an ivory linen shirt in a sunlit courtyard"
             fill
             sizes="100vw"
-            className="object-cover object-[65%_center]"
+            className="object-cover object-[65%_top] md:object-[75%_top]"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent md:bg-gradient-to-r md:from-black/45 md:via-transparent" />
