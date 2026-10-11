@@ -9,6 +9,8 @@ interface AppState {
   // Cart
   cart: CartItem[]
   addToCart: (product: Product, size?: string) => void
+  updateQuantity: (productId: string, delta: number, size?: string) => void
+  removeFromCart: (productId: string, size?: string) => void
   setCart: (updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => void
 
   // Wishlist
@@ -67,6 +69,39 @@ export const useStore = create<AppState>()(
         set((state) => ({
           cart: typeof updater === "function" ? updater(state.cart) : updater,
         })),
+      updateQuantity: (productId, delta, size) => {
+        set((state) => {
+          const targetIndex = state.cart.findIndex(
+            (x) => x.id === productId && (!size || x.size === size),
+          )
+          if (targetIndex === -1) {
+            return state
+          }
+          const item = state.cart[targetIndex]
+          const newQty = item.quantity + delta
+          if (newQty <= 0) {
+            const nextCart = state.cart.filter((_, idx) => idx !== targetIndex)
+            return {
+              cart: nextCart,
+              toast: "Removed from your bag",
+            }
+          }
+          const nextCart = [...state.cart]
+          nextCart[targetIndex] = { ...item, quantity: newQty }
+          return {
+            cart: nextCart,
+            toast: delta > 0 ? "Added 1 more to bag" : "Reduced quantity by 1",
+          }
+        })
+      },
+      removeFromCart: (productId, size) => {
+        set((state) => ({
+          cart: state.cart.filter(
+            (x) => !(x.id === productId && (!size || x.size === size)),
+          ),
+          toast: "Removed from your bag",
+        }))
+      },
 
       // ── Wishlist ──────────────────────────────────────────
       wishlist: [],

@@ -7,6 +7,7 @@ import type { Product } from "../../types"
 import { money } from "../../utils/format"
 import { getProductUrl } from "@/lib/navigation"
 import Icon from "../common/Icon"
+import { useStore } from "@/lib/store"
 
 export interface ProductCardProps {
   product: Product
@@ -27,11 +28,29 @@ export function ProductCard({
   const [copied, setCopied] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
 
+  const { cart, addToCart, updateQuantity } = useStore()
+  const matchingCartItems = cart.filter((x) => x.id === product.id)
+  const cartQty = matchingCartItems.reduce((acc, curr) => acc + curr.quantity, 0)
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation()
-    onAdd()
+    if (onAdd) {
+      onAdd()
+    } else {
+      addToCart(product)
+    }
     setIsAdded(true)
-    setTimeout(() => setIsAdded(false), 1600)
+    setTimeout(() => setIsAdded(false), 1200)
+  }
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    updateQuantity(product.id, 1)
+  }
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    updateQuantity(product.id, -1)
   }
 
   const [isInteracting, setIsInteracting] = useState(false)
@@ -392,21 +411,91 @@ export function ProductCard({
         </div>
         <p className="product-fabric">{product.color} · Cotton linen</p>
 
-        {/* Dedicated Modern Add To Bag Action */}
+        {/* Dedicated Modern Add To Bag / Amazon Quantity Controller Action */}
         <div
           className="product-card-action"
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            className={`card-add-to-bag-btn ${isAdded ? "added" : ""}`}
-            onClick={handleAddToCart}
-            aria-label={`Add ${product.name} to bag`}
-          >
-            <Icon name={isAdded ? "check" : "bag"} size={13} />
-            <span>{isAdded ? "Added to Bag" : "Add to Bag"}</span>
-          </button>
+          {cartQty > 0 ? (
+            <div
+              className="card-qty-controller"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className={`card-qty-btn card-qty-btn-minus ${cartQty === 1 ? "is-remove" : ""}`}
+                onClick={handleDecrement}
+                aria-label={
+                  cartQty === 1
+                    ? `Remove ${product.name} from bag`
+                    : `Decrease ${product.name} quantity`
+                }
+                title={cartQty === 1 ? "Remove from bag" : "Decrease quantity"}
+              >
+                {cartQty === 1 ? (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  >
+                    <path d="M5 12h14" />
+                  </svg>
+                )}
+              </button>
+              <span className="card-qty-display" aria-live="polite">
+                <span className="card-qty-number">{cartQty}</span>
+                <span className="card-qty-label">in bag</span>
+              </span>
+              <button
+                type="button"
+                className="card-qty-btn card-qty-btn-plus"
+                onClick={handleIncrement}
+                aria-label={`Increase ${product.name} quantity`}
+                title="Add another piece"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                >
+                  <path d="M12 5v14m-7-7h14" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={`card-add-to-bag-btn ${isAdded ? "added" : ""}`}
+              onClick={handleAddToCart}
+              aria-label={`Add ${product.name} to bag`}
+            >
+              <Icon name={isAdded ? "check" : "bag"} size={13} />
+              <span>{isAdded ? "Added to Bag" : "Add to Bag"}</span>
+            </button>
+          )}
           <button
             type="button"
             className={`card-wish-action-btn ${wishlisted ? "active" : ""}`}

@@ -11,6 +11,7 @@ import Modal from "../common/Modal"
 import SectionTitle from "../common/SectionTitle"
 import ProductAccordion from "../product/ProductAccordion"
 import ProductCard from "../product/ProductCard"
+import { useStore } from "@/lib/store"
 
 import type { View } from "../../types"
 
@@ -49,6 +50,12 @@ export function ProductDetailView({
   const [checked, setChecked] = useState(false)
   const [currentUrl, setCurrentUrl] = useState("")
   const [isZoomOpen, setIsZoomOpen] = useState(false)
+
+  const { cart, updateQuantity } = useStore()
+  const currentCartItem = cart.find(
+    (x) => x.id === product.id && (size ? x.size === size : true),
+  )
+  const pdpCartQty = currentCartItem ? currentCartItem.quantity : 0
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -518,9 +525,83 @@ export function ProductDetailView({
 
           {/* Action buttons: Add to bag, Wishlist & Dedicated Share Button */}
           <div className="detail-actions">
-            <Button className="add-bag" onClick={handleAddToCart}>
-              {size ? "Add to bag" : "Select size"} <Icon name="bag" />
-            </Button>
+            {pdpCartQty > 0 ? (
+              <div className="pdp-qty-stepper-wrap">
+                <div className="pdp-qty-stepper">
+                  <button
+                    type="button"
+                    className="pdp-qty-btn pdp-qty-minus"
+                    onClick={() =>
+                      updateQuantity(product.id, -1, currentCartItem?.size)
+                    }
+                    aria-label="Decrease quantity"
+                    title={
+                      pdpCartQty === 1
+                        ? "Remove from bag"
+                        : "Decrease quantity"
+                    }
+                  >
+                    {pdpCartQty === 1 ? (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                      >
+                        <path d="M5 12h14" />
+                      </svg>
+                    )}
+                  </button>
+                  <div className="pdp-qty-info">
+                    <span className="pdp-qty-val">{pdpCartQty}</span>
+                    <span className="pdp-qty-txt">
+                      in bag ({currentCartItem?.size || size || "M"})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="pdp-qty-btn pdp-qty-plus"
+                    onClick={() =>
+                      updateQuantity(product.id, 1, currentCartItem?.size)
+                    }
+                    aria-label="Increase quantity"
+                    title="Add another piece"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    >
+                      <path d="M12 5v14m-7-7h14" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Button className="add-bag" onClick={handleAddToCart}>
+                {size ? "Add to bag" : "Select size"} <Icon name="bag" />
+              </Button>
+            )}
             <Button
               variant="outline"
               className={`detail-wish-btn ${wishlisted ? "wishlisted" : ""}`}
@@ -631,12 +712,75 @@ export function ProductDetailView({
           >
             <Icon name="share" size={17} />
           </button>
-          <Button
-            className={`mobile-sticky-submit-btn ${!size ? "need-size" : ""}`}
-            onClick={handleAddToCart}
-          >
-            {size ? "Add to bag" : "Select size"}
-          </Button>
+          {pdpCartQty > 0 ? (
+            <div className="mobile-sticky-qty-stepper">
+              <button
+                type="button"
+                className="sticky-qty-btn sticky-qty-minus"
+                onClick={() =>
+                  updateQuantity(product.id, -1, currentCartItem?.size)
+                }
+                aria-label="Decrease quantity"
+              >
+                {pdpCartQty === 1 ? (
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  >
+                    <path d="M5 12h14" />
+                  </svg>
+                )}
+              </button>
+              <span className="sticky-qty-count">
+                <strong>{pdpCartQty}</strong> in bag
+              </span>
+              <button
+                type="button"
+                className="sticky-qty-btn sticky-qty-plus"
+                onClick={() =>
+                  updateQuantity(product.id, 1, currentCartItem?.size)
+                }
+                aria-label="Increase quantity"
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                >
+                  <path d="M12 5v14m-7-7h14" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <Button
+              className={`mobile-sticky-submit-btn ${!size ? "need-size" : ""}`}
+              onClick={handleAddToCart}
+            >
+              {size ? "Add to bag" : "Select size"}
+            </Button>
+          )}
         </div>
       </div>
 

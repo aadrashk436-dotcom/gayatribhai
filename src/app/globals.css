@@ -1497,6 +1497,78 @@ h2 {
   box-shadow: 0 4px 14px rgba(21, 128, 61, 0.28) !important;
 }
 
+/* Amazon-Style Reactive Quantity Controller */
+.card-qty-controller {
+  width: 100%;
+  min-height: 38px;
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid var(--ink);
+  background: var(--solid);
+  color: var(--solid-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.card-qty-btn {
+  width: 32px;
+  height: 30px;
+  border-radius: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.card-qty-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(1.05);
+}
+
+.card-qty-btn:active {
+  transform: scale(0.92);
+}
+
+.card-qty-btn.is-remove:hover {
+  background: rgba(220, 38, 38, 0.35);
+  color: #fca5a5;
+}
+
+.card-qty-display {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.card-qty-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: #cca466;
+  min-width: 14px;
+  text-align: center;
+}
+
+.card-qty-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
 .card-badge-wrap {
   display: contents;
 }
@@ -3181,6 +3253,72 @@ h2 {
 .detail-actions .detail-share-btn:hover {
   border-color: var(--gold);
   color: var(--gold);
+}
+
+/* PDP Amazon-Style Quantity Stepper */
+.pdp-qty-stepper-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pdp-qty-stepper {
+  width: 100%;
+  min-height: 52px;
+  height: 52px;
+  border-radius: 4px;
+  background: var(--solid);
+  color: var(--solid-fg);
+  border: 1px solid rgba(204, 164, 102, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  user-select: none;
+}
+
+.pdp-qty-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdp-qty-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(1.05);
+}
+
+.pdp-qty-btn:active {
+  transform: scale(0.94);
+}
+
+.pdp-qty-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+
+.pdp-qty-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: #cca466;
+}
+
+.pdp-qty-txt {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.82;
 }
 
 /* Share Modal Styling */
@@ -5481,6 +5619,48 @@ footer.legacy-footer>div>button {
     box-shadow: 0 3px 12px rgba(21, 128, 61, 0.3) !important;
   }
 
+  /* Mobile 2-column reactive quantity controller */
+  .card-qty-controller {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    width: auto !important;
+    min-height: 35px !important;
+    height: 35px !important;
+    padding: 0 3px !important;
+    gap: 2px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .card-qty-btn {
+    width: 27px !important;
+    height: 27px !important;
+    border-radius: 5px !important;
+  }
+
+  .card-qty-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .card-qty-display {
+    padding: 0 2px !important;
+    gap: 0px !important;
+  }
+
+  .card-qty-number {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+
+  .card-qty-label {
+    font-size: 8px !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1 !important;
+  }
+
+
   .card-wish-action-btn {
     display: inline-flex !important;
     flex: 0 0 34px !important;
@@ -6165,6 +6345,28 @@ footer.legacy-footer>div>button {
     letter-spacing: 0.05em !important;
   }
 
+  .shop-grid.mobile-cols-1 .card-qty-controller {
+    min-height: 44px !important;
+    height: 44px !important;
+    border-radius: 8px !important;
+    padding: 0 8px !important;
+    gap: 6px !important;
+  }
+
+  .shop-grid.mobile-cols-1 .card-qty-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .shop-grid.mobile-cols-1 .card-qty-number {
+    font-size: 15px !important;
+  }
+
+  .shop-grid.mobile-cols-1 .card-qty-label {
+    font-size: 9.5px !important;
+  }
+
+
   .shop-grid.mobile-cols-1 .card-wish-action-btn {
     flex: 0 0 44px !important;
     width: 44px !important;
@@ -6425,8 +6627,9 @@ footer.legacy-footer>div>button {
     display: none;
   }
 
-  .detail-actions .add-bag {
-    display: none;
+  .detail-actions .add-bag,
+  .detail-actions .pdp-qty-stepper-wrap {
+    display: none !important;
   }
 
   .detail-actions {
@@ -6542,6 +6745,64 @@ footer.legacy-footer>div>button {
     color: #fff;
     border-color: var(--gold);
   }
+
+  .mobile-sticky-qty-stepper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    min-width: 140px !important;
+    flex: 1 !important;
+    max-width: 175px !important;
+    background: var(--solid) !important;
+    color: var(--solid-fg) !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(204, 164, 102, 0.45) !important;
+    padding: 0 4px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+    user-select: none !important;
+  }
+
+  .sticky-qty-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease, transform 0.1s ease !important;
+  }
+
+  .sticky-qty-btn:active {
+    transform: scale(0.92) !important;
+    background: rgba(255, 255, 255, 0.22) !important;
+  }
+
+  .sticky-qty-btn.trash {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.18) !important;
+  }
+
+  .sticky-qty-count {
+    font-size: 11.5px !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .sticky-qty-count strong {
+    font-size: 14px !important;
+    color: #cca466 !important;
+    font-weight: 700 !important;
+  }
+
 
   .service-row {
     gap: 5px;
