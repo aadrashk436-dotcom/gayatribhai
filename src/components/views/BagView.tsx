@@ -7,6 +7,7 @@ import { money } from "../../utils/format"
 import Button from "../common/Button"
 import Empty from "../common/Empty"
 import Icon from "../common/Icon"
+import { useStore } from "@/lib/store"
 
 export interface BagViewProps {
   cart: CartItem[]
@@ -15,7 +16,11 @@ export interface BagViewProps {
   go: (v: View) => void
 }
 
-export function BagView({ cart, setCart, openProduct, go }: BagViewProps) {
+export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go }: BagViewProps) {
+  const store = useStore()
+  // Use store cart if available, fallback to propCart
+  const cart = store.cart ?? propCart
+
   const detailed = cart
     .map((item) => ({
       ...item,
@@ -29,19 +34,38 @@ export function BagView({ cart, setCart, openProduct, go }: BagViewProps) {
   )
   const mrp = detailed.reduce((sum, x) => sum + x.product.mrp * x.quantity, 0)
 
-  const update = (item: CartItem, amount: number) =>
-    setCart((prev) =>
-      prev.map((x) =>
-        x.id === item.id && x.size === item.size
-          ? { ...x, quantity: Math.max(1, x.quantity + amount) }
-          : x,
-      ),
-    )
+  const handleUpdate = (item: CartItem, amount: number) => {
+    if (item.quantity + amount <= 0) {
+      handleRemove(item)
+      return
+    }
+    store.updateQuantity(item.id, amount, item.size)
+    if (propSetCart) {
+      propSetCart((prev) =>
+        prev.map((x) =>
+          x.id === item.id && (!item.size || !x.size || x.size === item.size)
+            ? { ...x, quantity: x.quantity + amount }
+            : x,
+        ),
+      )
+    }
+  }
 
-  const remove = (item: CartItem) =>
-    setCart((prev) =>
-      prev.filter((x) => !(x.id === item.id && x.size === item.size)),
-    )
+  const handleRemove = (item: CartItem) => {
+    store.removeFromCart(item.id, item.size)
+    if (propSetCart) {
+      propSetCart((prev) =>
+        prev.filter((x) => !(x.id === item.id && (!item.size || !x.size || x.size === item.size))),
+      )
+    }
+  }
+
+  const handleClearCart = () => {
+    store.clearCart()
+    if (propSetCart) {
+      propSetCart([])
+    }
+  }
 
   if (!detailed.length) {
     return (
@@ -60,12 +84,28 @@ export function BagView({ cart, setCart, openProduct, go }: BagViewProps) {
   return (
     <div className="bag-page">
       <div className="bag-head">
-        <span className="eyebrow">Your Selection</span>
-        <h1>Shopping bag</h1>
-        <p>
-          {cart.length} {cart.length === 1 ? "piece" : "pieces"}, reserved for
-          15 minutes
-        </p>
+        <div className="bag-head-row">
+          <div>
+            <span className="eyebrow">Your Selection</span>
+            <h1>Shopping bag</h1>
+            <p>
+              {detailed.length} {detailed.length === 1 ? "piece" : "pieces"}, reserved for
+              15 minutes
+            </p>
+          </div>
+          {detailed.length > 0 && (
+            <button
+              type="button"
+              className="clear-cart-btn"
+              onClick={handleClearCart}
+              aria-label="Clear all items from bag"
+              title="Remove all items from shopping bag"
+            >
+              <Icon name="trash" size={14} />
+              <span>Clear Cart</span>
+            </button>
+          )}
+        </div>
       </div>
       <div className="bag-layout">
         <div className="bag-items">
@@ -81,7 +121,7 @@ export function BagView({ cart, setCart, openProduct, go }: BagViewProps) {
             <i style={{ width: `${Math.min(100, subtotal / 19.99)}%` }} />
           </div>
           {detailed.map((item) => (
-            <article className="bag-item" key={`${item.id}-${item.size}`}>
+            <article className="bag-item" key={`${item.id}-${item.size || "M"}`}>
               <button
                 type="button"
                 onClick={() => openProduct(item.product)}
@@ -93,32 +133,42 @@ export function BagView({ cart, setCart, openProduct, go }: BagViewProps) {
                 <small>AVYR · {item.product.category}</small>
                 <h3>{item.product.name}</h3>
                 <p>
-                  {item.product.color} · Size {item.size}
+                  {item.product.color} · Size {item.size || "M"}
                 </p>
-                <div className="qty">
+                <div className="bag-item-actions">
+                  <div className="qty">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdate(item, -1)}
+                      aria-label={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
+                      title={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
+                    >
+                      {item.quantity === 1 ? (
+                        <Icon name="trash" size={13} />
+                      ) : (
+                        <Icon name="minus" size={14} />
+                      )}
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdate(item, 1)}
+                      aria-label="Increase quantity"
+                      title="Increase quantity"
+                    >
+                      <Icon name="plus" size={14} />
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => update(item, -1)}
-                    aria-label="Decrease quantity"
+                    className="remove"
+                    onClick={() => handleRemove(item)}
+                    aria-label={`Remove ${item.product.name} from bag`}
                   >
-                    <Icon name="minus" size={14} />
-                  </button>
-                  <span>{item.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => update(item, 1)}
-                    aria-label="Increase quantity"
-                  >
-                    <Icon name="plus" size={14} />
+                    <Icon name="trash" size={14} />
+                    <span>Remove</span>
                   </button>
                 </div>
-                <button
-                  type="button"
-                  className="remove"
-                  onClick={() => remove(item)}
-                >
-                  <Icon name="trash" size={15} /> Remove
-                </button>
               </div>
               <div className="bag-price">
                 <strong>{money(item.product.price * item.quantity)}</strong>

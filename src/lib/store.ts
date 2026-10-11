@@ -11,6 +11,7 @@ interface AppState {
   addToCart: (product: Product, size?: string) => void
   updateQuantity: (productId: string, delta: number, size?: string) => void
   removeFromCart: (productId: string, size?: string) => void
+  clearCart: () => void
   setCart: (updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => void
 
   // Wishlist
@@ -58,8 +59,8 @@ export const useStore = create<AppState>()(
           return {
             cart: existing
               ? state.cart.map((x) =>
-                  x === existing ? { ...x, quantity: x.quantity + 1 } : x,
-                )
+                x === existing ? { ...x, quantity: x.quantity + 1 } : x,
+              )
               : [...state.cart, { id: product.id, size: chosenSize, quantity: 1 }],
             toast: `${product.name} added to bag`,
           }
@@ -72,7 +73,7 @@ export const useStore = create<AppState>()(
       updateQuantity: (productId, delta, size) => {
         set((state) => {
           const targetIndex = state.cart.findIndex(
-            (x) => x.id === productId && (!size || x.size === size),
+            (x) => x.id === productId && (!size || !x.size || x.size === size),
           )
           if (targetIndex === -1) {
             return state
@@ -97,10 +98,16 @@ export const useStore = create<AppState>()(
       removeFromCart: (productId, size) => {
         set((state) => ({
           cart: state.cart.filter(
-            (x) => !(x.id === productId && (!size || x.size === size)),
+            (x) => !(x.id === productId && (!size || !x.size || x.size === size)),
           ),
           toast: "Removed from your bag",
         }))
+      },
+      clearCart: () => {
+        set({
+          cart: [],
+          toast: "Shopping bag cleared",
+        })
       },
 
       // ── Wishlist ──────────────────────────────────────────
@@ -119,7 +126,7 @@ export const useStore = create<AppState>()(
       // ── User ──────────────────────────────────────────────
       user: {
         id: "usr_1",
-        name: "Arjun Mehta",
+        name: "Arjun Mehta saransh",
         email: "arjun@example.com",
         phone: "+91 98765 43210",
         joinedDate: "April 2026",

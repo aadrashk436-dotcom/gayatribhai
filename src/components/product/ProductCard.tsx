@@ -28,7 +28,7 @@ export function ProductCard({
   const [copied, setCopied] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
 
-  const { cart, addToCart, updateQuantity } = useStore()
+  const { cart, addToCart, updateQuantity, removeFromCart } = useStore()
   const matchingCartItems = cart.filter((x) => x.id === product.id)
   const cartQty = matchingCartItems.reduce((acc, curr) => acc + curr.quantity, 0)
 
@@ -50,7 +50,11 @@ export function ProductCard({
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.stopPropagation()
-    updateQuantity(product.id, -1)
+    if (cartQty <= 1) {
+      removeFromCart(product.id)
+    } else {
+      updateQuantity(product.id, -1)
+    }
   }
 
   const [isInteracting, setIsInteracting] = useState(false)
