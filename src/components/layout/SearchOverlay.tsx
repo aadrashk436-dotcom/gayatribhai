@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import Link from "next/link"
 import { products } from "../../products"
 import type { Product } from "../../types"
 import { money } from "../../utils/format"
+import { getProductUrl } from "../../lib/navigation"
 import Empty from "../common/Empty"
 import Icon from "../common/Icon"
 
@@ -139,10 +141,10 @@ export function SearchOverlay({
             {results.length ? (
               <div className="search-results">
                 {results.map((p) => (
-                  <button
-                    type="button"
+                  <Link
+                    href={getProductUrl(p)}
                     onClick={() => {
-                      openProduct(p)
+                      if (openProduct) openProduct(p)
                       onClose()
                     }}
                     key={p.id}
@@ -155,7 +157,7 @@ export function SearchOverlay({
                       </small>
                     </span>
                     <Icon name="arrow" />
-                  </button>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -187,17 +189,17 @@ export function SearchOverlay({
             <span className="eyebrow">Recently Viewed</span>
             <div className="search-products">
               {products.slice(0, 3).map((p) => (
-                <button
-                  type="button"
+                <Link
+                  href={getProductUrl(p)}
                   onClick={() => {
-                    openProduct(p)
+                    if (openProduct) openProduct(p)
                     onClose()
                   }}
                   key={p.id}
                 >
                   <img src={p.images[0]} alt="" />
                   <span>{p.name}</span>
-                </button>
+                </Link>
               ))}
             </div>
           </>

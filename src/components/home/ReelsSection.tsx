@@ -1,10 +1,12 @@
 "use client"
 
 import React, { useRef, useState } from "react"
+import Link from "next/link"
 import { REELS_DATA } from "../../data/reelsData"
 import { products } from "../../products"
 import type { Product, ReelItem, View } from "../../types"
 import { money } from "../../utils/format"
+import { getProductUrl } from "../../lib/navigation"
 import Button from "../common/Button"
 import Icon from "../common/Icon"
 import Modal from "../common/Modal"
@@ -183,11 +185,15 @@ export function ReelsSection({
 
                   {/* Product Mini Pill */}
                   {matchingProduct && (
-                    <div
+                    <Link
+                      href={getProductUrl(matchingProduct)}
                       className="reel-product-pill"
                       onClick={(e) => {
                         e.stopPropagation()
-                        openProduct(matchingProduct)
+                        if (openProduct) {
+                          e.preventDefault()
+                          openProduct(matchingProduct)
+                        }
                       }}
                       title={`View ${matchingProduct.name}`}
                     >
@@ -205,7 +211,7 @@ export function ReelsSection({
                         </span>
                       </div>
                       <span className="pill-shop-badge">Shop →</span>
-                    </div>
+                    </Link>
                   )}
                 </div>
 
@@ -348,13 +354,13 @@ export function ReelsSection({
                       <span className="category-pill">
                         {activeProduct.category}
                       </span>
-                      <strong
-                        onClick={() => {
-                          openProduct(activeProduct)
-                          closeFullscreenReel()
-                        }}
-                      >
-                        {activeProduct.name}
+                      <strong>
+                        <Link
+                          href={getProductUrl(activeProduct)}
+                          onClick={() => closeFullscreenReel()}
+                        >
+                          {activeProduct.name}
+                        </Link>
                       </strong>
                       <div className="price-tag">
                         <b>{money(activeProduct.price)}</b>
