@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import Lenis from "lenis"
+import "lenis/dist/lenis.css"
 import { gsap } from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 
@@ -22,12 +23,11 @@ export default function SmoothScroll() {
     if (reduceMotion) return
 
     const lenis = new Lenis({
-      duration: 1.0,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.1, // Instant physical response on wheel turn with zero input delay
       smoothWheel: true,
       syncTouch: false,
       touchMultiplier: 1.0,
-      wheelMultiplier: 0.95,
+      wheelMultiplier: 1.0,
       prevent: (node) => {
         // Never hijack scrolling inside elements with data-lenis-prevent or filter sidebars
         return (

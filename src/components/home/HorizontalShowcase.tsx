@@ -53,8 +53,6 @@ export default function HorizontalShowcase({
             pinSpacing: true,
             anticipatePin: 0,
             invalidateOnRefresh: true,
-            fastScrollEnd: true,
-            preventOverlaps: true,
           },
         })
 
@@ -63,6 +61,7 @@ export default function HorizontalShowcase({
           {
             x: () => -getDistance(),
             ease: "none",
+            force3D: true,
           },
           0,
         )
@@ -175,7 +174,7 @@ export default function HorizontalShowcase({
       >
         <div
           ref={track}
-          className="flex w-max gap-3.5 px-5 md:gap-5 md:px-10 lg:px-14 items-stretch pb-2"
+          className="flex w-max gap-3.5 px-5 md:gap-5 md:px-10 lg:px-14 items-stretch pb-2 will-change-transform"
         >
           {items.map((p) => (
             <div

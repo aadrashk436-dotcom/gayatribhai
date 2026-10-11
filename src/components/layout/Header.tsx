@@ -45,11 +45,23 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
 
   useEffect(() => {
     let last = window.scrollY
+    let prevScrolled = false
+    let prevHidden = false
+
     const onScroll = () => {
       const y = window.scrollY
-      setScrolled(y > 10)
-      setHidden(y > 240 && y > last)
+      const nextScrolled = y > 10
+      const nextHidden = y > 240 && y > last
       last = y
+
+      if (nextScrolled !== prevScrolled) {
+        prevScrolled = nextScrolled
+        setScrolled(nextScrolled)
+      }
+      if (nextHidden !== prevHidden) {
+        prevHidden = nextHidden
+        setHidden(nextHidden)
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)

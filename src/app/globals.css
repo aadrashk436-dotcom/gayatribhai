@@ -1213,9 +1213,7 @@ h2 {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--surface-glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   cursor: pointer;
   transition: all .2s;
@@ -1239,9 +1237,7 @@ h2 {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--surface-glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   cursor: pointer;
   transition: all .2s;
@@ -1279,14 +1275,13 @@ h2 {
   height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, .08);
-  background: var(--surface-glass);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   display: grid;
   place-items: center;
   cursor: pointer;
   opacity: 0;
   transition: all .22s ease;
-  backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, .14);
 }
 
@@ -1319,9 +1314,8 @@ h2 {
   align-items: center;
   gap: 5px;
   padding: 4px 8px;
-  background: rgba(14, 28, 20, .45);
+  background: rgba(14, 28, 20, .72);
   border-radius: 12px;
-  backdrop-filter: blur(6px);
   opacity: 0;
   transition: opacity .25s ease;
   pointer-events: auto;
@@ -1329,6 +1323,14 @@ h2 {
 
 .product-card:hover .card-mini-dots {
   opacity: 1;
+}
+
+[data-theme="dark"] .wish-btn,
+[data-theme="dark"] .card-share-btn,
+[data-theme="dark"] .card-nav-arrow {
+  background: rgba(30, 30, 30, 0.92);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .card-dot {
