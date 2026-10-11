@@ -198,12 +198,14 @@ export default function HeroSlider() {
       gsap.to(".hero-stage", {
         yPercent: 18,
         ease: "none",
+        force3D: true,
         scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
       })
       gsap.to(".hero-copy-wrap", {
         autoAlpha: 0,
         y: -60,
         ease: "none",
+        force3D: true,
         scrollTrigger: { trigger: root.current, start: "top top", end: "60% top", scrub: true },
       })
     },

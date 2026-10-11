@@ -54,6 +54,7 @@ export function useReveal(scope: RefObject<HTMLElement | null>) {
             {
               yPercent: amount,
               ease: "none",
+              force3D: true,
               scrollTrigger: { trigger: el.parentElement, start: "top bottom", end: "bottom top", scrub: true },
             },
           )

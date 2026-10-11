@@ -23,11 +23,11 @@ export default function SmoothScroll() {
     if (reduceMotion) return
 
     const lenis = new Lenis({
-      lerp: 0.1, // Instant physical response on wheel turn with zero input delay
+      lerp: 0.12, // Snappy, ultra-fluid response with zero drag latency
       smoothWheel: true,
       syncTouch: false,
       touchMultiplier: 1.0,
-      wheelMultiplier: 1.0,
+      wheelMultiplier: 1.05,
       prevent: (node) => {
         // Never hijack scrolling inside elements with data-lenis-prevent or filter sidebars
         return (

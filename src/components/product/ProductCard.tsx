@@ -33,6 +33,27 @@ export function ProductCard({
   }
 
   const [isInteracting, setIsInteracting] = useState(false)
+  const hoverTimer = useRef<NodeJS.Timeout | null>(null)
+
+  const handleMouseEnter = () => {
+    if (isInteracting) return
+    hoverTimer.current = setTimeout(() => {
+      setIsInteracting(true)
+    }, 150)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+  }
+
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    }
+  }, [])
 
   // Drag / Swipe / Touch state tracking
   const mouseStartX = useRef<number | null>(null)
@@ -45,6 +66,7 @@ export function ProductCard({
 
   const prevSlide = (e?: React.MouseEvent | React.TouchEvent) => {
     e?.stopPropagation()
+    setIsInteracting(true)
     setImgIndex(
       (prev) => (prev - 1 + product.images.length) % product.images.length,
     )
@@ -52,6 +74,7 @@ export function ProductCard({
 
   const nextSlide = (e?: React.MouseEvent | React.TouchEvent) => {
     e?.stopPropagation()
+    setIsInteracting(true)
     setImgIndex((prev) => (prev + 1) % product.images.length)
   }
 
@@ -189,7 +212,8 @@ export function ProductCard({
   return (
     <article
       className="product-card group"
-      onMouseEnter={() => setIsInteracting(true)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         className="product-image-wrap"
