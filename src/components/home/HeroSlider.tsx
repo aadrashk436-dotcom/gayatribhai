@@ -18,6 +18,8 @@ type Slide = {
   mobile: string
   alt: string
   tone: "light" | "dark"
+  desktopPos?: string
+  mobilePos?: string
 }
 
 const SLIDES: Slide[] = [
@@ -26,30 +28,36 @@ const SLIDES: Slide[] = [
     kicker: "Summer Atelier '26",
     lines: ["Woven", "by hand."],
     cta: "Shop linen",
-    desktop: "/assets/site_banners/slide1_desktop.jpg",
+    desktop: "/assets/banners/hero-atelier-widescreen.jpg",
     mobile: "/assets/site_banners/slide1_mobile.jpg",
-    alt: "Model in an ivory hand-embroidered linen shirt on a seaside terrace",
+    alt: "Model in an ivory hand-embroidered French linen shirt on an Aegean seaside stone terrace",
     tone: "light",
+    desktopPos: "72% 15%",
+    mobilePos: "center 18%",
   },
   {
     id: "resort",
     kicker: "The Resort Edit",
     lines: ["Coastal", "state."],
     cta: "Shop resort",
-    desktop: "/assets/site_banners/slide2_desktop.jpg",
+    desktop: "/assets/banners/hero-resort-widescreen.jpg",
     mobile: "/assets/site_banners/slide2_mobile.jpg",
-    alt: "Model relaxing by the sea in a blue embroidered cuban collar shirt",
+    alt: "Model relaxing on a luxury coastal villa terrace in a sky-blue Cuban collar linen shirt",
     tone: "light",
+    desktopPos: "72% 18%",
+    mobilePos: "center 18%",
   },
   {
     id: "studio",
     kicker: "New Arrivals",
     lines: ["Rust &", "ease."],
     cta: "Shop new in",
-    desktop: "/assets/banners/hero-studio-desktop.jpg",
+    desktop: "/assets/banners/hero-terracotta-widescreen.jpg",
     mobile: "/assets/banners/hero-studio-mobile.jpg",
-    alt: "Model walking in a terracotta linen cuban collar shirt",
-    tone: "dark",
+    alt: "Model walking through a sunlit sandstone courtyard in a terracotta embroidered linen shirt",
+    tone: "light",
+    desktopPos: "76% 15%",
+    mobilePos: "center 18%",
   },
   {
     id: "evening",
@@ -58,18 +66,20 @@ const SLIDES: Slide[] = [
     cta: "Shop evening",
     desktop: "/assets/banners/hero-evening-desktop.jpg",
     mobile: "/assets/site_banners/slide3_mobile.jpg",
-    alt: "Model on a city rooftop at dusk in a navy embroidered shirt",
+    alt: "Model on an evening rooftop at dusk in a navy embroidered shirt",
     tone: "light",
+    desktopPos: "75% top",
+    mobilePos: "center 18%",
   },
 ]
 
 const AUTOPLAY = 6
 
 function SlidePicture({ slide, priority }: { slide: Slide; priority: boolean }) {
-  const common = { alt: slide.alt, sizes: "100vw", quality: 78 }
+  const common = { alt: slide.alt, sizes: "100vw", quality: 85 }
   const {
     props: { srcSet: desktopSet, src: desktopSrc },
-  } = getImageProps({ ...common, src: slide.desktop, width: 1376, height: 768 })
+  } = getImageProps({ ...common, src: slide.desktop, width: 1920, height: 1080 })
   const {
     props: { srcSet: mobileSet, ...rest },
   } = getImageProps({
@@ -88,8 +98,14 @@ function SlidePicture({ slide, priority }: { slide: Slide; priority: boolean }) 
       <img
         {...rest}
         alt={slide.alt}
-        className="hero-img absolute inset-0 h-full w-full object-cover object-[center_18%] will-change-transform md:object-[72%_top]"
-        style={{ transformOrigin: "72% top" }}
+        className="hero-img absolute inset-0 h-full w-full object-cover will-change-transform object-[var(--pos-m,center_18%)] md:object-[var(--pos-d,72%_15%)]"
+        style={
+          {
+            "--pos-m": slide.mobilePos || "center 18%",
+            "--pos-d": slide.desktopPos || "72% 15%",
+            transformOrigin: slide.desktopPos || "72% 15%",
+          } as React.CSSProperties
+        }
       />
     </picture>
   )
@@ -269,7 +285,7 @@ export default function HeroSlider() {
       ref={root}
       aria-roledescription="carousel"
       aria-label="Featured collections"
-      className="relative h-[calc(100svh-100px)] min-h-[560px] w-full touch-pan-y select-none overflow-hidden bg-[#111] md:h-[calc(100svh-112px)] md:min-h-[620px]"
+      className="relative h-[calc(100svh-100px)] min-h-[540px] w-full touch-pan-y select-none overflow-hidden bg-[#111] md:h-[clamp(580px,calc(100svh-112px),840px)] md:min-h-[580px]"
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onMouseEnter={() => setPaused(true)}
@@ -294,18 +310,18 @@ export default function HeroSlider() {
               className={`pointer-events-none absolute inset-0 ${
                 slide.tone === "dark"
                   ? "bg-gradient-to-t from-[#f1e4d2]/80 via-transparent to-transparent md:bg-gradient-to-r md:from-[#efe2cf]/70 md:via-transparent"
-                  : "bg-gradient-to-t from-black/70 via-black/10 to-black/20 md:bg-gradient-to-r md:from-black/55 md:via-black/5 md:to-transparent"
+                  : "bg-gradient-to-t from-black/75 via-black/15 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20 md:to-transparent"
               }`}
             />
 
-            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-24 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[52%] md:flex-col md:justify-end md:px-14 md:pb-28 lg:px-20">
+            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-20 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[50%] md:max-w-2xl md:flex-col md:justify-end md:px-12 md:pb-24 lg:px-16 xl:px-20">
               <div className={slide.tone === "dark" ? "text-[#1a1410]" : "text-white"}>
                 <div className="overflow-hidden">
                   <p className="hero-reveal mb-4 text-[11px] font-semibold uppercase tracking-[0.32em] opacity-90 md:text-xs">
                     {slide.kicker}
                   </p>
                 </div>
-                <h2 className="font-display text-[clamp(3.2rem,13vw,4.6rem)] font-normal leading-[0.92] tracking-[-0.02em] md:text-[clamp(4.5rem,8vw,8.5rem)]">
+                <h2 className="font-display text-[clamp(3.2rem,12vw,4.5rem)] font-normal leading-[0.92] tracking-[-0.02em] md:text-[clamp(3.8rem,5.5vw,7.2rem)]">
                   {slide.lines.map((line, li) => (
                     <span key={line} className="block overflow-hidden pb-[0.08em]">
                       <span className={`hero-reveal block ${li === 1 ? "italic" : ""}`}>{line}</span>

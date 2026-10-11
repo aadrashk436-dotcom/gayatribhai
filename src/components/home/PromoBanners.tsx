@@ -13,7 +13,7 @@ function Arrow() {
 export function WideBanner() {
   return (
     <section className="px-3 md:px-6">
-      <Link href="/shop" className="group relative block h-[78svh] max-h-[760px] min-h-[460px] overflow-hidden rounded-sm md:h-[86vh]">
+      <Link href="/shop" className="group relative block h-[70svh] min-h-[420px] overflow-hidden rounded-sm md:h-[clamp(500px,62vh,680px)]">
         <div data-parallax="10" className="absolute -inset-y-[12%] inset-x-0">
           <Image
             src="/assets/banners/promo-linen-wide.jpg"
