@@ -39,8 +39,9 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
       handleRemove(item)
       return
     }
-    store.updateQuantity(item.id, amount, item.size)
-    if (propSetCart) {
+    if (store && typeof store.updateQuantity === "function") {
+      store.updateQuantity(item.id, amount, item.size)
+    } else if (propSetCart) {
       propSetCart((prev) =>
         prev.map((x) =>
           x.id === item.id && (!item.size || !x.size || x.size === item.size)
@@ -52,8 +53,9 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
   }
 
   const handleRemove = (item: CartItem) => {
-    store.removeFromCart(item.id, item.size)
-    if (propSetCart) {
+    if (store && typeof store.removeFromCart === "function") {
+      store.removeFromCart(item.id, item.size)
+    } else if (propSetCart) {
       propSetCart((prev) =>
         prev.filter((x) => !(x.id === item.id && (!item.size || !x.size || x.size === item.size))),
       )
@@ -61,8 +63,9 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
   }
 
   const handleClearCart = () => {
-    store.clearCart()
-    if (propSetCart) {
+    if (store && typeof store.clearCart === "function") {
+      store.clearCart()
+    } else if (propSetCart) {
       propSetCart([])
     }
   }

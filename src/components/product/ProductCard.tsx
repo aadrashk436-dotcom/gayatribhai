@@ -45,15 +45,15 @@ export function ProductCard({
 
   const handleIncrement = (e: React.MouseEvent) => {
     e.stopPropagation()
-    updateQuantity(product.id, 1)
+    updateQuantity(product.id, 1, matchingCartItems[0]?.size)
   }
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (cartQty <= 1) {
-      removeFromCart(product.id)
+      removeFromCart(product.id, matchingCartItems[0]?.size)
     } else {
-      updateQuantity(product.id, -1)
+      updateQuantity(product.id, -1, matchingCartItems[0]?.size)
     }
   }
 
