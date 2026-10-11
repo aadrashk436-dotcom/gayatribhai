@@ -1115,7 +1115,7 @@ h2 {
 }
 
 .product-image-wrap {
-  aspect-ratio: .77;
+  aspect-ratio: 2 / 3;
   position: relative;
   overflow: hidden;
   background: var(--surface-2);
@@ -1144,6 +1144,7 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   transition: transform .6s ease;
   user-select: none;
   -webkit-user-drag: none;
@@ -2756,22 +2757,27 @@ h2 {
 
 .thumbnails img {
   width: 100%;
-  aspect-ratio: .78;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: top center;
   display: block;
 }
 
 /* Main Image & Sliding Track */
 .main-image {
   position: relative;
-  height: calc(100vh - 145px);
-  max-height: 780px;
-  min-height: 540px;
+  width: 100%;
+  max-width: calc(min(84vh, 840px) * 2 / 3);
+  aspect-ratio: 2 / 3;
+  max-height: min(84vh, 840px);
   overflow: hidden;
   background: var(--surface-2);
-  border-radius: 2px;
+  border-radius: 4px;
   user-select: none;
   cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-image:active {
@@ -2792,14 +2798,19 @@ h2 {
   height: 100%;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
 }
 
 .gallery-slide-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center top;
   display: block;
-  transition: transform .6s ease;
+  transition: transform .45s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -3184,9 +3195,10 @@ h2 {
 
 .share-product-card img {
   width: 62px;
-  aspect-ratio: .78;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: 2px;
+  object-position: top center;
+  border-radius: 3px;
 }
 
 .share-card-info {
@@ -3511,8 +3523,10 @@ h2 {
 
 .bag-item img {
   width: 160px;
-  aspect-ratio: .78;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: top center;
+  border-radius: 4px;
 }
 
 .bag-item-copy>small {
@@ -3945,8 +3959,10 @@ h2 {
 
 .checkout-item img {
   width: 65px;
-  aspect-ratio: .78;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: top center;
+  border-radius: 3px;
 }
 
 .checkout-item span {
@@ -4134,8 +4150,10 @@ h2 {
 
 .ordered-product img {
   width: 95px;
-  aspect-ratio: .78;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: top center;
+  border-radius: 4px;
 }
 
 .ordered-product span {
@@ -4839,8 +4857,11 @@ h2 {
 
 .search-products img {
   width: 75px;
-  height: 90px;
+  aspect-ratio: 2 / 3;
+  height: auto;
   object-fit: cover;
+  object-position: top center;
+  border-radius: 3px;
 }
 
 .search-results button {
@@ -5288,11 +5309,18 @@ footer.legacy-footer>div>button {
 
   .product-image-wrap {
     width: 100% !important;
-    aspect-ratio: 0.77 !important;
+    aspect-ratio: 2 / 3 !important;
     position: relative !important;
     overflow: hidden !important;
     background: var(--surface-2) !important;
     border-radius: 7px 7px 0 0 !important;
+  }
+
+  .product-image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: top center !important;
   }
 
   .quick-actions {
@@ -6052,7 +6080,7 @@ footer.legacy-footer>div>button {
   .shop-grid .product-image-wrap {
     width: 100% !important;
     max-width: 100% !important;
-    aspect-ratio: 0.77 !important;
+    aspect-ratio: 2 / 3 !important;
     position: relative !important;
     overflow: hidden !important;
     border-radius: 7px 7px 0 0 !important;
@@ -6111,7 +6139,7 @@ footer.legacy-footer>div>button {
   }
 
   .shop-grid.mobile-cols-1 .product-image-wrap {
-    aspect-ratio: 0.88 !important;
+    aspect-ratio: 2 / 3 !important;
     border-radius: 9px 9px 0 0 !important;
   }
 
@@ -6270,10 +6298,18 @@ footer.legacy-footer>div>button {
   }
 
   .main-image {
-    height: 60vh;
-    min-height: 380px;
-    max-height: 520px;
-    border-radius: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 2 / 3 !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: 75vh !important;
+    border-radius: 0 !important;
+  }
+
+  .gallery-slide-item img {
+    object-fit: contain !important;
+    object-position: center top !important;
   }
 
   .main-image:hover img {
@@ -6325,8 +6361,9 @@ footer.legacy-footer>div>button {
   }
 
   .thumbnails button {
-    flex: 0 0 54px;
-    height: 70px;
+    flex: 0 0 52px;
+    height: 78px;
+    border-radius: 3px;
   }
 
   .product-summary {
@@ -9502,8 +9539,10 @@ footer.legacy-footer>div>button {
 
 .pill-thumb {
   width: 32px;
-  height: 38px;
+  height: 48px;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: top center;
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -10639,7 +10678,7 @@ footer.legacy-footer>div>button {
 
 .shirt-card-media {
   position: relative;
-  aspect-ratio: 0.78;
+  aspect-ratio: 2 / 3;
   overflow: hidden;
   cursor: pointer;
   background: #ebe7de;
@@ -10649,6 +10688,7 @@ footer.legacy-footer>div>button {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   transition: transform 0.35s ease;
 }
 

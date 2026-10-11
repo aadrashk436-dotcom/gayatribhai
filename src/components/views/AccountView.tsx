@@ -345,8 +345,8 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                     <div className="grid grid-cols-3 gap-3 md:grid-cols-4">
                       {saved.slice(0, 4).map((p) => (
                         <Link key={p.id} href={`/product/${p.slug}`} className="group block">
-                          <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-surface-2">
-                            <Image src={p.images[0]} alt={p.name} fill sizes="25vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                          <div className="relative aspect-[2/3] overflow-hidden rounded-sm bg-surface-2">
+                            <Image src={p.images[0]} alt={p.name} fill sizes="25vw" className="object-cover object-top transition-transform duration-700 group-hover:scale-105" />
                           </div>
                           <p className="mt-2 line-clamp-1 text-sm font-semibold">{p.name}</p>
                           <p className="text-sm text-muted-foreground">{money(p.price)}</p>

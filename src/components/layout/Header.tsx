@@ -270,8 +270,8 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
           <div data-drawer-item className="mt-8 grid grid-cols-2 gap-3">
             {[products[3], products[9]].map((p, i) => (
               <Link key={p.id} href="/shop" onClick={() => setMenuOpen(false)} className="group relative block overflow-hidden rounded-sm">
-                <div className="relative aspect-[3/4]">
-                  <Image src={p.images[0]} alt={p.name} fill sizes="45vw" className="object-cover" />
+                <div className="relative aspect-[2/3]">
+                  <Image src={p.images[0]} alt={p.name} fill sizes="45vw" className="object-cover object-top" />
                 </div>
                 <span className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-3 left-3 text-sm font-semibold text-white">{i === 0 ? "Embroidered" : "Linen"}</span>

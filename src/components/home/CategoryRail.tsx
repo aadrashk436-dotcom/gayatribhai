@@ -32,7 +32,7 @@ export default function CategoryRail() {
                 alt={`${cat.name} shirts`}
                 fill
                 sizes="(max-width: 768px) 72vw, 25vw"
-                className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.2,.7,.2,1)] group-hover:scale-[1.06]"
+                className="object-cover object-top transition-transform duration-[1.2s] ease-[cubic-bezier(.2,.7,.2,1)] group-hover:scale-[1.06]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-transparent" />
             </div>

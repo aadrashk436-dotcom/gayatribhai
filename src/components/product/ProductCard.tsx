@@ -248,7 +248,7 @@ export function ProductCard({
                 alt={`${product.name} view ${idx + 1}`}
                 className="product-image"
                 width={600}
-                height={850}
+                height={900}
                 sizes="(max-width: 640px) 70vw, (max-width: 1024px) 35vw, 290px"
                 quality={80}
                 loading="lazy"
