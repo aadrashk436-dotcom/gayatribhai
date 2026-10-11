@@ -74,6 +74,7 @@ html.lenis body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -1102,8 +1103,6 @@ h2 {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  content-visibility: auto;
-  contain-intrinsic-size: 260px 460px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
@@ -5370,7 +5369,7 @@ footer.legacy-footer>div>button {
     font-style: italic !important;
   }
 
-  .story-copy > p {
+  .story-copy>p {
     font-size: 13px !important;
     line-height: 1.7 !important;
     color: var(--muted) !important;
@@ -8665,10 +8664,13 @@ footer.legacy-footer>div>button {
   }
 
   @keyframes pulseSwipeHint {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 0.85;
       transform: translateX(0);
     }
+
     50% {
       opacity: 1;
       transform: translateX(2px);

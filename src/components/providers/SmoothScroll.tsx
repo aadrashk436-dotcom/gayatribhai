@@ -43,8 +43,8 @@ export default function SmoothScroll() {
     lenis.on("scroll", ScrollTrigger.update)
     const tick = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(tick)
-    // Smooth out any frame rate drops instead of jumping violently
-    gsap.ticker.lagSmoothing(500, 33)
+    // Disable lag smoothing as strictly mandated by Lenis docs to prevent scroll jumps
+    gsap.ticker.lagSmoothing(0)
 
     return () => {
       gsap.ticker.remove(tick)

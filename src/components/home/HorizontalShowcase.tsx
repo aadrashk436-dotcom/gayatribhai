@@ -34,31 +34,54 @@ export default function HorizontalShowcase({
       const mm = gsap.matchMedia()
       mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
         const el = track.current
-        if (!el) return
-        const distance = () => Math.max(0, el.scrollWidth - window.innerWidth + 80)
-        gsap.to(el, {
-          x: () => -distance(),
-          ease: "none",
+        const container = root.current
+        if (!el || !container) return
+
+        const getDistance = () => {
+          // Exact visible content width excluding scrollbars
+          const visibleWidth = container.clientWidth || window.innerWidth
+          return Math.max(0, el.scrollWidth - visibleWidth)
+        }
+
+        const tl = gsap.timeline({
           scrollTrigger: {
-            trigger: root.current,
+            trigger: container,
             start: "top top",
-            end: () => `+=${distance()}`,
-            scrub: 0.6,
-            pin: true,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          },
-        })
-        gsap.to(".showcase-progress", {
-          scaleX: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: root.current,
-            start: "top top",
-            end: () => `+=${distance()}`,
+            end: () => `+=${getDistance()}`,
             scrub: true,
+            pin: true,
+            pinSpacing: true,
+            anticipatePin: 0,
+            invalidateOnRefresh: true,
+            fastScrollEnd: true,
+            preventOverlaps: true,
           },
         })
+
+        tl.to(
+          el,
+          {
+            x: () => -getDistance(),
+            ease: "none",
+          },
+          0,
+        )
+
+        tl.to(
+          ".showcase-progress",
+          {
+            scaleX: 1,
+            ease: "none",
+          },
+          0,
+        )
+
+        // Ensure fresh measurement after initial hydration & render
+        const timer = setTimeout(() => {
+          ScrollTrigger.refresh()
+        }, 150)
+
+        return () => clearTimeout(timer)
       })
       return () => mm.revert()
     },
@@ -82,25 +105,19 @@ export default function HorizontalShowcase({
   return (
     <section
       ref={root}
-      className="relative overflow-hidden bg-surface-2 py-12 md:py-16 lg:py-8 xl:py-12 lg:min-h-[720px] lg:h-screen lg:max-h-[920px] lg:flex lg:flex-col lg:justify-center"
+      className="relative overflow-hidden bg-surface-2 py-12 md:py-16 lg:py-0 lg:h-screen lg:min-h-0 lg:max-h-none lg:flex lg:flex-col lg:justify-center"
       aria-label="Best sellers collection"
     >
-      {/* Header with compact luxury styling to avoid any vertical overflow */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 px-5 md:px-10 lg:mb-7 lg:px-14">
+      {/* Header with compact luxury styling */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 px-5 md:px-10 lg:mb-6 lg:px-14">
         <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-            <p
-              data-reveal
-              className="text-[11px] font-semibold uppercase tracking-[0.28em] text-accent md:text-xs"
-            >
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-accent md:text-xs">
               Most loved editions
             </p>
           </div>
-          <h2
-            data-reveal-text
-            className="font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-[1.05] tracking-[-0.02em] text-foreground"
-          >
+          <h2 className="font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-[1.05] tracking-[-0.02em] text-foreground">
             <span>Best </span>
             <span className="italic font-serif">sellers.</span>
           </h2>
@@ -110,7 +127,7 @@ export default function HorizontalShowcase({
         <div className="hidden items-center gap-6 lg:flex" aria-hidden="true">
           <div className="w-44">
             <div className="h-0.5 w-full bg-border rounded-full overflow-hidden">
-              <div className="showcase-progress h-full w-full origin-left scale-x-0 bg-foreground transition-transform" />
+              <div className="showcase-progress h-full w-full origin-left scale-x-0 bg-foreground" />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span>Scroll to pan</span>
@@ -153,6 +170,7 @@ export default function HorizontalShowcase({
       <div
         ref={scrollContainer}
         onScroll={handleScroll}
+        data-lenis-prevent
         className="overflow-x-auto [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden snap-x snap-mandatory scroll-smooth [-webkit-overflow-scrolling:touch] pb-5 pt-1"
       >
         <div
@@ -162,7 +180,7 @@ export default function HorizontalShowcase({
           {items.map((p) => (
             <div
               key={p.id}
-              className="w-[72vw] sm:w-[48vw] md:w-[36vw] lg:w-[250px] xl:w-[275px] shrink-0 snap-start transition-transform duration-200"
+              className="w-[72vw] sm:w-[48vw] md:w-[36vw] lg:w-[245px] xl:w-[270px] shrink-0 snap-start"
             >
               <ProductCard
                 product={p}
