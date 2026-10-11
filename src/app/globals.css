@@ -1506,12 +1506,12 @@ h2 {
 
 /* Mobile Responsive Optimization for Product Cards & Hero Framing */
 .hero-img {
-  object-position: center 12%;
+  object-position: var(--pos-m, center 12%);
 }
 
 @media (min-width: 768px) {
   .hero-img {
-    object-position: 72% 15%;
+    object-position: var(--pos-d, 75% top);
   }
 }
 

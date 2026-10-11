@@ -28,24 +28,24 @@ const SLIDES: Slide[] = [
     kicker: "Summer Atelier '26",
     lines: ["Woven", "by hand."],
     cta: "Shop linen",
-    desktop: "/assets/banners/hero-atelier-widescreen.jpg",
+    desktop: "/assets/site_banners/slide1_desktop.jpg",
     mobile: "/assets/site_banners/slide1_mobile.jpg",
     alt: "Model in an ivory hand-embroidered French linen shirt on an Aegean seaside stone terrace",
     tone: "light",
-    desktopPos: "72% 15%",
-    mobilePos: "center 18%",
+    desktopPos: "75% top",
+    mobilePos: "center 12%",
   },
   {
     id: "resort",
     kicker: "The Resort Edit",
     lines: ["Coastal", "state."],
     cta: "Shop resort",
-    desktop: "/assets/banners/hero-resort-widescreen.jpg",
+    desktop: "/assets/site_banners/slide2_desktop.jpg",
     mobile: "/assets/site_banners/slide2_mobile.jpg",
     alt: "Model relaxing on a luxury coastal villa terrace in a sky-blue Cuban collar linen shirt",
     tone: "light",
-    desktopPos: "72% 18%",
-    mobilePos: "center 18%",
+    desktopPos: "72% top",
+    mobilePos: "center 12%",
   },
   {
     id: "studio",
@@ -56,8 +56,8 @@ const SLIDES: Slide[] = [
     mobile: "/assets/banners/hero-studio-mobile.jpg",
     alt: "Model walking through a sunlit sandstone courtyard in a terracotta embroidered linen shirt",
     tone: "light",
-    desktopPos: "76% 15%",
-    mobilePos: "center 18%",
+    desktopPos: "76% top",
+    mobilePos: "center 12%",
   },
   {
     id: "evening",
@@ -69,7 +69,7 @@ const SLIDES: Slide[] = [
     alt: "Model on an evening rooftop at dusk in a navy embroidered shirt",
     tone: "light",
     desktopPos: "75% top",
-    mobilePos: "center 18%",
+    mobilePos: "center 12%",
   },
 ]
 
@@ -98,12 +98,12 @@ function SlidePicture({ slide, priority }: { slide: Slide; priority: boolean }) 
       <img
         {...rest}
         alt={slide.alt}
-        className="hero-img absolute inset-0 h-full w-full object-cover will-change-transform object-[var(--pos-m,center_18%)] md:object-[var(--pos-d,72%_15%)]"
+        className="hero-img absolute inset-0 h-full w-full object-cover will-change-transform"
         style={
           {
-            "--pos-m": slide.mobilePos || "center 18%",
-            "--pos-d": slide.desktopPos || "72% 15%",
-            transformOrigin: slide.desktopPos || "72% 15%",
+            "--pos-m": slide.mobilePos || "center 12%",
+            "--pos-d": slide.desktopPos || "75% top",
+            transformOrigin: slide.desktopPos || "75% top",
           } as React.CSSProperties
         }
       />
