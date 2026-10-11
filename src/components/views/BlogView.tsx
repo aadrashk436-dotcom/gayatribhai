@@ -1,10 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import Link from "next/link"
 import { BLOG_POSTS } from "../../data/blogData"
 import { products } from "../../products"
 import type { BlogPost, Product, View } from "../../types"
 import { money } from "../../utils/format"
+import { getBlogUrl } from "../../lib/navigation"
 import Button from "../common/Button"
 import Icon from "../common/Icon"
 
@@ -81,6 +83,12 @@ export function BlogView({
   const handleCloseArticle = () => {
     setActiveArticle(null)
     if (setSelectedBlogId) setSelectedBlogId(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleSelectPost = (post: BlogPost) => {
+    setActiveArticle(post)
+    if (setSelectedBlogId) setSelectedBlogId(post.id)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
@@ -325,10 +333,7 @@ export function BlogView({
             {prevPost ? (
               <div
                 className="nav-story-card prev"
-                onClick={() => {
-                  setActiveArticle(prevPost)
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
+                onClick={() => handleSelectPost(prevPost)}
               >
                 <span className="nav-story-direction">← Previous Essay</span>
                 <h4>{prevPost.title}</h4>
@@ -343,10 +348,7 @@ export function BlogView({
             {nextPost ? (
               <div
                 className="nav-story-card next"
-                onClick={() => {
-                  setActiveArticle(nextPost)
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
+                onClick={() => handleSelectPost(nextPost)}
               >
                 <span className="nav-story-direction">Next Essay →</span>
                 <h4>{nextPost.title}</h4>
@@ -420,7 +422,7 @@ export function BlogView({
       {selectedCategory === "All Essays" && featuredPost && (
         <section
           className="featured-blog-card"
-          onClick={() => setActiveArticle(featuredPost)}
+          onClick={() => handleSelectPost(featuredPost)}
         >
           <div className="featured-blog-img-wrap">
             <img
@@ -453,9 +455,16 @@ export function BlogView({
                   <small>{featuredPost.author.role}</small>
                 </div>
               </div>
-              <Button variant="dark" className="read-article-btn">
+              <Link
+                href={getBlogUrl(featuredPost.slug)}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleSelectPost(featuredPost)
+                }}
+                className="btn btn-dark read-article-btn"
+              >
                 Read Full Essay <Icon name="arrow" />
-              </Button>
+              </Link>
             </div>
           </div>
         </section>
@@ -480,7 +489,7 @@ export function BlogView({
             <article
               key={post.id}
               className="blog-card"
-              onClick={() => setActiveArticle(post)}
+              onClick={() => handleSelectPost(post)}
             >
               <div className="blog-card-media">
                 <img src={post.coverImage} alt={post.title} loading="lazy" />
@@ -493,16 +502,33 @@ export function BlogView({
                   </span>
                   <span>{post.date}</span>
                 </div>
-                <h4>{post.title}</h4>
+                <h4>
+                  <Link
+                    href={getBlogUrl(post.slug)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleSelectPost(post)
+                    }}
+                  >
+                    {post.title}
+                  </Link>
+                </h4>
                 <p>{post.excerpt}</p>
                 <div className="blog-card-footer">
                   <div className="mini-author">
                     <span className="mini-avatar">{post.author.avatar}</span>
                     <small>{post.author.name}</small>
                   </div>
-                  <span className="read-more-link">
+                  <Link
+                    href={getBlogUrl(post.slug)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleSelectPost(post)
+                    }}
+                    className="read-more-link"
+                  >
                     Read Essay <Icon name="arrow" size={13} />
-                  </span>
+                  </Link>
                 </div>
               </div>
             </article>

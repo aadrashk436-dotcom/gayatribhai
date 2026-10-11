@@ -12,6 +12,7 @@ import { DuoBanners, PerkBanners, WideBanner } from "../home/PromoBanners"
 import HorizontalShowcase from "../home/HorizontalShowcase"
 import CraftStory from "../home/CraftStory"
 import ReelsSection from "../home/ReelsSection"
+import BlogPreviewSection from "../home/BlogPreviewSection"
 import Newsletter from "../home/Newsletter"
 import { useReveal } from "../home/useReveal"
 
@@ -24,7 +25,7 @@ export interface HomeViewProps {
   onOpenArticle?: (post: BlogPost) => void
 }
 
-export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart }: HomeViewProps) {
+export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart, onOpenArticle }: HomeViewProps) {
   const root = useRef<HTMLDivElement>(null)
   useReveal(root)
 
@@ -64,6 +65,7 @@ export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart }: H
       <DuoBanners />
       <CraftStory />
       <ReelsSection openProduct={openProduct} addToCart={addToCart} go={go} />
+      <BlogPreviewSection go={go} onOpenArticle={onOpenArticle} />
       <Newsletter />
     </div>
   )

@@ -108,7 +108,7 @@ export const BLOG_POSTS: BlogPost[] = [
       avatar: "AS",
     },
     category: "Craft & Atelier",
-    coverImage: "/assets/site_media/instagram_lookbook_ing3.jpg",
+    coverImage: "/assets/banners/craft-detail.jpg",
     readTime: "6 min read",
     date: "April 08, 2026",
     tags: [
@@ -151,7 +151,7 @@ export const BLOG_POSTS: BlogPost[] = [
       avatar: "AM",
     },
     category: "Style Guides",
-    coverImage: "/assets/site_banners/slide3_desktop.jpg",
+    coverImage: "/assets/banners/after-dark-portrait.jpg",
     readTime: "4 min read",
     date: "April 02, 2026",
     tags: [
@@ -193,7 +193,7 @@ export const BLOG_POSTS: BlogPost[] = [
       avatar: "KS",
     },
     category: "Resort Life",
-    coverImage: "/assets/site_banners/home_banner_secondary.jpeg",
+    coverImage: "/assets/banners/folded-shirts.jpg",
     readTime: "5 min read",
     date: "March 28, 2026",
     tags: [
