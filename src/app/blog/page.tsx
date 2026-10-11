@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import { BLOG_POSTS } from "@/data/blogData"
 import BlogClient from "./BlogClient"
+
+const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
 
 export const metadata: Metadata = {
   title: "The AVYR Journal | Essays on Craft, Linen Science & Sartorial Art",
@@ -26,5 +29,38 @@ export const metadata: Metadata = {
 }
 
 export default function BlogPage() {
-  return <BlogClient />
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "The AVYR Journal",
+    description:
+      "Essays on craft, linen science, embroidery techniques, and relaxed resort menswear.",
+    url: `${BASE_URL}/blog`,
+    publisher: {
+      "@type": "Organization",
+      name: "AVYR by Gayatri",
+      logo: `${BASE_URL}/favicon.svg`,
+    },
+    blogPost: BLOG_POSTS.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.excerpt,
+      url: `${BASE_URL}/blog/${post.slug}`,
+      datePublished: post.date,
+      author: {
+        "@type": "Person",
+        name: post.author.name,
+      },
+    })),
+  }
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <BlogClient />
+    </>
+  )
 }

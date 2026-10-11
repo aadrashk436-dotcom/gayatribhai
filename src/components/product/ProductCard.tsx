@@ -1,9 +1,11 @@
 "use client"
 
 import React, { useRef, useState } from "react"
+import Link from "next/link"
 import Image from "next/image"
 import type { Product } from "../../types"
 import { money } from "../../utils/format"
+import { getProductUrl } from "@/lib/navigation"
 import Icon from "../common/Icon"
 
 export interface ProductCardProps {
@@ -213,6 +215,8 @@ export function ProductCard({
   return (
     <article
       className="product-card group"
+      itemScope
+      itemType="https://schema.org/Product"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -351,16 +355,37 @@ export function ProductCard({
         </div>
       </div>
 
-      <div className="product-info" onClick={onOpen}>
+      <div className="product-info">
         <div className="product-meta">
-          <span className="product-category-tag">{product.category}</span>
+          <span className="product-category-tag" itemProp="category">{product.category}</span>
           <span className="rating">
             <Icon name="star" size={11} filled /> {product.rating} (
             {product.reviews})
           </span>
         </div>
-        <h3>{product.name}</h3>
-        <div className="price">
+        <h3 itemProp="name">
+          <Link
+            href={getProductUrl(product)}
+            onClick={(e) => {
+              if (onOpen) {
+                e.preventDefault()
+                onOpen()
+              }
+            }}
+            className="product-title-link transition-colors hover:text-accent"
+          >
+            {product.name}
+          </Link>
+        </h3>
+        <div
+          className="price"
+          itemProp="offers"
+          itemScope
+          itemType="https://schema.org/Offer"
+        >
+          <meta itemProp="priceCurrency" content="INR" />
+          <meta itemProp="price" content={String(product.price)} />
+          <meta itemProp="availability" content="https://schema.org/InStock" />
           <strong className="current-price">{money(product.price)}</strong>
           <s className="original-price">{money(product.mrp)}</s>
           <span className="discount-tag">{product.discount}% off</span>

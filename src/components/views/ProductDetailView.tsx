@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { products } from "../../products"
 import { allSizes, type Product } from "../../types"
 import { money } from "../../utils/format"
@@ -221,25 +222,44 @@ export function ProductDetailView({
           </span>
           <span>Back</span>
         </button>
-        <div className="breadcrumbs">
-          <button
-            type="button"
-            className="breadcrumb-link"
-            onClick={() => go?.("home")}
+        <nav
+          className="breadcrumbs"
+          aria-label="Breadcrumbs"
+          itemScope
+          itemType="https://schema.org/BreadcrumbList"
+        >
+          <span
+            itemProp="itemListElement"
+            itemScope
+            itemType="https://schema.org/ListItem"
           >
-            Home
-          </button>
+            <Link href="/" className="breadcrumb-link" itemProp="item">
+              <span itemProp="name">Home</span>
+            </Link>
+            <meta itemProp="position" content="1" />
+          </span>
           <span className="breadcrumb-sep">/</span>
-          <button
-            type="button"
-            className="breadcrumb-link"
-            onClick={() => go?.("shop")}
+          <span
+            itemProp="itemListElement"
+            itemScope
+            itemType="https://schema.org/ListItem"
           >
-            Shirts
-          </button>
+            <Link href="/shop" className="breadcrumb-link" itemProp="item">
+              <span itemProp="name">Shirts</span>
+            </Link>
+            <meta itemProp="position" content="2" />
+          </span>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">{product.name}</span>
-        </div>
+          <span
+            className="breadcrumb-current"
+            itemProp="itemListElement"
+            itemScope
+            itemType="https://schema.org/ListItem"
+          >
+            <span itemProp="name">{product.name}</span>
+            <meta itemProp="position" content="3" />
+          </span>
+        </nav>
       </div>
       <div className="product-detail">
         <div className="gallery">
