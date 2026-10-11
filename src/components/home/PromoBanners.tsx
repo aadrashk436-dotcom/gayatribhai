@@ -13,26 +13,26 @@ function Arrow() {
 export function WideBanner() {
   return (
     <section className="px-3 md:px-6">
-      <Link href="/shop" className="group relative block h-[70svh] min-h-[420px] overflow-hidden rounded-sm md:h-[clamp(500px,62vh,680px)]">
+      <Link href="/shop" className="group relative block h-[72svh] min-h-[460px] max-h-[620px] overflow-hidden rounded-sm md:h-[clamp(500px,62vh,680px)] md:max-h-none">
         <div data-parallax="10" className="absolute -inset-y-[12%] inset-x-0">
           <picture>
             <source media="(min-width: 768px)" srcSet="/assets/banners/promo-linen-wide.jpg" />
             <img
               src="/assets/banners/auth-portrait.jpg"
               alt="Model in tailored French linen in sunlit courtyard"
-              className="h-full w-full object-cover object-[center_20%] md:object-[75%_top]"
+              className="h-full w-full object-cover object-[center_top] md:object-[75%_top]"
             />
           </picture>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 via-45% to-transparent md:bg-gradient-to-r md:from-black/55 md:via-black/15 md:to-transparent" />
-        <div className="absolute inset-x-6 bottom-8 text-white md:inset-x-auto md:bottom-auto md:left-14 md:top-1/2 md:-translate-y-1/2">
-          <p data-reveal className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] opacity-90 md:text-xs">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 via-40% to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20 md:to-transparent" />
+        <div className="absolute inset-x-5 bottom-7 text-white sm:bottom-8 sm:left-8 md:inset-x-auto md:bottom-auto md:left-14 md:top-1/2 md:-translate-y-1/2">
+          <p data-reveal className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/90 md:mb-4 md:text-xs">
             Linen season
           </p>
-          <h2 data-reveal-text className="font-display text-[clamp(2.8rem,10vw,7rem)] leading-[0.92] tracking-[-0.02em]">
+          <h2 data-reveal-text className="font-display text-[clamp(2.3rem,8vw,5.5rem)] leading-[0.96] tracking-[-0.02em]">
             <SplitLines lines={["Breathe", "easy."]} />
           </h2>
-          <span data-reveal className="mt-8 inline-flex h-12 items-center gap-3 rounded-full bg-white px-7 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#111]">
+          <span data-reveal className="mt-6 inline-flex h-11 items-center gap-2.5 rounded-full bg-white px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#111] shadow-md transition-transform active:scale-95 md:mt-8 md:h-12 md:px-7 md:text-[13px]">
             Shop linen <Arrow />
           </span>
         </div>
