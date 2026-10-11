@@ -48,6 +48,7 @@ export function ProductDetailView({
   const [pincode, setPincode] = useState("")
   const [checked, setChecked] = useState(false)
   const [currentUrl, setCurrentUrl] = useState("")
+  const [isZoomOpen, setIsZoomOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -75,6 +76,7 @@ export function ProductDetailView({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") prevImage()
       if (e.key === "ArrowRight") nextImage()
+      if (e.key === "Escape") setIsZoomOpen(false)
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
@@ -343,8 +345,31 @@ export function ProductDetailView({
               </>
             )}
 
-            {/* Floating Top-Right Action Badges (Wishlist & Share) */}
+            {/* Floating Top-Right Action Badges (Wishlist & Share & Zoom) */}
             <div className="gallery-floating-actions">
+              <button
+                type="button"
+                className="gallery-action-btn"
+                onClick={() => setIsZoomOpen(true)}
+                aria-label="Inspect fabric in high resolution"
+                title="Zoom image"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </button>
               <button
                 type="button"
                 className={`gallery-action-btn ${wishlisted ? "active" : ""}`}
@@ -383,7 +408,35 @@ export function ProductDetailView({
               </div>
             </div>
 
-            <span className="gallery-hint">Swipe or click arrows to slide</span>
+            <button
+              type="button"
+              className="gallery-hint"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsZoomOpen(true)
+              }}
+              aria-label="Inspect fabric in high resolution"
+            >
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                style={{
+                  display: "inline-block",
+                  verticalAlign: "-1px",
+                  marginRight: "4px",
+                }}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <line x1="11" y1="8" x2="11" y2="14" />
+                <line x1="8" y1="11" x2="14" y2="11" />
+              </svg>
+              Tap to inspect craft
+            </button>
           </div>
         </div>
 
@@ -696,6 +749,93 @@ export function ProductDetailView({
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Fullscreen High-Resolution Image Zoom Modal (Amazon / Luxury boutique style) */}
+      {isZoomOpen && (
+        <div
+          className="fixed inset-0 z-[150] flex flex-col bg-black/95 backdrop-blur-md transition-opacity duration-300"
+          onClick={() => setIsZoomOpen(false)}
+        >
+          {/* Top Bar */}
+          <div
+            className="flex items-center justify-between px-5 py-4 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-display text-lg tracking-wide">{product.name}</span>
+              <span className="text-xs uppercase tracking-widest text-white/60">
+                0{image + 1} / 0{product.images.length}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsZoomOpen(false)}
+              className="flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 active:scale-95"
+              aria-label="Close zoom"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Fullscreen Image Container */}
+          <div
+            className="relative flex flex-1 items-center justify-center overflow-hidden p-2 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={product.images[image]}
+              alt={`${product.name} view ${image + 1}`}
+              className="max-h-[82vh] max-w-full object-contain select-none transition-transform duration-300"
+              draggable={false}
+            />
+
+            {/* Prev / Next Arrows */}
+            {product.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prevImage}
+                  className="absolute left-3 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 active:scale-95 sm:left-6"
+                  aria-label="Previous image"
+                >
+                  <span style={{ display: "inline-flex", transform: "rotate(180deg)" }}>
+                    <Icon name="arrow" size={18} />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={nextImage}
+                  className="absolute right-3 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 active:scale-95 sm:right-6"
+                  aria-label="Next image"
+                >
+                  <Icon name="arrow" size={18} />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Bottom Thumbnails Strip */}
+          <div
+            className="flex items-center justify-center gap-2 pb-6 px-4 overflow-x-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {product.images.map((src, i) => (
+              <button
+                key={src + i}
+                type="button"
+                onClick={() => setImage(i)}
+                className={`relative h-16 w-11 shrink-0 overflow-hidden rounded border transition ${
+                  i === image ? "border-[#cca466] opacity-100 scale-105" : "border-white/30 opacity-60 hover:opacity-90"
+                }`}
+              >
+                <img src={src} alt="" className="h-full w-full object-cover object-top" />
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )

@@ -2951,16 +2951,30 @@ h2 {
   position: absolute;
   top: 16px;
   left: 16px;
-  padding: 4px 10px;
-  background: rgba(20, 28, 23, .3);
-  backdrop-filter: blur(6px);
+  padding: 5px 11px;
+  background: rgba(20, 28, 23, .45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #fff;
-  font-size: 8px;
-  letter-spacing: .12em;
+  font-size: 8.5px;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  border-radius: 2px;
-  pointer-events: none;
-  opacity: .75;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: .9;
+  z-index: 15;
+  transition: all .2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gallery-hint:hover {
+  background: rgba(20, 28, 23, .75);
+  border-color: rgba(255, 255, 255, .4);
+  transform: translateY(-1px);
+  opacity: 1;
 }
 
 .product-summary {
@@ -6308,8 +6322,10 @@ footer.legacy-footer>div>button {
   }
 
   .gallery-slide-item img {
-    object-fit: contain !important;
-    object-position: center top !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: top center !important;
   }
 
   .main-image:hover img {
@@ -6317,9 +6333,16 @@ footer.legacy-footer>div>button {
   }
 
   .gallery-nav-arrow {
-    width: 38px;
-    height: 38px;
-    opacity: 1;
+    width: 36px !important;
+    height: 36px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    color: var(--ink) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+    border-radius: 50% !important;
+    opacity: 0.92 !important;
   }
 
   .gallery-nav-arrow.gallery-prev {
@@ -6340,6 +6363,13 @@ footer.legacy-footer>div>button {
     height: 36px;
   }
 
+  .gallery-hint {
+    top: 12px !important;
+    left: 12px !important;
+    font-size: 8px !important;
+    padding: 4px 9px !important;
+  }
+
   .gallery-meta-bar {
     bottom: 12px;
     left: 12px;
@@ -6347,8 +6377,11 @@ footer.legacy-footer>div>button {
   }
 
   .gallery-counter {
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: 10.5px;
+    padding: 3.5px 9px;
+    background: rgba(20, 28, 23, 0.72) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
   }
 
   .thumbnails {

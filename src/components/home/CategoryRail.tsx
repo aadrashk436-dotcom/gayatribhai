@@ -26,7 +26,7 @@ export default function CategoryRail() {
               i % 2 === 1 ? "md:mt-16" : ""
             }`}
           >
-            <div className="relative aspect-[3/4]">
+            <div className="relative aspect-[2/3]">
               <Image
                 src={cat.image}
                 alt={`${cat.name} shirts`}
