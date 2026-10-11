@@ -151,7 +151,6 @@ export default function HorizontalShowcase({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        data-lenis-prevent
         className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory scroll-smooth [-webkit-overflow-scrolling:touch] pb-4 pt-1 cursor-grab active:cursor-grabbing select-none"
       >
         <div className="flex w-max gap-4 px-5 md:gap-6 md:px-10 lg:px-14 items-stretch">
