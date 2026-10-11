@@ -13,14 +13,14 @@ export default function SectionHead({
   linkLabel?: string
 }) {
   return (
-    <div className="mb-8 flex items-end justify-between gap-6 md:mb-12">
+    <div className="mb-6 flex items-end justify-between gap-4 md:mb-12 md:gap-6">
       <div>
-        <p data-reveal className="mb-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-accent md:text-xs">
+        <p data-reveal className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.3em] text-accent md:mb-3 md:text-xs">
           {kicker}
         </p>
         <h2
           data-reveal-text
-          className="font-display text-[clamp(2.2rem,7vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-foreground"
+          className="font-display text-[clamp(1.9rem,6.5vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-foreground"
         >
           <SplitLines lines={title} />
         </h2>

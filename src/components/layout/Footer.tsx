@@ -43,7 +43,7 @@ export function Footer(_props: FooterProps) {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-6 md:contents">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-6 md:contents">
           {COLUMNS.map((col) => (
             <div key={col.title}>
               <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">{col.title}</h3>

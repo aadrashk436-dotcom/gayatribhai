@@ -10,12 +10,12 @@ export default function Newsletter() {
 
   return (
     <section className="px-5 pb-28 pt-6 md:px-10 md:pb-28 lg:px-14">
-      <div className="flex flex-col gap-8 rounded-sm bg-solid px-6 py-12 text-solid-foreground md:flex-row md:items-end md:justify-between md:px-14 md:py-16">
+      <div className="flex flex-col gap-6 rounded-sm bg-solid px-5 py-10 text-solid-foreground sm:px-8 sm:py-12 md:flex-row md:items-end md:justify-between md:gap-8 md:px-14 md:py-16">
         <div>
-          <p data-reveal className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] opacity-70 md:text-xs">
+          <p data-reveal className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.3em] opacity-70 md:mb-4 md:text-xs">
             The inner circle
           </p>
-          <h2 data-reveal-text className="font-display text-[clamp(2.2rem,6vw,4rem)] leading-[0.98] tracking-[-0.02em]">
+          <h2 data-reveal-text className="font-display text-[clamp(1.9rem,6vw,4rem)] leading-[0.98] tracking-[-0.02em]">
             <SplitLines lines={["First look.", "10% off."]} />
           </h2>
         </div>

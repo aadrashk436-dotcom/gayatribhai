@@ -318,25 +318,25 @@ export default function HeroSlider() {
               }`}
             />
 
-            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-16 sm:pb-20 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[50%] md:max-w-2xl md:flex-col md:justify-end md:px-12 md:pb-24 lg:px-16 xl:px-20">
+            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-20 sm:pb-24 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[50%] md:max-w-2xl md:flex-col md:justify-end md:px-12 md:pb-24 lg:px-16 xl:px-20">
               <div className={slide.tone === "dark" ? "text-[#1a1410]" : "text-white"}>
                 <div className="overflow-hidden">
-                  <p className="hero-reveal mb-4 text-[11px] font-semibold uppercase tracking-[0.32em] opacity-90 md:text-xs">
+                  <p className="hero-reveal mb-3 text-[10.5px] font-semibold uppercase tracking-[0.32em] opacity-90 md:mb-4 md:text-xs">
                     {slide.kicker}
                   </p>
                 </div>
-                <h2 className="font-display text-[clamp(3.2rem,12vw,4.5rem)] font-normal leading-[0.92] tracking-[-0.02em] md:text-[clamp(3.8rem,5.5vw,7.2rem)]">
+                <h2 className="font-display text-[clamp(2.5rem,10vw,4.2rem)] font-normal leading-[0.92] tracking-[-0.02em] md:text-[clamp(3.8rem,5.5vw,7.2rem)]">
                   {slide.lines.map((line, li) => (
                     <span key={line} className="block overflow-hidden pb-[0.08em]">
                       <span className={`hero-reveal block ${li === 1 ? "italic" : ""}`}>{line}</span>
                     </span>
                   ))}
                 </h2>
-                <div className="mt-7 overflow-hidden md:mt-9">
+                <div className="mt-6 overflow-hidden md:mt-9">
                   <div className="hero-reveal">
                     <Link
                       href="/shop"
-                      className={`group inline-flex h-12 items-center gap-3 rounded-full px-7 text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors md:h-14 md:px-9 ${
+                      className={`group inline-flex h-11 items-center gap-2.5 rounded-full px-6 text-xs font-semibold uppercase tracking-[0.14em] transition-colors md:h-14 md:px-9 md:text-[13px] md:gap-3 ${
                         slide.tone === "dark"
                           ? "bg-[#1a1410] text-white hover:bg-black"
                           : "bg-white text-[#111] hover:bg-[#f1ece2]"
@@ -344,8 +344,8 @@ export default function HeroSlider() {
                     >
                       {slide.cta}
                       <svg
-                        width="16"
-                        height="16"
+                        width="15"
+                        height="15"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -365,7 +365,7 @@ export default function HeroSlider() {
       </div>
 
       <div
-        className={`hero-ui pointer-events-none absolute inset-x-5 bottom-8 z-20 flex items-center gap-2 md:inset-x-auto md:bottom-12 md:left-14 md:w-[360px] lg:left-20 ${
+        className={`hero-ui pointer-events-none absolute inset-x-5 bottom-6 z-20 flex items-center gap-2 md:inset-x-auto md:bottom-12 md:left-14 md:w-[360px] lg:left-20 ${
           isDarkTone ? "text-[#1a1410]" : "text-white"
         }`}
       >

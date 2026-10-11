@@ -39,7 +39,7 @@ export default function CraftStory() {
   )
 
   return (
-    <section ref={root} className="grid items-center gap-10 px-5 py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-28 lg:px-14">
+    <section ref={root} className="grid items-center gap-8 px-5 py-14 sm:py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-28 lg:px-14">
       <div className="relative">
         <div data-reveal-img className="relative aspect-[4/5] overflow-hidden rounded-sm">
           <Image
@@ -62,27 +62,27 @@ export default function CraftStory() {
       </div>
 
       <div className="md:pl-6">
-        <p data-reveal className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-accent md:text-xs">
+        <p data-reveal className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.3em] text-accent md:mb-4 md:text-xs">
           The atelier
         </p>
-        <h2 data-reveal-text className="font-display text-[clamp(2.4rem,6vw,4.8rem)] leading-[0.98] tracking-[-0.02em] text-foreground">
+        <h2 data-reveal-text className="font-display text-[clamp(2.1rem,6vw,4.8rem)] leading-[0.98] tracking-[-0.02em] text-foreground">
           <SplitLines lines={["Made by hand.", "Worn for years."]} />
         </h2>
-        <p data-reveal className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">
+        <p data-reveal className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:mt-6 sm:text-base md:text-lg">
           Every shirt is cut, stitched and embroidered by our artisans in Surat.
         </p>
 
-        <dl data-stagger className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8">
+        <dl data-stagger className="mt-8 grid grid-cols-3 gap-2 border-t border-border pt-6 sm:mt-10 sm:gap-4 sm:pt-8">
           {STATS.map((s) => (
             <div key={s.label}>
               <dt className="sr-only">{s.label}</dt>
-              <dd className="font-display text-4xl leading-none text-foreground md:text-5xl">
+              <dd className="font-display text-3xl leading-none text-foreground sm:text-4xl md:text-5xl">
                 <span className="stat-num" data-value={s.value}>
                   {s.value}
                 </span>
                 {s.suffix}
               </dd>
-              <p aria-hidden="true" className="mt-2 text-xs leading-snug text-muted-foreground md:text-sm">
+              <p aria-hidden="true" className="mt-1.5 text-[11px] leading-snug text-muted-foreground sm:mt-2 sm:text-sm">
                 {s.label}
               </p>
             </div>

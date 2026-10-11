@@ -68,7 +68,7 @@ export function DuoBanners() {
           <div className="absolute inset-x-6 bottom-6 flex items-end justify-between text-white md:inset-x-8 md:bottom-8">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] opacity-85">{b.kicker}</p>
-              <h3 className="mt-2 font-display text-4xl leading-none md:text-5xl">{b.title}</h3>
+              <h3 className="mt-2 font-display text-[clamp(1.9rem,6.5vw,3.2rem)] leading-none md:text-5xl">{b.title}</h3>
             </div>
             <span className="inline-flex items-center gap-2 border-b border-white/80 pb-1 text-xs font-semibold uppercase tracking-[0.16em]">
               Shop <Arrow />
@@ -88,7 +88,7 @@ const PERKS = [
 
 export function PerkBanners() {
   return (
-    <section className="px-5 pb-16 pt-10 md:px-10 md:pb-24 lg:px-14">
+    <section className="px-5 pb-14 pt-8 md:px-10 md:pb-24 md:pt-10 lg:px-14">
       <div
         data-stagger
         className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden"
@@ -97,16 +97,16 @@ export function PerkBanners() {
           <Link
             key={p.title}
             href="/shop"
-            className="group flex w-[82%] shrink-0 snap-start items-center gap-4 overflow-hidden rounded-sm border border-border bg-surface p-3 transition-colors hover:border-foreground/40 md:w-auto"
+            className="group flex w-[82%] shrink-0 snap-start items-center gap-3.5 overflow-hidden rounded-sm border border-border bg-surface p-3 transition-colors hover:border-foreground/40 sm:gap-4 md:w-auto"
           >
-            <div className="relative size-20 shrink-0 overflow-hidden rounded-sm md:size-24">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-sm sm:size-20 md:size-24">
               <Image src={p.image} alt="" fill sizes="96px" className="object-cover transition-transform duration-700 group-hover:scale-110" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-2xl leading-tight text-foreground md:text-[1.7rem]">{p.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{p.sub}</p>
+              <h3 className="font-display text-xl leading-tight text-foreground sm:text-2xl md:text-[1.7rem]">{p.title}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground sm:mt-1 sm:text-sm">{p.sub}</p>
             </div>
-            <span className="mr-2 text-foreground transition-transform group-hover:translate-x-1">
+            <span className="mr-1 text-foreground transition-transform group-hover:translate-x-1 sm:mr-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
                 <path d="M5 12h14m-5-5 5 5-5 5" />
               </svg>
