@@ -234,6 +234,71 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </svg>
               )}
             </button>
+
+            {/* Quick Demo & Social Login Options */}
+            <div data-auth-item className="relative my-4 text-center">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                <span className="bg-background px-4 text-muted-foreground">or quick access</span>
+              </div>
+            </div>
+
+            <div data-auth-item className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true)
+                  setTimeout(() => {
+                    onLogin({
+                      id: "usr_demo",
+                      name: "Kabir Mehta",
+                      email: "kabir.mehta@avyr.in",
+                      phone: "+91 98201 44552",
+                      joinedDate: "October 2025",
+                      membershipTier: "Gold",
+                      points: 1450,
+                    })
+                    showToast("Signed in as Kabir Mehta (Demo Member)")
+                    setLoading(false)
+                  }, 400)
+                }}
+                className="flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:bg-surface-2 active:scale-98"
+              >
+                <Icon name="check" size={14} />
+                <span>One-Click Demo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true)
+                  setTimeout(() => {
+                    onLogin({
+                      id: `usr_google_${Date.now()}`,
+                      name: isSignup ? "Aarav Sharma" : "Aarav Sharma",
+                      email: "aarav.sharma@gmail.com",
+                      phone: "+91 98765 12345",
+                      joinedDate: "April 2026",
+                      membershipTier: "Silver",
+                      points: 300,
+                    })
+                    showToast("Signed in with Google")
+                    setLoading(false)
+                  }, 500)
+                }}
+                className="flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:bg-surface-2 active:scale-98"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                </svg>
+                <span>Google</span>
+              </button>
+            </div>
           </form>
 
           <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">

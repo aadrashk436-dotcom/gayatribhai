@@ -22,17 +22,29 @@ export default function SmoothScroll() {
     if (reduceMotion) return
 
     const lenis = new Lenis({
-      duration: 1.1,
+      duration: 1.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      touchMultiplier: 1.4,
+      syncTouch: false,
+      touchMultiplier: 1.0,
+      wheelMultiplier: 0.95,
+      prevent: (node) => {
+        // Never hijack scrolling inside elements with data-lenis-prevent or filter sidebars
+        return (
+          node.hasAttribute("data-lenis-prevent") ||
+          Boolean(node.closest("[data-lenis-prevent]")) ||
+          Boolean(node.closest(".filters")) ||
+          Boolean(node.closest(".filters-scrollable-body"))
+        )
+      },
     })
     lenisInstance = lenis
 
     lenis.on("scroll", ScrollTrigger.update)
     const tick = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
+    // Smooth out any frame rate drops instead of jumping violently
+    gsap.ticker.lagSmoothing(500, 33)
 
     return () => {
       gsap.ticker.remove(tick)

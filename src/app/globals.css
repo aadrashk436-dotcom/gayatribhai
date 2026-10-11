@@ -1102,6 +1102,8 @@ h2 {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.06);
+  content-visibility: auto;
+  contain-intrinsic-size: 260px 460px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
@@ -1126,7 +1128,7 @@ h2 {
   width: 100%;
   height: 100%;
   transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
+  transform: translateZ(0);
 }
 
 .card-slide-item {
@@ -2036,12 +2038,11 @@ h2 {
     max-width: 290px !important;
     height: calc(100vh - 100px) !important;
     max-height: calc(100vh - 100px) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important;
     background: var(--surface) !important;
     border: 1px solid var(--line) !important;
     border-radius: 8px !important;
-    padding: 22px 20px !important;
+    padding: 18px 18px !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
     flex-direction: column !important;
     box-sizing: border-box !important;
@@ -2052,22 +2053,37 @@ h2 {
   }
 }
 
-/* Custom sleek scrollbar for sticky sidebar */
-.filters::-webkit-scrollbar {
+/* Inner scrollable body for filters - stationary sidebar header, smoothly scrollable items */
+.filters-scrollable-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  margin-top: 6px;
+  min-height: 0;
+}
+
+/* Custom sleek scrollbar for sticky sidebar and inner scrollable body */
+.filters::-webkit-scrollbar,
+.filters-scrollable-body::-webkit-scrollbar {
   width: 5px;
 }
 
-.filters::-webkit-scrollbar-track {
-  background: #f8f6f0;
+.filters::-webkit-scrollbar-track,
+.filters-scrollable-body::-webkit-scrollbar-track {
+  background: var(--surface-2);
   border-radius: 4px;
 }
 
-.filters::-webkit-scrollbar-thumb {
+.filters::-webkit-scrollbar-thumb,
+.filters-scrollable-body::-webkit-scrollbar-thumb {
   background: #cfc9bd;
   border-radius: 4px;
 }
 
-.filters::-webkit-scrollbar-thumb:hover {
+.filters::-webkit-scrollbar-thumb:hover,
+.filters-scrollable-body::-webkit-scrollbar-thumb:hover {
   background: var(--solid);
 }
 
@@ -5913,6 +5929,10 @@ footer.legacy-footer>div>button {
 
   .filters:not(.open) .apply-filter {
     display: none !important;
+  }
+
+  .filters-scrollable-body {
+    padding-bottom: 80px !important;
   }
 
   .product-page {

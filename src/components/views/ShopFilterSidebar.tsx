@@ -92,7 +92,7 @@ export default function ShopFilterSidebar({
   totalCount,
 }: ShopFilterSidebarProps) {
   return (
-    <aside className={`filters ${filtersOpen ? "open" : ""}`}>
+    <aside className={`filters ${filtersOpen ? "open" : ""}`} data-lenis-prevent>
       {/* Sidebar Top Header with Reset All */}
       <div className="filters-sidebar-header">
         <div className="filter-title-box">
@@ -124,10 +124,12 @@ export default function ShopFilterSidebar({
         </button>
       </div>
 
-      {/* 1. Category Filter */}
-      <FilterGroup
-        title="Category"
-        activeCount={category !== "All Shirts" ? 1 : 0}
+      {/* Scrollable Filters Inner Content Container */}
+      <div className="filters-scrollable-body" data-lenis-prevent>
+        {/* 1. Category Filter */}
+        <FilterGroup
+          title="Category"
+          activeCount={category !== "All Shirts" ? 1 : 0}
       >
         <div className="filter-checkbox-list">
           {["All Shirts", ...categories].map((x) => {
@@ -585,6 +587,7 @@ export default function ShopFilterSidebar({
           })}
         </div>
       </FilterGroup>
+      </div>
 
       {/* Mobile Drawer Bottom CTA */}
       <Button className="apply-filter" onClick={() => setFiltersOpen(false)}>

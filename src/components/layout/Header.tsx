@@ -156,7 +156,11 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
             <ThemeToggle />
             <Link
               href={user ? "/account" : "/login"}
-              className="hidden size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/5 md:inline-flex"
+              className={`hidden items-center gap-1.5 rounded-full text-foreground transition-all hover:bg-foreground/5 md:inline-flex ${
+                user
+                  ? "size-10 justify-center"
+                  : "h-9 border border-border/80 px-3 hover:border-foreground/40"
+              }`}
               aria-label={user ? `Account: ${user.name}` : "Sign in"}
             >
               {user ? (
@@ -164,7 +168,10 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
                   {user.name.slice(0, 1).toUpperCase()}
                 </span>
               ) : (
-                <Icon name="user" size={19} />
+                <>
+                  <Icon name="user" size={15} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider">Sign in</span>
+                </>
               )}
             </Link>
             <Link

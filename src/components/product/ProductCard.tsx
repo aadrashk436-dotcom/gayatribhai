@@ -32,6 +32,8 @@ export function ProductCard({
     setTimeout(() => setIsAdded(false), 1600)
   }
 
+  const [isInteracting, setIsInteracting] = useState(false)
+
   // Drag / Swipe / Touch state tracking
   const mouseStartX = useRef<number | null>(null)
   const isMouseDragging = useRef<boolean>(false)
@@ -185,14 +187,23 @@ export function ProductCard({
   }
 
   return (
-    <article className="product-card group">
+    <article
+      className="product-card group"
+      onMouseEnter={() => setIsInteracting(true)}
+    >
       <div
         className="product-image-wrap"
         onClick={handleCardClick}
-        onMouseDown={handleMouseDown}
+        onMouseDown={(e) => {
+          setIsInteracting(true)
+          handleMouseDown(e)
+        }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onTouchStart={handleTouchStart}
+        onTouchStart={(e) => {
+          setIsInteracting(true)
+          handleTouchStart(e)
+        }}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
@@ -201,17 +212,21 @@ export function ProductCard({
           className="card-slider-track"
           style={{ transform: `translateX(-${imgIndex * 100}%)` }}
         >
-          {product.images.map((imgSrc, idx) => (
+          {(isInteracting || imgIndex > 0
+            ? product.images
+            : product.images.slice(0, 1)
+          ).map((imgSrc, idx) => (
             <div key={imgSrc + idx} className="card-slide-item">
               <Image
                 src={imgSrc}
                 alt={`${product.name} view ${idx + 1}`}
                 className="product-image"
-                width={1200}
-                height={1800}
-                sizes="(max-width: 768px) 50vw, (max-width: 1280px) 30vw, 22vw"
-                quality={75}
+                width={600}
+                height={850}
+                sizes="(max-width: 640px) 70vw, (max-width: 1024px) 35vw, 290px"
+                quality={80}
                 loading="lazy"
+                decoding="async"
                 draggable={false}
               />
             </div>
