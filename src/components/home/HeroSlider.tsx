@@ -208,6 +208,18 @@ export default function HeroSlider() {
         force3D: true,
         scrollTrigger: { trigger: root.current, start: "top top", end: "60% top", scrub: true },
       })
+
+      ScrollTrigger.create({
+        trigger: root.current,
+        start: "top top",
+        end: "bottom top",
+        onLeave: () => {
+          progress.current?.pause()
+        },
+        onEnterBack: () => {
+          if (!paused.current) progress.current?.resume()
+        },
+      })
     },
     { scope: root },
   )

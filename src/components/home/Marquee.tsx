@@ -14,31 +14,22 @@ export default function Marquee() {
 
   useGSAP(
     () => {
-      const loop = gsap.to(".marquee-track", { xPercent: -50, duration: 32, ease: "none", repeat: -1 })
-      let resetTimer: NodeJS.Timeout | null = null
+      const loop = gsap.to(".marquee-track", {
+        xPercent: -50,
+        duration: 32,
+        ease: "none",
+        repeat: -1,
+      })
 
       ScrollTrigger.create({
         trigger: root.current,
         start: "top bottom",
         end: "bottom top",
-        onUpdate: (self) => {
-          const dir = self.direction === -1 ? -1 : 1
-          const boost = Math.min(Math.abs(self.getVelocity()) / 400, 3)
-          gsap.to(loop, {
-            timeScale: dir * (1 + boost),
-            duration: 0.2,
-            overwrite: true,
-          })
-          if (resetTimer) clearTimeout(resetTimer)
-          resetTimer = setTimeout(() => {
-            gsap.to(loop, { timeScale: dir, duration: 0.8, overwrite: true })
-          }, 200)
-        },
+        onEnter: () => loop.play(),
+        onLeave: () => loop.pause(),
+        onEnterBack: () => loop.play(),
+        onLeaveBack: () => loop.pause(),
       })
-
-      return () => {
-        if (resetTimer) clearTimeout(resetTimer)
-      }
     },
     { scope: root },
   )

@@ -23,11 +23,11 @@ export default function SmoothScroll() {
     if (reduceMotion) return
 
     const lenis = new Lenis({
-      lerp: 0.12, // Snappy, ultra-fluid response with zero drag latency
+      lerp: 0.14, // Snappy, ultra-responsive scroll with zero inertia delay
       smoothWheel: true,
       syncTouch: false,
       touchMultiplier: 1.0,
-      wheelMultiplier: 1.05,
+      wheelMultiplier: 1.0,
       prevent: (node) => {
         // Never hijack scrolling inside elements with data-lenis-prevent or filter sidebars
         return (
@@ -43,8 +43,6 @@ export default function SmoothScroll() {
     lenis.on("scroll", ScrollTrigger.update)
     const tick = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(tick)
-    // Disable lag smoothing as strictly mandated by Lenis docs to prevent scroll jumps
-    gsap.ticker.lagSmoothing(0)
 
     return () => {
       gsap.ticker.remove(tick)

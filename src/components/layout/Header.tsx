@@ -102,9 +102,9 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
   return (
     <>
       <header
-        className={`sticky top-0 z-40 border-b transition-[transform,background-color,border-color] duration-500 ${
+        className={`sticky top-0 z-40 transform-gpu border-b transition-[transform,background-color,border-color] duration-300 ${
           hidden && !menuOpen ? "-translate-y-full" : "translate-y-0"
-        } ${scrolled ? "border-border bg-background/85 backdrop-blur-xl" : "border-transparent bg-background"}`}
+        } ${scrolled ? "border-border bg-background/90 backdrop-blur-md" : "border-transparent bg-background"}`}
       >
         <div className="mx-auto flex h-16 items-center gap-2 px-3 md:h-[76px] md:px-8 lg:px-14">
           <button

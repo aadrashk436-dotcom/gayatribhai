@@ -14,36 +14,38 @@ export function useReveal(scope: RefObject<HTMLElement | null>) {
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
           gsap.from(el, {
-            y: 40,
+            y: 20,
             autoAlpha: 0,
-            duration: 1,
-            ease: "power3.out",
+            duration: 0.65,
+            ease: "power2.out",
+            force3D: true,
             delay: Number(el.dataset.revealDelay || 0),
-            scrollTrigger: { trigger: el, start: "top 88%", once: true },
+            scrollTrigger: { trigger: el, start: "top 90%", once: true },
           })
         })
 
         gsap.utils.toArray<HTMLElement>("[data-reveal-text]").forEach((el) => {
           gsap.from(el.querySelectorAll(".line-inner"), {
-            yPercent: 110,
-            duration: 1.1,
-            stagger: 0.08,
-            ease: "expo.out",
-            scrollTrigger: { trigger: el, start: "top 88%", once: true },
+            yPercent: 100,
+            duration: 0.8,
+            stagger: 0.05,
+            ease: "power2.out",
+            force3D: true,
+            scrollTrigger: { trigger: el, start: "top 90%", once: true },
           })
         })
 
         gsap.utils.toArray<HTMLElement>("[data-reveal-img]").forEach((el) => {
           const img = el.querySelector("img")
           const tl = gsap.timeline({
-            scrollTrigger: { trigger: el, start: "top 85%", once: true },
+            scrollTrigger: { trigger: el, start: "top 88%", once: true },
           })
           tl.fromTo(
             el,
-            { clipPath: "inset(100% 0% 0% 0%)" },
-            { clipPath: "inset(0% 0% 0% 0%)", duration: 1.3, ease: "expo.inOut" },
+            { autoAlpha: 0, y: 25 },
+            { autoAlpha: 1, y: 0, duration: 0.75, ease: "power2.out", force3D: true },
           )
-          if (img) tl.fromTo(img, { scale: 1.3 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
+          if (img) tl.fromTo(img, { scale: 1.08 }, { scale: 1, duration: 1.1, ease: "power2.out", force3D: true }, 0.1)
         })
 
         gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
@@ -55,19 +57,20 @@ export function useReveal(scope: RefObject<HTMLElement | null>) {
               yPercent: amount,
               ease: "none",
               force3D: true,
-              scrollTrigger: { trigger: el.parentElement, start: "top bottom", end: "bottom top", scrub: true },
+              scrollTrigger: { trigger: el.parentElement, start: "top bottom", end: "bottom top", scrub: 0.8 },
             },
           )
         })
 
         gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((group) => {
           gsap.from(group.children, {
-            y: 50,
+            y: 25,
             autoAlpha: 0,
-            duration: 0.9,
-            stagger: 0.09,
-            ease: "power3.out",
-            scrollTrigger: { trigger: group, start: "top 85%", once: true },
+            duration: 0.6,
+            stagger: 0.04,
+            ease: "power2.out",
+            force3D: true,
+            scrollTrigger: { trigger: group, start: "top 88%", once: true },
           })
         })
       })
