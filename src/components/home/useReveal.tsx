@@ -48,29 +48,33 @@ export function useReveal(scope: RefObject<HTMLElement | null>) {
           if (img) tl.fromTo(img, { scale: 1.08 }, { scale: 1, duration: 1.1, ease: "power2.out", force3D: true }, 0.1)
         })
 
-        gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
-          const amount = Number(el.dataset.parallax || 12)
-          gsap.fromTo(
-            el,
-            { yPercent: -amount },
-            {
-              yPercent: amount,
-              ease: "none",
-              force3D: true,
-              scrollTrigger: { trigger: el.parentElement, start: "top bottom", end: "bottom top", scrub: 0.8 },
-            },
-          )
-        })
+        // Parallax scrub only on desktop (prevents micro-stutter on mobile touch scroll)
+        if (window.matchMedia("(min-width: 768px)").matches) {
+          gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
+            const amount = Number(el.dataset.parallax || 12)
+            gsap.fromTo(
+              el,
+              { yPercent: -amount },
+              {
+                yPercent: amount,
+                ease: "none",
+                force3D: true,
+                scrollTrigger: { trigger: el.parentElement, start: "top bottom", end: "bottom top", scrub: 0.8 },
+              },
+            )
+          })
+        }
 
         gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((group) => {
           gsap.from(group.children, {
-            y: 25,
+            y: 20,
             autoAlpha: 0,
-            duration: 0.6,
-            stagger: 0.04,
+            duration: 0.55,
+            stagger: 0.03,
             ease: "power2.out",
             force3D: true,
-            scrollTrigger: { trigger: group, start: "top 88%", once: true },
+            clearProps: "transform,opacity",
+            scrollTrigger: { trigger: group, start: "top 92%", once: true },
           })
         })
       })

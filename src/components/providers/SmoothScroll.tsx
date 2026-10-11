@@ -22,6 +22,11 @@ export default function SmoothScroll() {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     if (reduceMotion) return
 
+    // On touch devices (phones/tablets), native hardware scrolling is 120Hz/60Hz.
+    // Lenis should only enhance desktop mouse wheel scrolling.
+    const isTouch = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768
+    if (isTouch) return
+
     const lenis = new Lenis({
       lerp: 0.14, // Snappy, ultra-responsive scroll with zero inertia delay
       smoothWheel: true,

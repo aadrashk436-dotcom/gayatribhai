@@ -29,7 +29,9 @@ export default function HorizontalShowcase({
   const scrollLeftStart = useRef(0)
   const hasDragged = useRef(false)
 
-  const handleScroll = useCallback(() => {
+  const rafId = useRef<number | null>(null)
+
+  const updateScrollState = useCallback(() => {
     if (!scrollContainer.current) return
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.current
     const maxScroll = Math.max(1, scrollWidth - clientWidth)
@@ -37,6 +39,14 @@ export default function HorizontalShowcase({
     setCanScrollRight(scrollLeft < maxScroll - 15)
     setScrollProgress(Math.min(1, Math.max(0, scrollLeft / maxScroll)))
   }, [])
+
+  const handleScroll = useCallback(() => {
+    if (rafId.current !== null) return
+    rafId.current = window.requestAnimationFrame(() => {
+      rafId.current = null
+      updateScrollState()
+    })
+  }, [updateScrollState])
 
   useEffect(() => {
     handleScroll()
@@ -151,7 +161,7 @@ export default function HorizontalShowcase({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory scroll-smooth [-webkit-overflow-scrolling:touch] pb-4 pt-1 cursor-grab active:cursor-grabbing select-none"
+        className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory [-webkit-overflow-scrolling:touch] pb-4 pt-1 cursor-grab active:cursor-grabbing select-none"
       >
         <div className="flex w-max gap-4 px-5 md:gap-6 md:px-10 lg:px-14 items-stretch">
           {items.map((p) => (

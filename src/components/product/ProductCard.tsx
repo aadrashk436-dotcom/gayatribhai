@@ -135,9 +135,10 @@ export function ProductCard({
       return
     }
 
-    // Only flag as horizontal swipe if movement is clearly horizontal and > 15px
-    if (Math.abs(diffX) > 15 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+    // Only flag as horizontal swipe if movement is clearly horizontal and > 20px
+    if (Math.abs(diffX) > 20 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
       isHorizontalSwipe.current = true
+      if (!isInteracting) setIsInteracting(true)
     }
   }
 
@@ -224,10 +225,7 @@ export function ProductCard({
         }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onTouchStart={(e) => {
-          setIsInteracting(true)
-          handleTouchStart(e)
-        }}
+        onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >

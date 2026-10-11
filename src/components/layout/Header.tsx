@@ -48,23 +48,40 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
     let prevScrolled = false
     let prevHidden = false
 
-    const onScroll = () => {
+    let rafId: number | null = null
+
+    const handleScroll = () => {
       const y = window.scrollY
       const nextScrolled = y > 10
-      const nextHidden = y > 240 && y > last
-      last = y
 
       if (nextScrolled !== prevScrolled) {
         prevScrolled = nextScrolled
         setScrolled(nextScrolled)
       }
-      if (nextHidden !== prevHidden) {
-        prevHidden = nextHidden
-        setHidden(nextHidden)
+
+      // Only toggle hide/show if scrolled past 240px and user has scrolled at least 8px
+      if (Math.abs(y - last) > 8) {
+        const nextHidden = y > 240 && y > last
+        if (nextHidden !== prevHidden) {
+          prevHidden = nextHidden
+          setHidden(nextHidden)
+        }
+        last = y
       }
     }
+
+    const onScroll = () => {
+      if (rafId !== null) return
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null
+        handleScroll()
+      })
+    }
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    return () => {
+      if (rafId !== null) window.cancelAnimationFrame(rafId)
+      window.removeEventListener("scroll", onScroll)
+    }
   }, [])
 
   useEffect(() => {
@@ -104,7 +121,7 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
       <header
         className={`sticky top-0 z-40 transform-gpu border-b transition-[transform,background-color,border-color] duration-300 ${
           hidden && !menuOpen ? "-translate-y-full" : "translate-y-0"
-        } ${scrolled ? "border-border bg-background/90 backdrop-blur-md" : "border-transparent bg-background"}`}
+        } ${scrolled ? "border-border bg-background/95 md:bg-background/90 md:backdrop-blur-md" : "border-transparent bg-background"}`}
       >
         <div className="mx-auto flex h-16 items-center gap-2 px-3 md:h-[76px] md:px-8 lg:px-14">
           <button

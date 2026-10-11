@@ -212,18 +212,22 @@ export default function HeroSlider() {
         )
         .from(".hero-ui", { autoAlpha: 0, y: 16, duration: 0.8, stagger: 0.08, ease: "power3.out" }, 0.6)
 
-      gsap.to(".hero-stage", {
-        yPercent: 18,
-        ease: "none",
-        force3D: true,
-        scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
-      })
-      gsap.to(".hero-copy-wrap", {
-        autoAlpha: 0,
-        y: -60,
-        ease: "none",
-        force3D: true,
-        scrollTrigger: { trigger: root.current, start: "top top", end: "60% top", scrub: true },
+      // Only run continuous full-screen parallax scrub on desktop devices (saves mobile GPU/CPU on touch scroll)
+      const mm = gsap.matchMedia()
+      mm.add("(min-width: 768px)", () => {
+        gsap.to(".hero-stage", {
+          yPercent: 18,
+          ease: "none",
+          force3D: true,
+          scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
+        })
+        gsap.to(".hero-copy-wrap", {
+          autoAlpha: 0,
+          y: -60,
+          ease: "none",
+          force3D: true,
+          scrollTrigger: { trigger: root.current, start: "top top", end: "60% top", scrub: true },
+        })
       })
 
       ScrollTrigger.create({

@@ -14,7 +14,7 @@ export function WideBanner() {
   return (
     <section className="px-3 md:px-6">
       <Link href="/shop" className="group relative block h-[72svh] min-h-[460px] max-h-[620px] overflow-hidden rounded-sm md:h-[clamp(500px,62vh,680px)] md:max-h-none">
-        <div data-parallax="10" className="absolute -inset-y-[12%] inset-x-0">
+        <div data-parallax="10" className="absolute inset-0 md:-inset-y-[12%] md:inset-x-0">
           <picture>
             <source media="(min-width: 768px)" srcSet="/assets/banners/promo-linen-wide.jpg" />
             <img

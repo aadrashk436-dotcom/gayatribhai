@@ -139,6 +139,7 @@ export function ReelsSection({
                     }}
                     src={reel.videoUrl}
                     poster={reel.posterUrl}
+                    preload="none"
                     muted
                     loop
                     playsInline
