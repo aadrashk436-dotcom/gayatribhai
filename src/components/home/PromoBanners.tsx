@@ -15,15 +15,16 @@ export function WideBanner() {
     <section className="px-3 md:px-6">
       <Link href="/shop" className="group relative block h-[70svh] min-h-[420px] overflow-hidden rounded-sm md:h-[clamp(500px,62vh,680px)]">
         <div data-parallax="10" className="absolute -inset-y-[12%] inset-x-0">
-          <Image
-            src="/assets/banners/promo-linen-wide.jpg"
-            alt="Model in an ivory linen shirt in a sunlit courtyard"
-            fill
-            sizes="100vw"
-            className="object-cover object-[65%_top] md:object-[75%_top]"
-          />
+          <picture>
+            <source media="(min-width: 768px)" srcSet="/assets/banners/promo-linen-wide.jpg" />
+            <img
+              src="/assets/banners/auth-portrait.jpg"
+              alt="Model in tailored French linen in sunlit courtyard"
+              className="h-full w-full object-cover object-[center_20%] md:object-[75%_top]"
+            />
+          </picture>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent md:bg-gradient-to-r md:from-black/45 md:via-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 via-45% to-transparent md:bg-gradient-to-r md:from-black/55 md:via-black/15 md:to-transparent" />
         <div className="absolute inset-x-6 bottom-8 text-white md:inset-x-auto md:bottom-auto md:left-14 md:top-1/2 md:-translate-y-1/2">
           <p data-reveal className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] opacity-90 md:text-xs">
             Linen season

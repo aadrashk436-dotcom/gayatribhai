@@ -310,11 +310,11 @@ export default function HeroSlider() {
               className={`pointer-events-none absolute inset-0 ${
                 slide.tone === "dark"
                   ? "bg-gradient-to-t from-[#f1e4d2]/80 via-transparent to-transparent md:bg-gradient-to-r md:from-[#efe2cf]/70 md:via-transparent"
-                  : "bg-gradient-to-t from-black/75 via-black/15 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20 md:to-transparent"
+                  : "bg-gradient-to-t from-black/90 via-black/35 via-45% to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20 md:to-transparent"
               }`}
             />
 
-            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-20 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[50%] md:max-w-2xl md:flex-col md:justify-end md:px-12 md:pb-24 lg:px-16 xl:px-20">
+            <div className="hero-copy-wrap absolute inset-x-0 bottom-0 z-10 px-5 pb-16 sm:pb-20 md:inset-y-0 md:left-0 md:right-auto md:flex md:w-[50%] md:max-w-2xl md:flex-col md:justify-end md:px-12 md:pb-24 lg:px-16 xl:px-20">
               <div className={slide.tone === "dark" ? "text-[#1a1410]" : "text-white"}>
                 <div className="overflow-hidden">
                   <p className="hero-reveal mb-4 text-[11px] font-semibold uppercase tracking-[0.32em] opacity-90 md:text-xs">
