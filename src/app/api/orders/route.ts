@@ -97,3 +97,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message || "Failed to create order record" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { orderId, orderIds, status, courier, awb, cancelReason, verified } = body;
+
+    const orders = readStoredOrders();
+    const targetIds = orderIds || (orderId ? [orderId] : []);
+
+    if (!targetIds.length) {
+      return NextResponse.json({ error: "Order ID(s) required" }, { status: 400 });
+    }
+
+    const updatedOrders = orders.map((o: any) => {
+      if (targetIds.includes(o.id) || targetIds.includes(o.orderNumber)) {
+        return {
+          ...o,
+          ...(status && { status }),
+          ...(courier && { courier }),
+          ...(awb && { awb }),
+          ...(cancelReason && { cancelReason }),
+          ...(verified !== undefined && { verified, verifiedAt: new Date().toISOString() }),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return o;
+    });
+
+    try {
+      const filePath = getOrdersFilePath();
+      if (fs.existsSync(filePath)) {
+        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        data.orders = updatedOrders;
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+      }
+    } catch (saveErr) {
+      console.warn("Could not save updated orders to file:", saveErr);
+    }
+
+    return NextResponse.json({ success: true, updatedCount: targetIds.length });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to update orders" }, { status: 500 });
+  }
+}

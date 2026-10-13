@@ -34,6 +34,14 @@ import {
   Trash2,
   Sparkles,
   MapPin,
+  CheckSquare,
+  Square,
+  Phone,
+  Mail,
+  FileText,
+  Ban,
+  Send,
+  Printer,
 } from "lucide-react"
 import { products as initialProducts, Product } from "@/lib/products"
 
@@ -46,107 +54,216 @@ function formatINR(amount: number) {
   }).format(amount)
 }
 
-// Initial Mock Orders with real product references
-const initialOrders = [
+export interface AdminOrder {
+  id: string
+  customer: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  pincode: string
+  shirtName: string
+  sku: string
+  size: string
+  qty: number
+  price: number
+  total: number
+  image: string
+  paymentMethod: string
+  paymentId: string
+  paymentStatus: "Paid" | "Pending COD"
+  status: "Pending Verification" | "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered" | "Cancelled"
+  verifiedBy?: string | null
+  verifiedAt?: string | null
+  courier?: string | null
+  awb?: string | null
+  date: string
+  cancelReason?: string | null
+}
+
+// Initial Mock Orders with real product references and complete addresses
+const initialOrders: AdminOrder[] = [
   {
     id: "GB-2026-1048",
     customer: "Vikram Singhania",
     email: "vikram.singh@atelier.in",
     phone: "+91 98201 44210",
+    address: "402, Sea Green Apartments, Bandra West, Near Carter Road",
     city: "Mumbai, Maharashtra",
     pincode: "400050",
     shirtName: "Azure Leaf Hand-Embroidered Shirt",
     sku: "M26/SS/CON/CS/23",
     size: "L",
     qty: 1,
+    price: 2100,
     total: 2100,
-    paymentMethod: "Razorpay (Prepaid)",
+    image: "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+    paymentMethod: "Razorpay (Prepaid UPI)",
     paymentId: "pay_live_Rz99x11",
     paymentStatus: "Paid",
-    status: "Processing",
+    status: "Pending Verification",
+    verifiedBy: null,
+    verifiedAt: null,
+    courier: null,
+    awb: null,
     date: "Today, 14:24",
-    courier: "Delhivery Surface",
-    awb: "14298012480",
+    cancelReason: null,
   },
   {
     id: "GB-2026-1047",
     customer: "Rohan Kapoor",
     email: "rohan.kapoor@heritage.org",
     phone: "+91 99112 88390",
+    address: "B-14, Heritage Greens, Civil Lines, Near Raj Niwas",
     city: "New Delhi, Delhi",
-    pincode: "110001",
+    pincode: "110054",
     shirtName: "Deep Sea Coco Hand Embroidered Shirt",
     sku: "M26/SS/BEA/CS/42",
     size: "M",
     qty: 2,
+    price: 2399,
     total: 4798,
-    paymentMethod: "Razorpay (UPI)",
+    image: "/assets/products/Deep_Sea_COCO_Hand_Embroidered_Shirt/Deep_Sea_COCO_Hand_Embroidered_Shirt_main.jpg",
+    paymentMethod: "Razorpay (Prepaid NetBanking)",
     paymentId: "pay_live_Kz88v22",
     paymentStatus: "Paid",
-    status: "Dispatched",
+    status: "Verified",
+    verifiedBy: "Gayatri Puri (Admin)",
+    verifiedAt: "Today, 12:00",
+    courier: null,
+    awb: null,
     date: "Today, 11:15",
-    courier: "BlueDart Express Air",
-    awb: "33890142911",
+    cancelReason: null,
   },
   {
     id: "GB-2026-1046",
     customer: "Ananya Deshmukh",
     email: "ananya.d@luxuryart.co",
     phone: "+91 98450 11922",
+    address: "77, Indiranagar 100ft Road, 2nd Stage, Defence Colony",
     city: "Bengaluru, Karnataka",
-    pincode: "560001",
+    pincode: "560038",
     shirtName: "True Red Havana Beach Embroidered Shirt",
     sku: "M26/SS/BEA/CS/19",
     size: "S",
     qty: 1,
-    total: 2399,
+    price: 1899,
+    total: 1899,
+    image: "/assets/products/True_Red_havana_Beach_Embroidered_Shirt/True_Red_havana_Beach_Embroidered_Shirt_main.jpg",
     paymentMethod: "Razorpay (Credit Card)",
     paymentId: "pay_live_Lx44t90",
     paymentStatus: "Paid",
-    status: "Delivered",
+    status: "Assigned to Courier",
+    verifiedBy: "Gayatri Puri (Admin)",
+    verifiedAt: "Yesterday, 19:10",
+    courier: "BlueDart Express Air",
+    awb: "AWB-SR-33890142911",
     date: "Yesterday, 18:40",
-    courier: "Delhivery Surface",
-    awb: "14298011985",
+    cancelReason: null,
   },
   {
     id: "GB-2026-1045",
     customer: "Arjun Oberoi",
     email: "arjun.oberoi@palace.in",
     phone: "+91 97660 33411",
+    address: "Villa 12, C-Scheme, Ashok Nagar, Near Statue Circle",
     city: "Jaipur, Rajasthan",
     pincode: "302001",
-    shirtName: "Rust Palm Handcrafted Cuban Shirt",
-    sku: "M26/SS/RES/CS/08",
+    shirtName: "The Bract Hand Embroidered Rust Cotton Linen Shirt",
+    sku: "M26/SS/NATURE/SF/13",
     size: "XL",
     qty: 1,
-    total: 2150,
-    paymentMethod: "Cash on Delivery",
-    paymentId: "COD_VERIFIED",
+    price: 1699,
+    total: 1699,
+    image: "/assets/products/The_Bract_hand_Embroidered_Rust_Cotton_linen_Shirt/The_Bract_hand_Embroidered_Rust_Cotton_linen_Shirt_main.jpg",
+    paymentMethod: "Cash on Delivery (COD)",
+    paymentId: "COD_MANUAL_VERIFY",
     paymentStatus: "Pending COD",
-    status: "Confirmed",
+    status: "Pending Verification",
+    verifiedBy: null,
+    verifiedAt: null,
+    courier: null,
+    awb: null,
     date: "Yesterday, 13:05",
-    courier: "DTDC Surface",
-    awb: "DTDC8829014",
+    cancelReason: null,
   },
   {
     id: "GB-2026-1044",
     customer: "Meera Sen",
     email: "meera.sen@calcutta.edu",
     phone: "+91 98300 55190",
+    address: "Flat 4A, Ballygunge Circular Road, Near Lake Club",
     city: "Kolkata, West Bengal",
     pincode: "700019",
-    shirtName: "Ivory Floral Heirloom Knot Shirt",
-    sku: "M26/SS/CLA/CS/02",
+    shirtName: "French Knotted Leaves Shirt",
+    sku: "M26/SS/NATURE/CS/11",
     size: "M",
     qty: 1,
-    total: 2600,
-    paymentMethod: "Razorpay (NetBanking)",
+    price: 1699,
+    total: 1699,
+    image: "/assets/products/French_Knotted_Leaves_Shirt/French_Knotted_Leaves_Shirt_main.jpg",
+    paymentMethod: "Razorpay (UPI)",
     paymentId: "pay_live_Qp11a88",
     paymentStatus: "Paid",
-    status: "Delivered",
+    status: "Dispatched",
+    verifiedBy: "Gayatri Puri (Admin)",
+    verifiedAt: "11 Oct, 17:00",
+    courier: "Delhivery Surface",
+    awb: "AWB-SR-14298011985",
     date: "11 Oct, 16:30",
+    cancelReason: null,
+  },
+  {
+    id: "GB-2026-1043",
+    customer: "Siddharth Verma",
+    email: "siddharth.v@vermaholdings.in",
+    phone: "+91 98199 77210",
+    address: "Tower 3, Penthouse 18B, Koregaon Park Annexe",
+    city: "Pune, Maharashtra",
+    pincode: "411001",
+    shirtName: "Coco Flamingo Beach Shirt",
+    sku: "M26/SS/Beach/CS/20",
+    size: "XL",
+    qty: 1,
+    price: 2799,
+    total: 2799,
+    image: "/assets/products/COCO_Flamingo_Beach_Shirt/COCO_Flamingo_Beach_Shirt_main.jpg",
+    paymentMethod: "Razorpay (Prepaid)",
+    paymentId: "pay_live_M88v99",
+    paymentStatus: "Paid",
+    status: "Delivered",
+    verifiedBy: "Gayatri Puri (Admin)",
+    verifiedAt: "09 Oct, 11:20",
     courier: "BlueDart Express Air",
-    awb: "33890141029",
+    awb: "AWB-SR-88492011933",
+    date: "09 Oct, 10:45",
+    cancelReason: null,
+  },
+  {
+    id: "GB-2026-1042",
+    customer: "Aditya Roy",
+    email: "aditya.roy@zenith.co",
+    phone: "+91 99200 44102",
+    address: "Flat 101, Palm Grove, Juhu Tara Road",
+    city: "Mumbai, Maharashtra",
+    pincode: "400049",
+    shirtName: "Costal King Hand Embroidered Shirt",
+    sku: "M26/SS/Beach/SF/19",
+    size: "L",
+    qty: 1,
+    price: 2199,
+    total: 2199,
+    image: "/assets/products/Costal_King_Hand_Embroidered_Shirt/Costal_King_Hand_Embroidered_Shirt_main.jpg",
+    paymentMethod: "Razorpay (Prepaid)",
+    paymentId: "pay_live_Cn22w10",
+    paymentStatus: "Paid",
+    status: "Cancelled",
+    verifiedBy: null,
+    verifiedAt: null,
+    courier: null,
+    awb: null,
+    date: "08 Oct, 15:10",
+    cancelReason: "Patron requested size exchange before dispatch",
   },
 ]
 
@@ -267,6 +384,14 @@ export function AdminView() {
   // Modal states
   const [showAddShirtModal, setShowAddShirtModal] = useState(false)
   const [showAddCouponModal, setShowAddCouponModal] = useState(false)
+  const [inspectOrderModal, setInspectOrderModal] = useState<AdminOrder | null>(null)
+  const [assignCourierModal, setAssignCourierModal] = useState<AdminOrder | null>(null)
+  const [selectedCourierName, setSelectedCourierName] = useState<string>("BlueDart Express Air")
+  const [cancelOrderModal, setCancelOrderModal] = useState<AdminOrder | null>(null)
+  const [cancelReasonText, setCancelReasonText] = useState<string>("Patron requested cancellation")
+
+  // Multi-select state for bulk order actions
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
 
   // Form states for Add Shirt
   const [newShirtName, setNewShirtName] = useState("")
@@ -310,7 +435,10 @@ export function AdminView() {
         o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.phone.includes(searchQuery) ||
-        o.shirtName.toLowerCase().includes(searchQuery.toLowerCase())
+        o.shirtName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.pincode.includes(searchQuery)
       const matchStatus = orderStatusFilter === "All" || o.status === orderStatusFilter
       return matchSearch && matchStatus
     })
@@ -324,8 +452,274 @@ export function AdminView() {
     }).length
   }, [productList])
 
-  // Handlers
-  const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
+  // Order Handlers
+  const handleVerifyOrder = async (orderId: string) => {
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: "Verified" as const,
+              verifiedBy: "Gayatri Puri (Admin)",
+              verifiedAt: "Just now",
+            }
+          : o
+      )
+    )
+    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+      setInspectOrderModal((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Verified",
+              verifiedBy: "Gayatri Puri (Admin)",
+              verifiedAt: "Just now",
+            }
+          : null
+      )
+    }
+    showToast(`Order #${orderId} verified & approved! Ready for Shiprocket courier.`)
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: "Verified", verified: true }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleConfirmAssignCourier = async () => {
+    if (!assignCourierModal) return
+    const orderId = assignCourierModal.id
+    const newAwb = `AWB-SR-${Math.floor(1000000000 + Math.random() * 9000000000)}`
+    const courier = selectedCourierName || "BlueDart Express Air"
+
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: "Assigned to Courier" as const,
+              courier,
+              awb: newAwb,
+            }
+          : o
+      )
+    )
+
+    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+      setInspectOrderModal((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Assigned to Courier",
+              courier,
+              awb: newAwb,
+            }
+          : null
+      )
+    }
+
+    setAssignCourierModal(null)
+    showToast(`Shipment Booked! ${courier} AWB: #${newAwb}`)
+
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: "Assigned to Courier", courier, awb: newAwb }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleConfirmCancelOrder = async () => {
+    if (!cancelOrderModal) return
+    const orderId = cancelOrderModal.id
+    const order = orderList.find((o) => o.id === orderId)
+
+    if (
+      order?.status === "Assigned to Courier" ||
+      order?.status === "Dispatched" ||
+      order?.status === "Delivered"
+    ) {
+      showToast("Cannot cancel: Order is already handed over to courier partner. Initiate Return/RTO instead.")
+      setCancelOrderModal(null)
+      return
+    }
+
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: "Cancelled" as const,
+              cancelReason: cancelReasonText || "Cancelled by Store Admin",
+            }
+          : o
+      )
+    )
+
+    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+      setInspectOrderModal((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Cancelled",
+              cancelReason: cancelReasonText || "Cancelled by Store Admin",
+            }
+          : null
+      )
+    }
+
+    setCancelOrderModal(null)
+    showToast(`Order #${orderId} has been cancelled.`)
+
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: "Cancelled",
+          cancelReason: cancelReasonText,
+        }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  // Multi-select handlers
+  const handleSelectAllOrders = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrderIds(filteredOrders.map((o) => o.id))
+    } else {
+      setSelectedOrderIds([])
+    }
+  }
+
+  const handleToggleSelectOrder = (id: string) => {
+    setSelectedOrderIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const handleBulkVerify = async () => {
+    if (!selectedOrderIds.length) return
+    const eligible = orderList.filter(
+      (o) => selectedOrderIds.includes(o.id) && o.status === "Pending Verification"
+    )
+    if (!eligible.length) {
+      showToast("Selected orders are already verified or cannot be verified.")
+      return
+    }
+    const eligibleIds = eligible.map((o) => o.id)
+    setOrderList((prev) =>
+      prev.map((o) =>
+        eligibleIds.includes(o.id)
+          ? { ...o, status: "Verified" as const, verifiedBy: "Gayatri Puri (Admin)", verifiedAt: "Just now" }
+          : o
+      )
+    )
+    showToast(`Verified & approved ${eligible.length} orders for shipping!`)
+    setSelectedOrderIds([])
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderIds: eligibleIds, status: "Verified", verified: true }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleBulkAssignShiprocket = async () => {
+    if (!selectedOrderIds.length) return
+    const eligible = orderList.filter(
+      (o) => selectedOrderIds.includes(o.id) && o.status === "Verified"
+    )
+    if (!eligible.length) {
+      showToast("Selected orders must be 'Verified' before assigning to courier.")
+      return
+    }
+
+    const eligibleIds = eligible.map((o) => o.id)
+    setOrderList((prev) =>
+      prev.map((o) => {
+        if (eligibleIds.includes(o.id)) {
+          return {
+            ...o,
+            status: "Assigned to Courier" as const,
+            courier: "BlueDart Express Air",
+            awb: `AWB-SR-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+          }
+        }
+        return o
+      })
+    )
+    showToast(`Generated Shiprocket AWBs for ${eligible.length} orders!`)
+    setSelectedOrderIds([])
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderIds: eligibleIds,
+          status: "Assigned to Courier",
+          courier: "BlueDart Express Air",
+          awb: `AWB-SR-BULK-${Date.now().toString().slice(-6)}`,
+        }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleBulkCancel = async () => {
+    if (!selectedOrderIds.length) return
+    const eligible = orderList.filter(
+      (o) =>
+        selectedOrderIds.includes(o.id) &&
+        o.status !== "Assigned to Courier" &&
+        o.status !== "Dispatched" &&
+        o.status !== "Delivered" &&
+        o.status !== "Cancelled"
+    )
+    if (!eligible.length) {
+      showToast("Cannot cancel: Selected orders are already in courier custody or already cancelled.")
+      return
+    }
+    const eligibleIds = eligible.map((o) => o.id)
+    setOrderList((prev) =>
+      prev.map((o) =>
+        eligibleIds.includes(o.id)
+          ? { ...o, status: "Cancelled" as const, cancelReason: "Bulk cancelled by Store Admin" }
+          : o
+      )
+    )
+    showToast(`Cancelled ${eligible.length} orders successfully.`)
+    setSelectedOrderIds([])
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderIds: eligibleIds,
+          status: "Cancelled",
+          cancelReason: "Bulk cancelled by Store Admin",
+        }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleUpdateOrderStatus = (orderId: string, newStatus: any) => {
     setOrderList((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
     )
@@ -904,9 +1298,9 @@ export function AdminView() {
 
             {/* ══════════════ TAB 2: PRODUCTS ══════════════ */}
             {activeTab === "Products" && (
-              <div className="space-y-6">
-                {/* Search & Filter Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d] p-4">
+              <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
+                {/* Search & Filter Bar (STICKY & FIXED AT TOP) */}
+                <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
                   <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
@@ -918,14 +1312,14 @@ export function AdminView() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                     {["All", "Contemporary", "BeachSide", "Classic", "Festive"].map((cat) => (
                       <button
                         key={cat}
                         onClick={() => setCategoryFilter(cat)}
                         className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition shrink-0 ${
                           categoryFilter === cat
-                            ? "bg-[#d4af37] text-black font-bold"
+                            ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
                             : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                       >
@@ -935,204 +1329,409 @@ export function AdminView() {
                   </div>
                 </div>
 
-                {/* Product Catalog Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {filteredProducts.map((p) => {
-                    const totalUnits = Object.values(p.stock).reduce((a, b) => a + b, 0)
-                    return (
-                      <div
-                        key={p.id}
-                        className="rounded-2xl border border-white/10 bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group hover:border-[#d4af37]/40 transition duration-200"
-                      >
-                        <div>
-                          <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3">
-                            <Image
-                              src={p.images[0]}
-                              alt={p.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <span className="absolute top-2.5 left-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#d4af37] border border-white/10">
-                              {p.category}
-                            </span>
-                            <span className="absolute top-2.5 right-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/10">
-                              {totalUnits} Units in Stock
-                            </span>
-                          </div>
+                {/* Counter & Status Strip */}
+                <div className="shrink-0 flex items-center justify-between px-1 text-xs text-zinc-400">
+                  <span>Displaying <strong className="text-white">{filteredProducts.length}</strong> haute shirts in catalog</span>
+                  <span className="text-[11px] text-[#d4af37] font-semibold flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live Database Synced
+                  </span>
+                </div>
 
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-mono text-zinc-400">{p.sku}</span>
-                              <span className="text-[10px] font-semibold text-emerald-400">{p.discount}% Off</span>
-                            </div>
-                            <h4 className="font-serif text-base font-bold text-white line-clamp-1">{p.name}</h4>
-                            <p className="text-xs text-zinc-400 line-clamp-2">{p.description}</p>
-                          </div>
-
-                          {/* Size Stock Badges */}
-                          <div className="mt-4 pt-3 border-t border-white/10">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                              Stock by Size
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {Object.entries(p.stock).map(([size, count]) => (
-                                <span
-                                  key={size}
-                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${
-                                    count <= 2
-                                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                                      : "bg-white/5 text-zinc-300 border border-white/10"
-                                  }`}
-                                >
-                                  {size}: {count}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price & Actions */}
-                        <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
+                {/* Product Catalog Grid (INDEPENDENTLY SCROLLABLE) */}
+                <div className="flex-1 overflow-y-auto admin-scroll pr-1 pb-16">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredProducts.map((p) => {
+                      const totalUnits = Object.values(p.stock).reduce((a, b) => a + b, 0)
+                      return (
+                        <div
+                          key={p.id}
+                          className="rounded-2xl border border-white/10 bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group hover:border-[#d4af37]/40 transition duration-200"
+                        >
                           <div>
-                            <span className="font-serif text-lg font-bold text-white">{formatINR(p.price)}</span>
-                            <span className="ml-2 text-xs text-zinc-500 line-through">{formatINR(p.mrp)}</span>
+                            <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3">
+                              <Image
+                                src={p.images[0]}
+                                alt={p.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <span className="absolute top-2.5 left-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#d4af37] border border-white/10">
+                                {p.category}
+                              </span>
+                              <span className="absolute top-2.5 right-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/10">
+                                {totalUnits} Units in Stock
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono text-zinc-400">{p.sku}</span>
+                                <span className="text-[10px] font-semibold text-emerald-400">{p.discount}% Off</span>
+                              </div>
+                              <h4 className="font-serif text-base font-bold text-white line-clamp-1">{p.name}</h4>
+                              <p className="text-xs text-zinc-400 line-clamp-2">{p.description}</p>
+                            </div>
+
+                            {/* Size Stock Badges */}
+                            <div className="mt-4 pt-3 border-t border-white/10">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                                Stock by Size
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {Object.entries(p.stock).map(([size, count]) => (
+                                  <span
+                                    key={size}
+                                    className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${
+                                      count <= 2
+                                        ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                        : "bg-white/5 text-zinc-300 border border-white/10"
+                                    }`}
+                                  >
+                                    {size}: {count}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/product/${p.slug}`}
-                              target="_blank"
-                              className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
-                              title="View on Store"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                            <button
-                              onClick={() => showToast(`Price & details for "${p.name}" are synced with database.`)}
-                              className="rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
-                            >
-                              Edit Shirt
-                            </button>
+                          {/* Price & Actions */}
+                          <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
+                            <div>
+                              <span className="font-serif text-lg font-bold text-white">{formatINR(p.price)}</span>
+                              <span className="ml-2 text-xs text-zinc-500 line-through">{formatINR(p.mrp)}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/product/${p.slug}`}
+                                target="_blank"
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
+                                title="View on Store"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Link>
+                              <button
+                                onClick={() => showToast(`Price & details for "${p.name}" are synced with database.`)}
+                                className="rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                              >
+                                Edit Shirt
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* ══════════════ TAB 3: ORDERS ══════════════ */}
             {activeTab === "Orders" && (
-              <div className="space-y-6">
-                {/* Search & Status Filter */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d] p-4">
+              <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
+                {/* Search & Status Filter Bar (STICKY / FIXED AT TOP) */}
+                <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
                   <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       type="text"
-                      placeholder="Search by order ID, patron, phone..."
+                      placeholder="Search by order ID, patron, phone, city..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-                    {["All", "Processing", "Confirmed", "Dispatched", "Delivered"].map((st) => (
+                  <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                    {[
+                      { name: "All", count: orderList.length },
+                      { name: "Pending Verification", count: orderList.filter((o) => o.status === "Pending Verification").length },
+                      { name: "Verified", count: orderList.filter((o) => o.status === "Verified").length },
+                      { name: "Assigned to Courier", count: orderList.filter((o) => o.status === "Assigned to Courier").length },
+                      { name: "Dispatched", count: orderList.filter((o) => o.status === "Dispatched").length },
+                      { name: "Delivered", count: orderList.filter((o) => o.status === "Delivered").length },
+                      { name: "Cancelled", count: orderList.filter((o) => o.status === "Cancelled").length },
+                    ].map((st) => (
                       <button
-                        key={st}
-                        onClick={() => setOrderStatusFilter(st)}
-                        className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition shrink-0 ${
-                          orderStatusFilter === st
-                            ? "bg-[#d4af37] text-black font-bold"
+                        key={st.name}
+                        onClick={() => setOrderStatusFilter(st.name)}
+                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
+                          orderStatusFilter === st.name
+                            ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
                             : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                       >
-                        {st}
+                        <span>{st.name}</span>
+                        <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                          orderStatusFilter === st.name ? "bg-black/20 text-black" : "bg-white/10 text-zinc-300"
+                        }`}>
+                          {st.count}
+                        </span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Orders Detailed Table */}
-                <div className="rounded-2xl border border-white/10 bg-[#14171d] shadow-xl overflow-hidden">
-                  <div className="overflow-x-auto">
+                {/* Bulk Actions Floating Toolbar (When orders are selected) */}
+                {selectedOrderIds.length > 0 && (
+                  <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d4af37]/40 bg-[#161a22] p-3.5 shadow-2xl animate-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4af37] font-bold text-black text-xs">
+                        {selectedOrderIds.length}
+                      </span>
+                      <span className="text-xs font-semibold text-white">
+                        {selectedOrderIds.length} {selectedOrderIds.length === 1 ? "order" : "orders"} selected for action
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={handleBulkVerify}
+                        className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition"
+                        title="Approve all selected pending orders"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Verify & Approve</span>
+                      </button>
+
+                      <button
+                        onClick={handleBulkAssignShiprocket}
+                        className="flex items-center gap-1.5 rounded-xl bg-[#d4af37] px-3.5 py-1.5 text-xs font-bold text-black hover:brightness-110 transition shadow"
+                        title="Generate Shiprocket AWBs for all selected orders"
+                      >
+                        <Truck className="h-3.5 w-3.5" />
+                        <span>Assign Shiprocket</span>
+                      </button>
+
+                      <button
+                        onClick={handleBulkCancel}
+                        className="flex items-center gap-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                        title="Cancel selected undispatched orders"
+                      >
+                        <Ban className="h-3.5 w-3.5" />
+                        <span>Bulk Cancel</span>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedOrderIds([])}
+                        className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition"
+                      >
+                        Deselect
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Orders Detailed Table (SCROLLABLE CONTAINER) */}
+                <div className="flex-1 rounded-2xl border border-white/10 bg-[#14171d] shadow-xl overflow-hidden flex flex-col">
+                  <div className="overflow-x-auto overflow-y-auto flex-1 admin-scroll">
                     <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-white/10 bg-white/[0.02] text-zinc-400 font-semibold tracking-wider uppercase text-[11px]">
-                          <th className="py-4 px-4">Order Details</th>
-                          <th className="py-4 px-4">Patron & Shipping</th>
-                          <th className="py-4 px-4">Shirt Item</th>
-                          <th className="py-4 px-4">Payment</th>
-                          <th className="py-4 px-4">Shiprocket AWB</th>
-                          <th className="py-4 px-4">Update Status</th>
+                      <thead className="sticky top-0 z-10 bg-[#121418] border-b border-white/10 text-zinc-400 font-semibold tracking-wider uppercase text-[11px]">
+                        <tr>
+                          <th className="py-3.5 px-3 w-10">
+                            <input
+                              type="checkbox"
+                              checked={
+                                filteredOrders.length > 0 &&
+                                filteredOrders.every((o) => selectedOrderIds.includes(o.id))
+                              }
+                              onChange={(e) => handleSelectAllOrders(e.target.checked)}
+                              className="h-4 w-4 rounded accent-[#d4af37] cursor-pointer"
+                              title="Select all visible orders"
+                            />
+                          </th>
+                          <th className="py-3.5 px-3">Order Details</th>
+                          <th className="py-3.5 px-3">Patron & Shipping</th>
+                          <th className="py-3.5 px-3">Shirt Item</th>
+                          <th className="py-3.5 px-3">Payment</th>
+                          <th className="py-3.5 px-3">Logistics Status</th>
+                          <th className="py-3.5 px-3 text-right">Fulfillment Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {filteredOrders.map((ord) => (
-                          <tr key={ord.id} className="hover:bg-white/[0.02] transition">
-                            <td className="py-4 px-4">
-                              <p className="font-mono text-sm font-bold text-[#d4af37]">{ord.id}</p>
-                              <p className="text-[11px] text-zinc-400 mt-0.5">{ord.date}</p>
-                              <p className="font-mono text-xs font-semibold text-white mt-2">{formatINR(ord.total)}</p>
-                            </td>
+                        {filteredOrders.map((ord) => {
+                          const isSelected = selectedOrderIds.includes(ord.id)
+                          return (
+                            <tr
+                              key={ord.id}
+                              className={`transition ${
+                                isSelected ? "bg-[#d4af37]/5" : "hover:bg-white/[0.02]"
+                              }`}
+                            >
+                              {/* Checkbox */}
+                              <td className="py-3.5 px-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleSelectOrder(ord.id)}
+                                  className="h-4 w-4 rounded accent-[#d4af37] cursor-pointer"
+                                />
+                              </td>
 
-                            <td className="py-4 px-4">
-                              <p className="font-semibold text-white text-sm">{ord.customer}</p>
-                              <p className="text-zinc-400 text-xs">{ord.phone}</p>
-                              <p className="text-zinc-400 text-xs mt-1 flex items-center gap-1">
-                                <MapPin className="h-3 w-3 text-[#d4af37]" />
-                                {ord.city} (PIN: {ord.pincode})
-                              </p>
-                            </td>
+                              {/* Order & Date */}
+                              <td className="py-3.5 px-3">
+                                <button
+                                  onClick={() => setInspectOrderModal(ord)}
+                                  className="font-mono text-sm font-bold text-[#d4af37] hover:underline flex items-center gap-1"
+                                >
+                                  {ord.id}
+                                </button>
+                                <p className="text-[11px] text-zinc-400 mt-0.5">{ord.date}</p>
+                                <p className="font-mono text-xs font-semibold text-white mt-1.5">{formatINR(ord.total)}</p>
+                              </td>
 
-                            <td className="py-4 px-4">
-                              <p className="text-white font-semibold line-clamp-1">{ord.shirtName}</p>
-                              <p className="text-[11px] text-zinc-400 font-mono mt-0.5">{ord.sku}</p>
-                              <div className="mt-1 flex items-center gap-2">
-                                <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-zinc-200">
-                                  Size: {ord.size}
+                              {/* Customer & Address */}
+                              <td className="py-3.5 px-3 max-w-[220px]">
+                                <p className="font-semibold text-white text-xs">{ord.customer}</p>
+                                <p className="text-zinc-400 text-[11px]">{ord.phone}</p>
+                                <p className="text-zinc-300 text-[11px] mt-1 line-clamp-1" title={ord.address}>
+                                  {ord.address}
+                                </p>
+                                <p className="text-zinc-400 text-[10px] flex items-center gap-1 mt-0.5">
+                                  <MapPin className="h-3 w-3 text-[#d4af37] shrink-0" />
+                                  <span>{ord.city} (PIN {ord.pincode})</span>
+                                </p>
+                              </td>
+
+                              {/* Product Item with Thumbnail */}
+                              <td className="py-3.5 px-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
+                                    <Image
+                                      src={ord.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                                      alt={ord.shirtName}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-white font-semibold text-xs truncate max-w-[170px]" title={ord.shirtName}>
+                                      {ord.shirtName}
+                                    </p>
+                                    <p className="text-[10px] text-zinc-400 font-mono">{ord.sku}</p>
+                                    <div className="mt-0.5 flex items-center gap-1.5">
+                                      <span className="rounded bg-white/10 px-1.5 py-0.2 text-[9px] font-mono text-zinc-200">
+                                        Size: {ord.size}
+                                      </span>
+                                      <span className="text-[9px] text-zinc-400">Qty: {ord.qty}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Payment */}
+                              <td className="py-3.5 px-3">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                    ord.paymentStatus === "Paid"
+                                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                  }`}
+                                >
+                                  <CheckCircle2 className="h-2.5 w-2.5" />
+                                  {ord.paymentStatus}
                                 </span>
-                                <span className="text-[10px] text-zinc-400">Qty: {ord.qty}</span>
-                              </div>
-                            </td>
+                                <p className="text-[10px] text-zinc-400 mt-1">{ord.paymentMethod}</p>
+                                <p className="text-[9px] font-mono text-zinc-500">{ord.paymentId}</p>
+                              </td>
 
-                            <td className="py-4 px-4">
-                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                <CheckCircle2 className="h-3 w-3" />
-                                {ord.paymentStatus}
-                              </span>
-                              <p className="text-[10px] text-zinc-400 mt-1">{ord.paymentMethod}</p>
-                              <p className="text-[9px] font-mono text-zinc-500">{ord.paymentId}</p>
-                            </td>
+                              {/* Status & Logistics */}
+                              <td className="py-3.5 px-3">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                    ord.status === "Delivered"
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                      : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                      : ord.status === "Verified"
+                                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                      : ord.status === "Cancelled"
+                                      ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                      : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                  }`}
+                                >
+                                  {ord.status}
+                                </span>
 
-                            <td className="py-4 px-4">
-                              <p className="font-semibold text-zinc-200">{ord.courier}</p>
-                              <p className="text-[10px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
-                              <button
-                                onClick={() => showToast(`Tracking AWB #${ord.awb} via Shiprocket API... (In Transit)`)}
-                                className="mt-1 text-[10px] font-bold text-blue-400 hover:underline"
-                              >
-                                Track Package &rarr;
-                              </button>
-                            </td>
+                                {ord.awb && (
+                                  <div className="mt-1.5 space-y-0.5">
+                                    <p className="text-[10px] font-semibold text-zinc-300">{ord.courier}</p>
+                                    <p className="text-[9px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
+                                  </div>
+                                )}
 
-                            <td className="py-4 px-4">
-                              <select
-                                value={ord.status}
-                                onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
-                                className="rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-1.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
-                              >
-                                <option value="Confirmed">Confirmed</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Dispatched">Dispatched</option>
-                                <option value="Delivered">Delivered</option>
-                                <option value="Cancelled">Cancelled</option>
-                              </select>
-                            </td>
-                          </tr>
-                        ))}
+                                {ord.cancelReason && (
+                                  <p className="text-[10px] text-rose-400 mt-1 line-clamp-1 italic">
+                                    {ord.cancelReason}
+                                  </p>
+                                )}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3.5 px-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {/* Step 1: Admin Verification Button */}
+                                  {ord.status === "Pending Verification" && (
+                                    <button
+                                      onClick={() => handleVerifyOrder(ord.id)}
+                                      className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition"
+                                      title="Verify patron details and approve order"
+                                    >
+                                      Verify
+                                    </button>
+                                  )}
+
+                                  {/* Step 2: Assign to Shiprocket Button */}
+                                  {(ord.status === "Verified" || ord.status === "Pending Verification") && (
+                                    <button
+                                      onClick={() => setAssignCourierModal(ord)}
+                                      className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1"
+                                      title="Assign Shiprocket Courier and generate AWB"
+                                    >
+                                      <Truck className="h-3 w-3" />
+                                      <span>Ship</span>
+                                    </button>
+                                  )}
+
+                                  {/* Cancellation button (allowed ONLY before courier handover) */}
+                                  {ord.status !== "Assigned to Courier" &&
+                                    ord.status !== "Dispatched" &&
+                                    ord.status !== "Delivered" &&
+                                    ord.status !== "Cancelled" && (
+                                      <button
+                                        onClick={() => setCancelOrderModal(ord)}
+                                        className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                                        title="Cancel order before courier pickup"
+                                      >
+                                        Cancel
+                                      </button>
+                                    )}
+
+                                  {/* Tracking button if assigned */}
+                                  {ord.awb && (
+                                    <button
+                                      onClick={() => showToast(`Tracking AWB #${ord.awb} via Shiprocket API (In Transit)`)}
+                                      className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition"
+                                      title="Track shipment"
+                                    >
+                                      Track
+                                    </button>
+                                  )}
+
+                                  {/* Inspect Order Details */}
+                                  <button
+                                    onClick={() => setInspectOrderModal(ord)}
+                                    className="rounded-lg border border-white/10 bg-white/5 p-1 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+                                    title="View complete address and product items"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1625,6 +2224,333 @@ export function AdminView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: INSPECT FULL ORDER DETAILS ── */}
+      {inspectOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-6">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h3 className="font-serif text-xl font-bold text-white">Order #{inspectOrderModal.id}</h3>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      inspectOrderModal.status === "Delivered"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : inspectOrderModal.status === "Assigned to Courier" || inspectOrderModal.status === "Dispatched"
+                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                        : inspectOrderModal.status === "Verified"
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                        : inspectOrderModal.status === "Cancelled"
+                        ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    }`}
+                  >
+                    {inspectOrderModal.status}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-1">Placed on {inspectOrderModal.date} • Luxury Micro-Batch Fulfillment</p>
+              </div>
+              <button
+                onClick={() => setInspectOrderModal(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-white hover:bg-white/5 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Customer & Complete Shipping Address */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Patron Details</p>
+                <p className="text-sm font-bold text-white">{inspectOrderModal.customer}</p>
+                <p className="text-xs text-zinc-300 flex items-center gap-1.5">
+                  <Phone className="h-3 w-3 text-[#d4af37]" />
+                  <a href={`tel:${inspectOrderModal.phone}`} className="hover:underline">{inspectOrderModal.phone}</a>
+                </p>
+                <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+                  <Mail className="h-3 w-3 text-zinc-400" />
+                  <a href={`mailto:${inspectOrderModal.email}`} className="hover:underline">{inspectOrderModal.email}</a>
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Delivery Address</p>
+                <p className="text-xs text-zinc-200 leading-relaxed font-medium">
+                  {inspectOrderModal.address}
+                </p>
+                <p className="text-xs text-white font-semibold flex items-center gap-1.5 mt-1">
+                  <MapPin className="h-3.5 w-3.5 text-[#d4af37]" />
+                  {inspectOrderModal.city} — PIN {inspectOrderModal.pincode}
+                </p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                  <CheckCircle2 className="h-2.5 w-2.5" />
+                  Shiprocket Serviceable PIN
+                </span>
+              </div>
+            </div>
+
+            {/* Product Items Breakdown */}
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Ordered Shirt Item</p>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
+                    <Image
+                      src={inspectOrderModal.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                      alt={inspectOrderModal.shirtName}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-serif text-sm font-bold text-white">{inspectOrderModal.shirtName}</p>
+                    <p className="text-[10px] font-mono text-zinc-400">SKU: {inspectOrderModal.sku}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-zinc-200">
+                        Size: {inspectOrderModal.size}
+                      </span>
+                      <span className="text-[10px] text-zinc-400">Qty: {inspectOrderModal.qty}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-serif text-base font-bold text-white">{formatINR(inspectOrderModal.total)}</p>
+                  <p className="text-[10px] text-zinc-400">{inspectOrderModal.qty} × {formatINR(inspectOrderModal.price)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment & Shiprocket Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Payment Information</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-300">{inspectOrderModal.paymentMethod}</span>
+                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                    {inspectOrderModal.paymentStatus}
+                  </span>
+                </div>
+                <p className="text-[10px] font-mono text-zinc-500 mt-1">ID: {inspectOrderModal.paymentId}</p>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Shiprocket Logistics</p>
+                {inspectOrderModal.awb ? (
+                  <div>
+                    <p className="text-xs font-bold text-white">{inspectOrderModal.courier}</p>
+                    <p className="text-[10px] font-mono text-[#d4af37]">AWB: {inspectOrderModal.awb}</p>
+                    <p className="text-[10px] text-emerald-400 font-semibold mt-1">Pickup Scheduled & Tracking Active</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      No Courier Assigned Yet
+                    </p>
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {inspectOrderModal.status === "Pending Verification"
+                        ? "Requires Admin verification before shipping."
+                        : "Verified & ready to assign courier."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center gap-2">
+                {inspectOrderModal.status === "Pending Verification" && (
+                  <button
+                    onClick={() => handleVerifyOrder(inspectOrderModal.id)}
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Verify & Approve</span>
+                  </button>
+                )}
+
+                {(inspectOrderModal.status === "Verified" || inspectOrderModal.status === "Pending Verification") && (
+                  <button
+                    onClick={() => {
+                      setAssignCourierModal(inspectOrderModal)
+                      setInspectOrderModal(null)
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-500 shadow-lg"
+                  >
+                    <Truck className="h-3.5 w-3.5" />
+                    <span>Assign Shiprocket</span>
+                  </button>
+                )}
+
+                {inspectOrderModal.status !== "Assigned to Courier" &&
+                  inspectOrderModal.status !== "Dispatched" &&
+                  inspectOrderModal.status !== "Delivered" &&
+                  inspectOrderModal.status !== "Cancelled" && (
+                    <button
+                      onClick={() => {
+                        setCancelOrderModal(inspectOrderModal)
+                        setInspectOrderModal(null)
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                      <span>Cancel Order</span>
+                    </button>
+                  )}
+              </div>
+
+              <button
+                onClick={() => {
+                  showToast(`Generating packing slip for Order #${inspectOrderModal.id}...`)
+                  window.print()
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-white/10 hover:text-white"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Print Slip</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ASSIGN SHIPROCKET COURIER ── */}
+      {assignCourierModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-white">Assign Shiprocket Courier</h3>
+                <p className="text-xs text-zinc-400">Order #{assignCourierModal.id} • {assignCourierModal.customer}</p>
+              </div>
+              <button
+                onClick={() => setAssignCourierModal(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-300">
+                Select courier service for destination PIN <strong className="text-[#d4af37]">{assignCourierModal.pincode}</strong> ({assignCourierModal.city}):
+              </p>
+
+              {[
+                { name: "BlueDart Express Air", sla: "Next Day Air (24-48 hrs)", rate: "₹95", rec: true },
+                { name: "Delhivery Surface Express", sla: "2-3 Business Days", rate: "₹49", rec: false },
+                { name: "DTDC Pan-India Air", sla: "3-4 Business Days", rate: "₹55", rec: false },
+              ].map((c) => (
+                <label
+                  key={c.name}
+                  onClick={() => setSelectedCourierName(c.name)}
+                  className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
+                    selectedCourierName === c.name
+                      ? "border-[#d4af37] bg-[#d4af37]/10"
+                      : "border-white/10 bg-white/5 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="courier"
+                      checked={selectedCourierName === c.name}
+                      onChange={() => setSelectedCourierName(c.name)}
+                      className="accent-[#d4af37]"
+                    />
+                    <div>
+                      <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                        {c.name}
+                        {c.rec && <span className="rounded-full bg-[#d4af37]/20 text-[#d4af37] px-2 py-0.5 text-[9px] font-bold">Recommended</span>}
+                      </p>
+                      <p className="text-[10px] text-zinc-400">{c.sla}</p>
+                    </div>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-emerald-400">{c.rate}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-3 text-[11px] text-zinc-400 space-y-1">
+              <p className="font-semibold text-zinc-300">Origin Warehouse:</p>
+              <p>Gayatri Bhai Atelier Hub #1, Surat/Mumbai Central Warehouse</p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                onClick={() => setAssignCourierModal(null)}
+                className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAssignCourier}
+                className="rounded-xl bg-[#d4af37] px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg"
+              >
+                Generate AWB & Book
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CANCEL ORDER ── */}
+      {cancelOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-[#14171d] p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2 text-rose-400">
+                <Ban className="h-5 w-5" />
+                <h3 className="font-serif text-lg font-bold text-white">Cancel Order #{cancelOrderModal.id}</h3>
+              </div>
+              <button
+                onClick={() => setCancelOrderModal(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300">
+              Are you sure you want to cancel order for <strong className="text-white">{cancelOrderModal.customer}</strong>?
+              This order has not been dispatched yet and will be safely marked as Cancelled.
+            </p>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Reason for Cancellation</label>
+              <select
+                value={cancelReasonText}
+                onChange={(e) => setCancelReasonText(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+              >
+                <option value="Patron requested cancellation">Patron requested cancellation</option>
+                <option value="Delivery address incomplete / undeliverable">Delivery address incomplete / undeliverable</option>
+                <option value="Patron requested size/color change before dispatch">Patron requested size/color change before dispatch</option>
+                <option value="Item failed pre-dispatch quality audit">Item failed pre-dispatch quality audit</option>
+                <option value="Suspected fraudulent order / unverified COD">Suspected fraudulent order / unverified COD</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                onClick={() => setCancelOrderModal(null)}
+                className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={handleConfirmCancelOrder}
+                className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-500 shadow-lg"
+              >
+                Confirm Cancellation
+              </button>
+            </div>
           </div>
         </div>
       )}
