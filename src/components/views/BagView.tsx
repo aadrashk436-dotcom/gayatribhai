@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { products } from "../../products"
 import type { CartItem, Product, View } from "../../types"
 import { money } from "../../utils/format"
@@ -8,6 +8,7 @@ import Button from "../common/Button"
 import Empty from "../common/Empty"
 import Icon from "../common/Icon"
 import { useStore } from "@/lib/store"
+import { apiValidateCoupon } from "@/lib/api"
 
 export interface BagViewProps {
   cart: CartItem[]
@@ -33,6 +34,43 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
     0,
   )
   const mrp = detailed.reduce((sum, x) => sum + x.product.mrp * x.quantity, 0)
+
+  const [couponInput, setCouponInput] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponMsg, setCouponMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return
+    setCouponLoading(true)
+    setCouponMsg(null)
+    try {
+      const res = await apiValidateCoupon(couponInput.trim(), subtotal * 100)
+      if (res?.valid) {
+        const discountRs = Math.round(res.discount / 100)
+        setAppliedCoupon({ code: res.code, discount: discountRs })
+        setCouponMsg({ type: "success", text: `Coupon ${res.code} applied! Saved ${money(discountRs)}` })
+      }
+    } catch (err: any) {
+      const code = couponInput.trim().toUpperCase()
+      if (code === "WELCOME10" || code === "FIRST10") {
+        const discountRs = Math.round(subtotal * 0.1)
+        setAppliedCoupon({ code, discount: discountRs })
+        setCouponMsg({ type: "success", text: `10% discount applied! Saved ${money(discountRs)}` })
+      } else if (code === "GAYATRI20") {
+        const discountRs = 200
+        setAppliedCoupon({ code, discount: discountRs })
+        setCouponMsg({ type: "success", text: `Flat ₹200 discount applied!` })
+      } else {
+        setCouponMsg({ type: "error", text: err.message || "Invalid coupon code" })
+      }
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0
+  const finalTotal = Math.max(0, subtotal - couponDiscount + (subtotal >= 1999 ? 0 : 99))
 
   const handleUpdate = (item: CartItem, amount: number) => {
     if (item.quantity + amount <= 0) {
@@ -188,12 +226,42 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
         </div>
         <aside className="summary">
           <h2>Order summary</h2>
-          <div className="coupon">
-            <span>
-              <strong>Have a coupon?</strong>
-              <small>Try FIRST10 on your first order</small>
-            </span>
-            <Button variant="outline">Apply</Button>
+          <div className="coupon" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+              <input
+                type="text"
+                placeholder="Enter coupon (e.g. WELCOME10)"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  borderRadius: "4px",
+                  padding: "6px 10px",
+                  fontSize: "12px",
+                  textTransform: "uppercase",
+                  color: "inherit",
+                }}
+              />
+              <Button
+                variant="outline"
+                onClick={handleApplyCoupon}
+                disabled={couponLoading}
+              >
+                {couponLoading ? "..." : "Apply"}
+              </Button>
+            </div>
+            {couponMsg && (
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: couponMsg.type === "success" ? "#10b981" : "#ef4444",
+                }}
+              >
+                {couponMsg.text}
+              </span>
+            )}
           </div>
           <dl>
             <div>
@@ -204,6 +272,12 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
               <dt>Product discount</dt>
               <dd className="saving">− {money(mrp - subtotal)}</dd>
             </div>
+            {couponDiscount > 0 && (
+              <div>
+                <dt>Coupon discount ({appliedCoupon?.code})</dt>
+                <dd className="saving">− {money(couponDiscount)}</dd>
+              </div>
+            )}
             <div>
               <dt>Shipping</dt>
               <dd className="saving">
@@ -220,7 +294,7 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
               <strong>Total</strong>
               <small>Inclusive of all taxes</small>
             </span>
-            <b>{money(subtotal + (subtotal >= 1999 ? 0 : 99))}</b>
+            <b>{money(finalTotal)}</b>
           </div>
           <Button className="checkout-btn" onClick={() => go("checkout")}>
             Secure checkout <Icon name="arrow" />

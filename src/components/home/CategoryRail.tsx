@@ -22,9 +22,8 @@ export default function CategoryRail() {
           <Link
             key={cat.name}
             href="/shop"
-            className={`group relative block w-[72%] shrink-0 snap-start overflow-hidden rounded-sm bg-surface-2 sm:w-[44%] md:w-auto ${
-              i % 2 === 1 ? "md:mt-16" : ""
-            }`}
+            className={`group relative block w-[72%] shrink-0 snap-start overflow-hidden rounded-sm bg-surface-2 sm:w-[44%] md:w-auto ${i % 2 === 1 ? "md:mt-16" : ""
+              }`}
           >
             <div className="relative aspect-[2/3]">
               <Image

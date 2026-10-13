@@ -11,7 +11,10 @@ __v0_jsx-dev-runtime.ts
 .env*.local
 
 # Common ignores
-node_modules
+node_modules/
+**/node_modules/
+dist/
+**/dist/
 .next/
 .DS_Store
 AGENTS.md

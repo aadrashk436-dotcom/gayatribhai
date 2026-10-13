@@ -186,9 +186,30 @@ export function AdminView() {
             <span className="eyebrow">Store Dashboard</span>
             <h1>{tab}</h1>
           </div>
-          <Button>
-            <Icon name="plus" /> Add shirt
-          </Button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <a
+              href="http://localhost:5173"
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                background: "#d4af37",
+                color: "#000",
+                padding: "8px 14px",
+                borderRadius: "6px",
+                fontWeight: 600,
+                fontSize: "12px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              ⚡ Launch Dedicated Admin Panel (Port 5173)
+            </a>
+            <Button>
+              <Icon name="plus" /> Add shirt
+            </Button>
+          </div>
         </div>
         {tab === "Overview" ? <Dashboard /> : <AdminTable tab={tab} />}
       </main>

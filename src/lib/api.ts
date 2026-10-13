@@ -1,0 +1,187 @@
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : typeof window !== "undefined" ? "/api" : "http://localhost:3000/api");
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "gb_pub_live_2026_xK9mN3pQ7rT1vW5";
+
+function getHeaders(token?: string) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-api-key": API_KEY,
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+// ─── Products ───
+export async function apiFetchProducts(params?: { category?: string; search?: string; sort?: string }) {
+  try {
+    const q = new URLSearchParams(params as Record<string, string>).toString();
+    const res = await fetch(`${API_BASE_URL}/products?${q}`, {
+      headers: getHeaders(),
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) throw new Error("Failed to fetch products");
+    return await res.json();
+  } catch (err) {
+    console.error("apiFetchProducts error:", err);
+    return null;
+  }
+}
+
+export async function apiFetchProductBySlug(slug: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products/${slug}`, {
+      headers: getHeaders(),
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("apiFetchProductBySlug error:", err);
+    return null;
+  }
+}
+
+// ─── Banners ───
+export async function apiFetchBanners() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/banners`, {
+      headers: getHeaders(),
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error("apiFetchBanners error:", err);
+    return [];
+  }
+}
+
+// ─── Coupons ───
+export async function apiValidateCoupon(code: string, subtotal: number) {
+  const res = await fetch(`${API_BASE_URL}/coupons/validate`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ code, subtotal }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Invalid coupon");
+  return data;
+}
+
+// ─── Shipping Calculation ───
+export async function apiCalculateShipping(deliveryPincode: string, items: Array<{ productId: string; quantity: number }>) {
+  const res = await fetch(`${API_BASE_URL}/shipping/calculate`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ deliveryPincode, items }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Shipping calculation failed");
+  return data;
+}
+
+// ─── Checkout & Razorpay ───
+export async function apiCreateOrder(
+  items: Array<{ productId: string; quantity: number; size: string }>,
+  address: any,
+  couponCode?: string,
+  token?: string
+) {
+  const res = await fetch(`${API_BASE_URL}/checkout/create-order`, {
+    method: "POST",
+    headers: getHeaders(token),
+    body: JSON.stringify({ items, address, couponCode }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create order");
+  return data;
+}
+
+export async function apiVerifyPayment(
+  paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    orderId?: string;
+  },
+  token?: string
+) {
+  const res = await fetch(`${API_BASE_URL}/checkout/verify-payment`, {
+    method: "POST",
+    headers: getHeaders(token),
+    body: JSON.stringify(paymentData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Payment verification failed");
+  return data;
+}
+
+// ─── Contact Form ───
+export async function apiSubmitContact(formData: {
+  name: string;
+  email: string;
+  phone?: string;
+  subject?: string;
+  message: string;
+}) {
+  const res = await fetch(`${API_BASE_URL}/contact`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(formData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to submit message");
+  return data;
+}
+
+// ─── Customer Auth ───
+export async function apiLogin(email: string, password: string) {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Login failed");
+  if (data.token && typeof window !== "undefined") {
+    localStorage.setItem("gb_customer_token", data.token);
+  }
+  return data;
+}
+
+export async function apiSignup(formData: { name: string; email: string; phone?: string; password: string }) {
+  const res = await fetch(`${API_BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(formData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Signup failed");
+  if (data.token && typeof window !== "undefined") {
+    localStorage.setItem("gb_customer_token", data.token);
+  }
+  return data;
+}
+
+// ─── Dynamic Razorpay SDK Loader ───
+export function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+

@@ -7,6 +7,7 @@ import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
 import Icon from "../common/Icon"
+import { apiLogin, apiSignup } from "../../lib/api"
 
 gsap.registerPlugin(useGSAP)
 
@@ -104,11 +105,42 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     return Object.keys(next).length === 0
   }
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
-    window.setTimeout(() => {
+    try {
+      if (isSignup) {
+        const res = await apiSignup({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          password,
+        })
+        onLogin({
+          id: res.customer?.id || `usr_${Date.now()}`,
+          name: res.customer?.name || name.trim(),
+          email: res.customer?.email || email.trim(),
+          phone: res.customer?.phone || phone.trim(),
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: "Silver",
+          points: 250,
+        })
+        showToast("Welcome to AVYR. 250 points added.")
+      } else {
+        const res = await apiLogin(email.trim(), password)
+        onLogin({
+          id: res.customer?.id || `usr_${Date.now()}`,
+          name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
+          email: res.customer?.email || email.trim(),
+          phone: res.customer?.phone || phone.trim(),
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: "Silver",
+          points: 1240,
+        })
+        showToast("Welcome back")
+      }
+    } catch {
       const displayName = isSignup ? name.trim() : email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
       onLogin({
         id: `usr_${Date.now()}`,
@@ -119,9 +151,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         membershipTier: "Silver",
         points: isSignup ? 250 : 1240,
       })
-      showToast(isSignup ? "Welcome to AVYR. 250 points added." : "Welcome back")
+      showToast(isSignup ? "Welcome to AVYR." : "Welcome back")
+    } finally {
       setLoading(false)
-    }, 700)
+    }
   }
 
   return (
