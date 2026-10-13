@@ -115,12 +115,31 @@ export default function HeroSlider() {
   const root = useRef<HTMLElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const barEls = useRef<(HTMLSpanElement | null)[]>([])
+  const [slides, setSlides] = useState<Slide[]>(SLIDES)
   const [active, setActive] = useState(0)
   const activeRef = useRef(0)
   const busy = useRef(false)
   const progress = useRef<gsap.core.Tween | null>(null)
   const paused = useRef(false)
   const pointerStart = useRef<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    fetch("/api/banners")
+      .then((r) => r.json())
+      .then((data) => {
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          const activeOnly = data.filter((b: any) => b.is_active !== false)
+          if (activeOnly.length > 0) {
+            setSlides(activeOnly)
+          }
+        }
+      })
+      .catch(() => {})
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const startProgress = useCallback((index: number) => {
     progress.current?.kill()
@@ -133,11 +152,11 @@ export default function HeroSlider() {
       scaleX: 1,
       duration: AUTOPLAY,
       ease: "none",
-      onComplete: () => goTo((activeRef.current + 1) % SLIDES.length, 1),
+      onComplete: () => goTo((activeRef.current + 1) % slides.length, 1),
     })
     if (paused.current) progress.current.pause()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [slides.length])
 
   const goTo = useCallback(
     (next: number, dir: 1 | -1) => {
@@ -257,8 +276,8 @@ export default function HeroSlider() {
     }
   }, [])
 
-  const next = () => goTo((activeRef.current + 1) % SLIDES.length, 1)
-  const prev = () => goTo((activeRef.current - 1 + SLIDES.length) % SLIDES.length, -1)
+  const next = () => goTo((activeRef.current + 1) % slides.length, 1)
+  const prev = () => goTo((activeRef.current - 1 + slides.length) % slides.length, -1)
 
   const setPaused = (value: boolean) => {
     paused.current = value
@@ -281,8 +300,8 @@ export default function HeroSlider() {
     }
   }
 
-  const upcoming = SLIDES[(active + 1) % SLIDES.length]
-  const isDarkTone = SLIDES[active].tone === "dark"
+  const upcoming = slides[(active + 1) % slides.length] || slides[0]
+  const isDarkTone = slides[active]?.tone === "dark"
 
   return (
     <section
@@ -296,7 +315,7 @@ export default function HeroSlider() {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="hero-stage absolute inset-0">
-        {SLIDES.map((slide, i) => (
+        {slides.map((slide, i) => (
           <div
             key={slide.id}
             ref={(el) => {
@@ -306,7 +325,7 @@ export default function HeroSlider() {
             style={{ zIndex: i === 0 ? 2 : 1, visibility: i === 0 ? "visible" : "hidden" }}
             role="group"
             aria-roledescription="slide"
-            aria-label={`${i + 1} of ${SLIDES.length}`}
+            aria-label={`${i + 1} of ${slides.length}`}
             aria-hidden={i !== active}
           >
             <SlidePicture slide={slide} priority={i === 0} />
@@ -335,7 +354,7 @@ export default function HeroSlider() {
                 <div className="mt-6 overflow-hidden md:mt-9">
                   <div className="hero-reveal">
                     <Link
-                      href="/shop"
+                      href={slide.desktopPos || "/shop"}
                       className={`group inline-flex h-11 items-center gap-2.5 rounded-full px-6 text-xs font-semibold uppercase tracking-[0.14em] transition-colors md:h-14 md:px-9 md:text-[13px] md:gap-3 ${
                         slide.tone === "dark"
                           ? "bg-[#1a1410] text-white hover:bg-black"
@@ -369,7 +388,7 @@ export default function HeroSlider() {
           isDarkTone ? "text-[#1a1410]" : "text-white"
         }`}
       >
-        {SLIDES.map((slide, i) => (
+        {slides.map((slide, i) => (
           <button
             key={slide.id}
             type="button"
@@ -397,7 +416,7 @@ export default function HeroSlider() {
         aria-live="polite"
       >
         <span className="text-2xl md:text-3xl">{String(active + 1).padStart(2, "0")}</span>
-        <span className="opacity-60">{` / ${String(SLIDES.length).padStart(2, "0")}`}</span>
+        <span className="opacity-60">{` / ${String(slides.length).padStart(2, "0")}`}</span>
       </div>
 
       <div className="hero-ui absolute bottom-12 right-36 z-20 hidden items-center gap-3 md:flex lg:right-40">
@@ -438,7 +457,7 @@ export default function HeroSlider() {
         aria-label={`Next: ${upcoming.kicker}`}
       >
         <span className="relative block aspect-[3/4] overflow-hidden">
-          {SLIDES.map((slide) => (
+          {slides.map((slide) => (
             <img
               key={slide.id}
               src={getImageProps({ src: slide.mobile, width: 768, height: 1376, alt: "", sizes: "220px", quality: 60 }).props.src}

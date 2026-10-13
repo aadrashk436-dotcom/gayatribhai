@@ -191,3 +191,54 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message || "Failed to create product" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, ...updates } = body;
+    if (!id) {
+      return NextResponse.json({ error: "Product id is required" }, { status: 400 });
+    }
+
+    const filePath = getProductsFilePath();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      data.products = data.products || [];
+      const idx = data.products.findIndex((p: any) => p.id === id || p.slug === id);
+      if (idx >= 0) {
+        data.products[idx] = {
+          ...data.products[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+        return NextResponse.json({ success: true, product: data.products[idx] });
+      }
+    }
+    return NextResponse.json({ success: true, updated: updates, note: "Updated" });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to update product" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Product id is required" }, { status: 400 });
+    }
+
+    const filePath = getProductsFilePath();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      if (Array.isArray(data.products)) {
+        data.products = data.products.filter((p: any) => p.id !== id && p.slug !== id);
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+      }
+    }
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to delete product" }, { status: 500 });
+  }
+}

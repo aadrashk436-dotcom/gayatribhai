@@ -17,6 +17,7 @@ export type Product = {
   reviews: number
   badge: string
   stock: Record<string, number>
+  is_visible?: boolean
 }
 
 export const products: Product[] = [

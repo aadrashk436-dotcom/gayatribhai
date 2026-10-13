@@ -43,6 +43,9 @@ import {
   Send,
   Printer,
   Upload,
+  EyeOff,
+  Monitor,
+  Smartphone,
 } from "lucide-react"
 import { products as initialProducts, Product } from "@/lib/products"
 
@@ -405,6 +408,78 @@ export function AdminView() {
   const [selectedCourierName, setSelectedCourierName] = useState<string>("BlueDart Express Air")
   const [cancelOrderModal, setCancelOrderModal] = useState<AdminOrder | null>(null)
   const [cancelReasonText, setCancelReasonText] = useState<string>("Patron requested cancellation")
+
+  // Product Edit & Delete states
+  const [editProductModal, setEditProductModal] = useState<Product | null>(null)
+  const [deleteProductModal, setDeleteProductModal] = useState<Product | null>(null)
+  const [editPhotoCustomUrl, setEditPhotoCustomUrl] = useState("")
+
+  // Homepage Hero Slider Banners state
+  const [bannerList, setBannerList] = useState<any[]>([
+    {
+      id: "atelier",
+      kicker: "Summer Atelier '26",
+      lines: ["Woven", "by hand."],
+      cta: "Shop linen",
+      desktop: "/assets/site_banners/slide1_desktop.jpg",
+      mobile: "/assets/site_banners/slide1_mobile.jpg",
+      alt: "Ivory linen shirt on Aegean terrace",
+      tone: "light",
+      link: "/shop",
+      is_active: true,
+      sort_order: 1,
+    },
+    {
+      id: "resort",
+      kicker: "The Resort Edit",
+      lines: ["Coastal", "state."],
+      cta: "Shop resort",
+      desktop: "/assets/site_banners/slide2_desktop.jpg",
+      mobile: "/assets/site_banners/slide2_mobile.jpg",
+      alt: "Sky-blue Cuban collar linen shirt",
+      tone: "light",
+      link: "/shop",
+      is_active: true,
+      sort_order: 2,
+    },
+    {
+      id: "studio",
+      kicker: "New Arrivals",
+      lines: ["Rust &", "ease."],
+      cta: "Shop new in",
+      desktop: "/assets/banners/hero-terracotta-widescreen.jpg",
+      mobile: "/assets/banners/hero-studio-mobile.jpg",
+      alt: "Terracotta embroidered linen shirt",
+      tone: "light",
+      link: "/shop",
+      is_active: true,
+      sort_order: 3,
+    },
+    {
+      id: "evening",
+      kicker: "After Dark",
+      lines: ["Evening", "tailoring."],
+      cta: "Shop evening",
+      desktop: "/assets/banners/hero-evening-desktop.jpg",
+      mobile: "/assets/site_banners/slide3_mobile.jpg",
+      alt: "Navy embroidered shirt",
+      tone: "light",
+      link: "/shop",
+      is_active: true,
+      sort_order: 4,
+    },
+  ])
+  const [showBannerModal, setShowBannerModal] = useState(false)
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null)
+  const [bannerKicker, setBannerKicker] = useState("Summer Atelier '26")
+  const [bannerLine1, setBannerLine1] = useState("Woven")
+  const [bannerLine2, setBannerLine2] = useState("by hand.")
+  const [bannerCta, setBannerCta] = useState("Shop linen")
+  const [bannerDesktopImg, setBannerDesktopImg] = useState("/assets/site_banners/slide1_desktop.jpg")
+  const [bannerMobileImg, setMobileBannerImg] = useState("/assets/site_banners/slide1_mobile.jpg")
+  const [bannerLink, setBannerLink] = useState("/shop")
+  const [bannerTone, setBannerTone] = useState<"light" | "dark">("light")
+  const [bannerActive, setBannerActive] = useState(true)
 
   // Multi-select state for bulk order actions
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
@@ -912,6 +987,242 @@ export function AdminView() {
     } catch (err) {
       console.warn("Could not sync product with API:", err)
     }
+  }
+
+  // ── PRODUCT EDIT, HIDE & DELETE HANDLERS ──
+  const handleToggleProductVisibility = async (product: Product) => {
+    const newVisibility = product.is_visible === false ? true : false
+    setProductList((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, is_visible: newVisibility } : p))
+    )
+    showToast(
+      newVisibility
+        ? `"${product.name}" is now visible on storefront!`
+        : `"${product.name}" hidden from customer storefront (Draft)`
+    )
+    try {
+      await fetch("/api/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: product.id, is_visible: newVisibility }),
+      })
+    } catch (e) {
+      console.warn("Could not sync visibility to API:", e)
+    }
+  }
+
+  const handleOpenEditProduct = (product: Product) => {
+    setEditProductModal({ ...product, images: [...product.images], stock: { ...product.stock } })
+    setEditPhotoCustomUrl("")
+  }
+
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editProductModal) return
+    const updated = { ...editProductModal }
+    setProductList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+    setEditProductModal(null)
+    showToast(`"${updated.name}" details updated successfully!`)
+
+    try {
+      await fetch("/api/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+    } catch (e) {
+      console.warn("Could not sync edit to API:", e)
+    }
+  }
+
+  const handleDeleteProductPhoto = (index: number) => {
+    if (!editProductModal) return
+    if (editProductModal.images.length <= 1) {
+      showToast("A shirt must keep at least 1 photo.")
+      return
+    }
+    const updatedImages = editProductModal.images.filter((_, idx) => idx !== index)
+    setEditProductModal({ ...editProductModal, images: updatedImages })
+    showToast("Photo deleted from shirt.")
+  }
+
+  const handleSetCoverPhoto = (index: number) => {
+    if (!editProductModal || index === 0) return
+    const target = editProductModal.images[index]
+    const rest = editProductModal.images.filter((_, idx) => idx !== index)
+    const reordered = [target, ...rest]
+    setEditProductModal({ ...editProductModal, images: reordered })
+    showToast("Cover photo updated! This image is now the main store showcase.")
+  }
+
+  const handleUploadEditPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editProductModal) return
+    const files = e.target.files
+    if (!files || !files.length) return
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          const dataUrl = ev.target.result as string
+          setEditProductModal((prev) =>
+            prev ? { ...prev, images: [...prev.images, dataUrl] } : null
+          )
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ""
+  }
+
+  const handleAddEditPhotoUrl = () => {
+    if (!editProductModal || !editPhotoCustomUrl.trim()) return
+    setEditProductModal({
+      ...editProductModal,
+      images: [...editProductModal.images, editPhotoCustomUrl.trim()],
+    })
+    setEditPhotoCustomUrl("")
+    showToast("Photo added to gallery.")
+  }
+
+  const handleOpenDeleteProduct = (product: Product) => {
+    setDeleteProductModal(product)
+  }
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!deleteProductModal) return
+    const idToDelete = deleteProductModal.id
+    setProductList((prev) => prev.filter((p) => p.id !== idToDelete))
+    setDeleteProductModal(null)
+    showToast(`"${deleteProductModal.name}" deleted from catalog.`)
+
+    try {
+      await fetch(`/api/products?id=${encodeURIComponent(idToDelete)}`, {
+        method: "DELETE",
+      })
+    } catch (e) {
+      console.warn("Could not sync deletion to API:", e)
+    }
+  }
+
+  // ── HOMEPAGE HERO SLIDER BANNER HANDLERS ──
+  const handleOpenAddBanner = () => {
+    setEditingBannerId(null)
+    setBannerKicker("Summer Atelier '26")
+    setBannerLine1("Woven")
+    setBannerLine2("by hand.")
+    setBannerCta("Shop collection")
+    setBannerDesktopImg("/assets/site_banners/slide1_desktop.jpg")
+    setMobileBannerImg("/assets/site_banners/slide1_mobile.jpg")
+    setBannerLink("/shop")
+    setBannerTone("light")
+    setBannerActive(true)
+    setShowBannerModal(true)
+  }
+
+  const handleOpenEditBanner = (banner: any) => {
+    setEditingBannerId(banner.id)
+    setBannerKicker(banner.kicker || banner.title || "")
+    setBannerLine1(banner.lines?.[0] || banner.title || "")
+    setBannerLine2(banner.lines?.[1] || banner.subtitle || "")
+    setBannerCta(banner.cta || "Shop collection")
+    setBannerDesktopImg(banner.desktop || banner.image_desktop || "")
+    setMobileBannerImg(banner.mobile || banner.image_mobile || "")
+    setBannerLink(banner.link || "/shop")
+    setBannerTone(banner.tone || "light")
+    setBannerActive(banner.is_active !== false)
+    setShowBannerModal(true)
+  }
+
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const bannerObj = {
+      id: editingBannerId || `slide_${Date.now()}`,
+      kicker: bannerKicker,
+      lines: [bannerLine1, bannerLine2] as [string, string],
+      cta: bannerCta,
+      desktop: bannerDesktopImg,
+      mobile: bannerMobileImg,
+      alt: `${bannerKicker} - ${bannerLine1} ${bannerLine2}`,
+      tone: bannerTone,
+      link: bannerLink,
+      is_active: bannerActive,
+      sort_order: editingBannerId
+        ? bannerList.find((b) => b.id === editingBannerId)?.sort_order || 1
+        : bannerList.length + 1,
+    }
+
+    let updatedList: any[]
+    if (editingBannerId) {
+      updatedList = bannerList.map((b) => (b.id === editingBannerId ? bannerObj : b))
+    } else {
+      updatedList = [bannerObj, ...bannerList]
+    }
+
+    setBannerList(updatedList)
+    setShowBannerModal(false)
+    showToast("Homepage Hero Banner saved & live!")
+
+    try {
+      await fetch("/api/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedList),
+      })
+    } catch (e) {
+      console.warn("Could not sync banners to API:", e)
+    }
+  }
+
+  const handleToggleBannerActive = async (bannerId: string) => {
+    const updatedList = bannerList.map((b) =>
+      b.id === bannerId ? { ...b, is_active: !b.is_active } : b
+    )
+    setBannerList(updatedList)
+    showToast("Banner visibility toggled!")
+    try {
+      await fetch("/api/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedList),
+      })
+    } catch (e) {
+      console.warn("Could not sync banners to API:", e)
+    }
+  }
+
+  const handleDeleteBanner = async (bannerId: string) => {
+    const updatedList = bannerList.filter((b) => b.id !== bannerId)
+    setBannerList(updatedList)
+    showToast("Banner removed from homepage slider.")
+    try {
+      await fetch(`/api/banners?id=${encodeURIComponent(bannerId)}`, {
+        method: "DELETE",
+      })
+    } catch (e) {
+      console.warn("Could not sync delete banner to API:", e)
+    }
+  }
+
+  const handleUploadBannerDesktop = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      if (ev.target?.result) setBannerDesktopImg(ev.target.result as string)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ""
+  }
+
+  const handleUploadBannerMobile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      if (ev.target?.result) setMobileBannerImg(ev.target.result as string)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ""
   }
 
   const handleAddCouponSubmit = (e: React.FormEvent) => {
@@ -1468,15 +1779,20 @@ export function AdminView() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {filteredProducts.map((p) => {
                     const totalUnits = Object.values(p.stock).reduce((a, b) => a + b, 0)
+                    const isHidden = p.is_visible === false
                     return (
                       <div
                         key={p.id}
-                        className="rounded-2xl border border-white/10 bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group hover:border-[#d4af37]/40 transition duration-200"
+                        className={`rounded-2xl border bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group transition duration-200 ${
+                          isHidden
+                            ? "border-amber-500/30 opacity-90"
+                            : "border-white/10 hover:border-[#d4af37]/40"
+                        }`}
                       >
                         <div>
                           <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3">
                             <Image
-                              src={p.images[0]}
+                              src={p.images[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
                               alt={p.name}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -1487,6 +1803,22 @@ export function AdminView() {
                             <span className="absolute top-2.5 right-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/10">
                               {totalUnits} Units in Stock
                             </span>
+
+                            {/* Photo Count Pill */}
+                            <span className="absolute bottom-2.5 left-2.5 rounded-full bg-black/80 backdrop-blur-md px-2 py-0.5 text-[9px] font-mono text-zinc-300 border border-white/10 flex items-center gap-1">
+                              <ImageIcon className="h-3 w-3 text-[#d4af37]" />
+                              {p.images?.length || 1} Photos
+                            </span>
+
+                            {/* Hidden from Store Overlay */}
+                            {isHidden && (
+                              <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center">
+                                <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 text-[11px] font-bold flex items-center gap-1.5 shadow">
+                                  <EyeOff className="h-3.5 w-3.5" /> Hidden from Store (Draft)
+                                </span>
+                                <p className="text-[10px] text-zinc-400 mt-1">Patrons cannot see or purchase this item</p>
+                              </div>
+                            )}
                           </div>
 
                           <div className="space-y-1">
@@ -1507,10 +1839,11 @@ export function AdminView() {
                               {Object.entries(p.stock).map(([size, count]) => (
                                 <span
                                   key={size}
-                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${count <= 2
+                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${
+                                    count <= 2
                                       ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                                       : "bg-white/5 text-zinc-300 border border-white/10"
-                                    }`}
+                                  }`}
                                 >
                                   {size}: {count}
                                 </span>
@@ -1520,26 +1853,50 @@ export function AdminView() {
                         </div>
 
                         {/* Price & Actions */}
-                        <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                           <div>
                             <span className="font-serif text-lg font-bold text-white">{formatINR(p.price)}</span>
                             <span className="ml-2 text-xs text-zinc-500 line-through">{formatINR(p.mrp)}</span>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <Link
                               href={`/product/${p.slug}`}
                               target="_blank"
                               className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
-                              title="View on Store"
+                              title="View on Storefront"
                             >
-                              <Eye className="h-3.5 w-3.5" />
+                              <ExternalLink className="h-3.5 w-3.5" />
                             </Link>
+
+                            {/* Visibility Toggle Button */}
                             <button
-                              onClick={() => showToast(`Price & details for "${p.name}" are synced with database.`)}
-                              className="rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                              onClick={() => handleToggleProductVisibility(p)}
+                              className={`rounded-lg border p-2 transition ${
+                                isHidden
+                                  ? "border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/30"
+                                  : "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                              }`}
+                              title={isHidden ? "Unhide and publish to store" : "Hide from customer storefront"}
                             >
-                              Edit Shirt
+                              {isHidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                            </button>
+
+                            {/* Edit Shirt Button */}
+                            <button
+                              onClick={() => handleOpenEditProduct(p)}
+                              className="rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-2.5 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                            >
+                              Edit
+                            </button>
+
+                            {/* Delete Shirt Button */}
+                            <button
+                              onClick={() => handleOpenDeleteProduct(p)}
+                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                              title="Delete shirt from catalog"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
@@ -2101,24 +2458,169 @@ export function AdminView() {
           {/* ══════════════ TAB 8: MARKETING & BANNERS ══════════════ */}
           {activeTab === "Marketing" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-xl space-y-4">
-                <h4 className="font-serif text-lg font-bold text-white">Active Promotional Banners</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-                    <div className="relative aspect-[16/9] w-full rounded-lg overflow-hidden">
-                      <Image src="/assets/site_banners/slide1_desktop.jpg" alt="Summer Atelier" fill className="object-cover" />
-                    </div>
-                    <p className="font-bold text-white text-xs mt-2">Summer Atelier 2026 - Main Hero</p>
-                    <p className="text-[11px] text-zinc-400">Position 1 • Link: /shop • Status: Active</p>
+              {/* Studio Header Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-3 py-0.5 text-[10px] font-bold text-[#d4af37]">
+                      <Sparkles className="h-3 w-3" /> Storefront Hero Studio
+                    </span>
+                    <span className="text-[11px] text-zinc-400">• {bannerList.length} Active Slides</span>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-                    <div className="relative aspect-[16/9] w-full rounded-lg overflow-hidden">
-                      <Image src="/assets/site_banners/slide2_desktop.jpg" alt="Resort Edit" fill className="object-cover" />
-                    </div>
-                    <p className="font-bold text-white text-xs mt-2">The Resort Edit - Seaside Coastal</p>
-                    <p className="text-[11px] text-zinc-400">Position 2 • Link: /shop • Status: Active</p>
-                  </div>
+                  <h4 className="font-serif text-lg font-bold text-white mt-1">Homepage Hero Slider & Banners</h4>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Customize the full-screen carousel slides on the home page with independent images tailored for PC (Desktop) and Phone (Mobile).
+                  </p>
                 </div>
+
+                <button
+                  onClick={handleOpenAddBanner}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-[#d4af37]/20 hover:brightness-110 active:scale-95 transition shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Slider Banner</span>
+                </button>
+              </div>
+
+              {/* Banners List */}
+              <div className="space-y-4">
+                {bannerList.map((banner, index) => {
+                  const isActive = banner.is_active !== false
+                  return (
+                    <div
+                      key={banner.id || index}
+                      className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${
+                        isActive ? "border-white/10 hover:border-[#d4af37]/40" : "border-white/5 opacity-75"
+                      }`}
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 border border-white/10 font-mono text-xs font-bold text-[#d4af37]">
+                            #{index + 1}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">
+                                {banner.kicker || "Featured Slide"}
+                              </span>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  isActive
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-white/10 text-zinc-400"
+                                }`}
+                              >
+                                {isActive ? "● Live on Store" : "○ Draft / Paused"}
+                              </span>
+                            </div>
+                            <h5 className="font-serif text-base font-bold text-white mt-0.5">
+                              {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines || banner.title || "Hero Banner"}
+                            </h5>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleBannerActive(banner.id)}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                              isActive
+                                ? "border-white/10 bg-white/5 text-zinc-300 hover:text-white"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                            }`}
+                          >
+                            {isActive ? "Pause Slide" : "Make Live"}
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditBanner(banner)}
+                            className="rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/15 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1.5"
+                          >
+                            <Edit3 className="h-3 w-3" />
+                            <span>Edit Banner</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBanner(banner.id)}
+                            className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                            title="Delete banner"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Responsive Imagery Preview: Desktop vs Phone */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                        {/* PC Desktop Image (16:9 ratio) */}
+                        <div className="md:col-span-2 space-y-2">
+                          <div className="flex items-center justify-between text-xs text-zinc-400">
+                            <span className="flex items-center gap-1.5 font-semibold text-white">
+                              <Monitor className="h-3.5 w-3.5 text-[#d4af37]" />
+                              Desktop (PC / Widescreen Image)
+                            </span>
+                            <span className="font-mono text-[10px]">1920 × 1080 Landscape</span>
+                          </div>
+                          <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-inner group">
+                            <Image
+                              src={banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg"}
+                              alt={banner.kicker || "Desktop Slide"}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+                              <div className="text-white">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#d4af37]">
+                                  {banner.kicker}
+                                </p>
+                                <p className="font-serif text-sm font-bold">
+                                  {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mobile Phone Image (9:16 portrait ratio) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-zinc-400">
+                            <span className="flex items-center gap-1.5 font-semibold text-white">
+                              <Smartphone className="h-3.5 w-3.5 text-[#d4af37]" />
+                              Mobile (Phone Touch Screen)
+                            </span>
+                            <span className="font-mono text-[10px]">768 × 1376 Portrait</span>
+                          </div>
+                          <div className="relative aspect-[9/16] max-h-[220px] w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-inner mx-auto group">
+                            <Image
+                              src={banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg"}
+                              alt={banner.kicker || "Mobile Slide"}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
+                              <div className="text-white">
+                                <p className="text-[9px] uppercase font-bold text-[#d4af37]">{banner.kicker}</p>
+                                <span className="inline-block rounded-full bg-white text-black px-2 py-0.5 text-[8px] font-bold mt-1">
+                                  {banner.cta || "Shop"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer Info Strip */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-white/10 text-xs text-zinc-400">
+                        <div className="flex items-center gap-3">
+                          <span>Button: <strong className="text-white">{banner.cta || "Shop Linen"}</strong></span>
+                          <span>•</span>
+                          <span>Target Link: <code className="text-[#d4af37] font-mono">{banner.link || "/shop"}</code></span>
+                        </div>
+                        <span className="text-[11px] text-zinc-400">
+                          Text Tone: <strong className="text-zinc-200 capitalize">{banner.tone || "light"}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -2990,6 +3492,550 @@ export function AdminView() {
                 Confirm Cancellation
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT PRODUCT & PHOTO MANAGER MODAL ── */}
+      {editProductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#12141a] p-6 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
+                  <Edit3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-white">Edit Shirt & Photo Gallery</h3>
+                  <p className="text-xs text-zinc-400">SKU: {editProductModal.sku} • ID: {editProductModal.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditProductModal(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditProduct} className="space-y-6">
+              {/* Product Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Product Title / Name</label>
+                  <input
+                    type="text"
+                    value={editProductModal.name}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, name: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Category</label>
+                  <select
+                    value={editProductModal.category}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, category: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  >
+                    <option value="Casual Shirts">Casual Shirts</option>
+                    <option value="Formal Shirts">Formal Shirts</option>
+                    <option value="Resort Wear">Resort Wear</option>
+                    <option value="Evening Wear">Evening Wear</option>
+                    <option value="Hand-Embroidered">Hand-Embroidered</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Price (₹ INR Selling Price)</label>
+                  <input
+                    type="number"
+                    value={editProductModal.price}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, price: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Original MRP (₹ Strike-through)</label>
+                  <input
+                    type="number"
+                    value={editProductModal.mrp || editProductModal.price}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, mrp: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Fabric</label>
+                  <input
+                    type="text"
+                    value={editProductModal.fabric}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, fabric: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Color</label>
+                  <input
+                    type="text"
+                    value={editProductModal.color}
+                    onChange={(e) => setEditProductModal({ ...editProductModal, color: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Story / Description */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Product Story & Craftsmanship</label>
+                <textarea
+                  value={editProductModal.description || ""}
+                  onChange={(e) => setEditProductModal({ ...editProductModal, description: e.target.value })}
+                  rows={2}
+                  className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                  placeholder="Detailing the yarn, weave, drape and artisan touch..."
+                />
+              </div>
+
+              {/* ── PHOTO MANAGER SECTION (Cover image, Delete photo, Add photo) ── */}
+              <div className="rounded-2xl border border-[#d4af37]/30 bg-[#0d0f12] p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                      <span>Product Photos ({editProductModal.images?.length || 0})</span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      First photo is the <strong className="text-[#d4af37]">Cover Image</strong>. Click &ldquo;Make Cover&rdquo; to set any photo as main thumbnail.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10 transition flex items-center gap-1.5">
+                      <Upload className="h-3.5 w-3.5 text-[#d4af37]" />
+                      <span>Upload Photos</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleUploadEditPhoto}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Add Photo by URL */}
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={editPhotoCustomUrl}
+                    onChange={(e) => setEditPhotoCustomUrl(e.target.value)}
+                    placeholder="Or paste image URL (e.g. /assets/products/... or https://...)"
+                    className="flex-1 rounded-xl border border-white/10 bg-[#14171d] px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddEditPhotoUrl}
+                    className="rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/20 px-4 py-2 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                  >
+                    + Add Image
+                  </button>
+                </div>
+
+                {/* Photo Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                  {editProductModal.images?.map((imgSrc, idx) => {
+                    const isCover = idx === 0
+                    return (
+                      <div
+                        key={idx}
+                        className={`relative rounded-xl overflow-hidden border ${
+                          isCover ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 shadow-lg" : "border-white/10 bg-black/40"
+                        } group flex flex-col justify-between`}
+                      >
+                        <div className="relative aspect-square w-full bg-black">
+                          <Image
+                            src={imgSrc}
+                            alt={`Photo ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          {isCover && (
+                            <span className="absolute top-2 left-2 rounded-full bg-[#d4af37] text-black px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow">
+                              ★ Cover Photo
+                            </span>
+                          )}
+                          <span className="absolute bottom-2 left-2 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-mono text-zinc-300">
+                            #{idx + 1}
+                          </span>
+                        </div>
+
+                        {/* Action Toolbar on card */}
+                        <div className="p-2 bg-[#12141a] flex items-center justify-between gap-1 border-t border-white/10">
+                          {!isCover ? (
+                            <button
+                              type="button"
+                              onClick={() => handleSetCoverPhoto(idx)}
+                              className="rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 px-2 py-1 text-[10px] font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex-1 text-center"
+                            >
+                              Make Cover
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-400 px-1 py-0.5 flex-1 text-center">
+                              Primary Showcase
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProductPhoto(idx)}
+                            className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-1 text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                            title="Delete this photo"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Size Inventory Steppers */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-2">Inventory Stock by Size</label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((size) => (
+                    <div key={size} className="rounded-xl border border-white/10 bg-[#0d0f12] p-2.5 text-center">
+                      <span className="text-xs font-bold text-zinc-400">{size}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editProductModal.stock[size] ?? 0}
+                        onChange={(e) =>
+                          setEditProductModal({
+                            ...editProductModal,
+                            stock: {
+                              ...editProductModal.stock,
+                              [size]: Math.max(0, parseInt(e.target.value) || 0),
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border border-white/10 bg-[#161922] py-1 text-center text-xs font-bold text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditProductModal(null)}
+                  className="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#d4af37] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-[#b8972e] transition shadow-lg"
+                >
+                  Save Shirt Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE PRODUCT CONFIRMATION MODAL ── */}
+      {deleteProductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-[#16181f] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 border border-rose-500/30">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-white">Delete Product?</h3>
+                <p className="text-[11px] text-zinc-400">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-[#0d0f12]">
+              <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-black shrink-0">
+                <Image
+                  src={deleteProductModal.images?.[0] || "/placeholder.jpg"}
+                  alt={deleteProductModal.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-white truncate">{deleteProductModal.name}</h4>
+                <p className="text-[11px] text-zinc-400">SKU: {deleteProductModal.sku} • ₹{deleteProductModal.price}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-300">
+              Are you sure you want to delete <strong className="text-white">{deleteProductModal.name}</strong> from your catalog? It will be permanently removed from the website and database.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setDeleteProductModal(null)}
+                className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Keep Product
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteProduct}
+                className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-500 shadow-lg"
+              >
+                Delete Shirt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── HOMEPAGE HERO BANNER SLIDER MODAL (PC & MOBILE IMAGERY) ── */}
+      {showBannerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl border border-[#d4af37]/30 bg-[#12141a] p-6 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-white">
+                    {editingBannerId ? "Edit Hero Slider Slide" : "Add New Homepage Slider Slide"}
+                  </h3>
+                  <p className="text-xs text-zinc-400">Configure separate high-res images for PC / Desktop and Mobile Phones</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBannerModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBanner} className="space-y-6">
+              {/* Copy / Text Headlines */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Kicker / Top Subtitle</label>
+                  <input
+                    type="text"
+                    value={bannerKicker}
+                    onChange={(e) => setBannerKicker(e.target.value)}
+                    placeholder="e.g. Summer Atelier '26"
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">CTA Button Text</label>
+                  <input
+                    type="text"
+                    value={bannerCta}
+                    onChange={(e) => setBannerCta(e.target.value)}
+                    placeholder="e.g. Shop linen"
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Hero Headline Line 1</label>
+                  <input
+                    type="text"
+                    value={bannerLine1}
+                    onChange={(e) => setBannerLine1(e.target.value)}
+                    placeholder="e.g. Woven"
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Hero Headline Line 2</label>
+                  <input
+                    type="text"
+                    value={bannerLine2}
+                    onChange={(e) => setBannerLine2(e.target.value)}
+                    placeholder="e.g. by hand."
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Target Link</label>
+                  <input
+                    type="text"
+                    value={bannerLink}
+                    onChange={(e) => setBannerLink(e.target.value)}
+                    placeholder="/shop or /product/..."
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Text Tone</label>
+                  <select
+                    value={bannerTone}
+                    onChange={(e) => setBannerTone(e.target.value as "light" | "dark")}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                  >
+                    <option value="light">Light (White text on dark/rich photos)</option>
+                    <option value="dark">Dark (Dark text on light photos)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* ── RESPONSIVE IMAGERY: PC DESKTOP VS PHONE MOBILE ── */}
+              <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-5 space-y-5">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                    <span>Responsive Slider Images (Separate for PC & Mobile)</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Desktop requires wide horizontal ratio, while mobile devices show vertical portrait frames.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Desktop PC Image */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-white">
+                        <Monitor className="h-4 w-4 text-[#d4af37]" />
+                        Desktop (PC / Laptop)
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400">1920 × 1080 (16:9)</span>
+                    </div>
+
+                    <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-white/10 bg-black">
+                      {bannerDesktopImg ? (
+                        <Image
+                          src={bannerDesktopImg}
+                          alt="Desktop preview"
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+                          No Desktop Image
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-semibold text-white hover:bg-white/10 transition">
+                        <Upload className="h-3.5 w-3.5 text-[#d4af37]" />
+                        <span>Upload Desktop Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadBannerDesktop}
+                          className="hidden"
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        value={bannerDesktopImg}
+                        onChange={(e) => setBannerDesktopImg(e.target.value)}
+                        placeholder="Or enter desktop image URL"
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile Phone Image */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-white">
+                        <Smartphone className="h-4 w-4 text-[#d4af37]" />
+                        Mobile (Phone Screen)
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400">768 × 1376 (9:16)</span>
+                    </div>
+
+                    <div className="relative aspect-[16/9] md:aspect-[9/16] md:max-h-[175px] w-full rounded-xl overflow-hidden border border-white/10 bg-black mx-auto">
+                      {bannerMobileImg ? (
+                        <Image
+                          src={bannerMobileImg}
+                          alt="Mobile preview"
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+                          No Mobile Image
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-semibold text-white hover:bg-white/10 transition">
+                        <Upload className="h-3.5 w-3.5 text-[#d4af37]" />
+                        <span>Upload Mobile Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadBannerMobile}
+                          className="hidden"
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        value={bannerMobileImg}
+                        onChange={(e) => setMobileBannerImg(e.target.value)}
+                        placeholder="Or enter mobile image URL"
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status active checkbox */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="bannerActiveCheckbox"
+                  checked={bannerActive}
+                  onChange={(e) => setBannerActive(e.target.checked)}
+                  className="h-4 w-4 rounded accent-[#d4af37]"
+                />
+                <label htmlFor="bannerActiveCheckbox" className="text-xs font-semibold text-zinc-300 cursor-pointer">
+                  Publish Slide Live on Storefront (Uncheck to keep as draft)
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowBannerModal(false)}
+                  className="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#d4af37] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-[#b8972e] transition shadow-lg"
+                >
+                  {editingBannerId ? "Update Slider Slide" : "Add Slide to Homepage"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
