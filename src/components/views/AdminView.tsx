@@ -48,6 +48,9 @@ import {
   Smartphone,
   Globe,
   BookOpen,
+  ArrowUp,
+  ArrowDown,
+  Copy,
 } from "lucide-react"
 import { products as initialProducts, Product } from "@/lib/products"
 import { BLOG_POSTS as initialBlogPosts } from "@/data/blogData"
@@ -489,6 +492,12 @@ export function AdminView() {
   const [bannerAlt, setBannerAlt] = useState("Ivory hand-embroidered French linen shirt on an Aegean terrace")
   const [bannerSeoHeading, setBannerSeoHeading] = useState("H1")
   const [bannerSeoKeywords, setBannerSeoKeywords] = useState("french linen shirts, luxury menswear, resortwear")
+  const [zoomImageModal, setZoomImageModal] = useState<{
+    url: string
+    title: string
+    isMobile?: boolean
+  } | null>(null)
+  const [bannerPreviewFit, setBannerPreviewFit] = useState<"cover" | "contain">("cover")
 
   // ── BLOG CMS & SEO STUDIO STATES ──
   const [blogList, setBlogList] = useState<BlogPost[]>(initialBlogPosts)
@@ -1401,6 +1410,50 @@ export function AdminView() {
       })
     } catch (e) {
       console.warn("Could not sync delete banner to API:", e)
+    }
+  }
+
+  const handleMoveBanner = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= bannerList.length) return
+    const updated = [...bannerList]
+    const temp = updated[index]
+    updated[index] = updated[targetIndex]
+    updated[targetIndex] = temp
+    updated.forEach((b, i) => {
+      b.sort_order = i + 1
+    })
+    setBannerList(updated)
+    showToast(`Banner slide moved ${direction}!`)
+    try {
+      await fetch("/api/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+    } catch (e) {
+      console.warn("Could not sync banners to API:", e)
+    }
+  }
+
+  const handleDuplicateBanner = async (banner: any) => {
+    const newSlide = {
+      ...banner,
+      id: `slide_${Date.now()}`,
+      kicker: `${banner.kicker || "Featured"} (Copy)`,
+      sort_order: bannerList.length + 1,
+    }
+    const updated = [...bannerList, newSlide]
+    setBannerList(updated)
+    showToast("Banner slide duplicated successfully!")
+    try {
+      await fetch("/api/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+    } catch (e) {
+      console.warn("Could not sync banners to API:", e)
     }
   }
 
@@ -3174,20 +3227,98 @@ export function AdminView() {
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-3 py-0.5 text-[10px] font-bold text-[#d4af37]">
                       <Sparkles className="h-3 w-3" /> Storefront Hero Studio
                     </span>
-                    <span className="text-[11px] text-zinc-400">• {bannerList.length} Active Slides</span>
+                    <span className="text-[11px] text-zinc-400">• {bannerList.length} Slides ({bannerList.filter(b => b.is_active !== false).length} Live)</span>
                   </div>
                   <h4 className="font-serif text-lg font-bold text-white mt-1">Homepage Hero Slider & Banners</h4>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    Customize the full-screen carousel slides on the home page with independent images tailored for PC (Desktop) and Phone (Mobile).
+                    Customize high-resolution full-screen hero slides with tailored images for PC (Desktop 16:9) and Mobile Phones (Vertical 9:16).
                   </p>
                 </div>
 
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleOpenAddBanner}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-[#d4af37]/20 hover:brightness-110 active:scale-95 transition"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add New Slide</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Preset Templates Bar */}
+              <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-3 flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-zinc-300 flex items-center gap-1.5 mr-1">
+                  <Sparkles className="h-3.5 w-3.5 text-[#d4af37]" />
+                  Quick Inspiration Templates:
+                </span>
                 <button
-                  onClick={handleOpenAddBanner}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-[#d4af37]/20 hover:brightness-110 active:scale-95 transition shrink-0"
+                  type="button"
+                  onClick={() => {
+                    handleOpenAddBanner()
+                    setBannerKicker("Summer Atelier '26")
+                    setBannerLine1("Woven")
+                    setBannerLine2("by hand.")
+                    setBannerCta("Shop linen")
+                    setBannerDesktopImg("/assets/site_banners/slide1_desktop.jpg")
+                    setMobileBannerImg("/assets/site_banners/slide1_mobile.jpg")
+                    setBannerAlt("Ivory French linen shirt on an Aegean seaside stone terrace")
+                    setBannerTone("light")
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 hover:border-[#d4af37]/50 hover:text-white transition"
                 >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Slider Banner</span>
+                  + Summer Atelier (Ivory)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenAddBanner()
+                    setBannerKicker("The Resort Edit")
+                    setBannerLine1("Coastal")
+                    setBannerLine2("state.")
+                    setBannerCta("Shop resort")
+                    setBannerDesktopImg("/assets/site_banners/slide2_desktop.jpg")
+                    setMobileBannerImg("/assets/site_banners/slide2_mobile.jpg")
+                    setBannerAlt("Sky-blue Cuban collar linen shirt in a coastal villa")
+                    setBannerTone("light")
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 hover:border-[#d4af37]/50 hover:text-white transition"
+                >
+                  + The Resort Edit (Blue)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenAddBanner()
+                    setBannerKicker("New Arrivals")
+                    setBannerLine1("Rust &")
+                    setBannerLine2("ease.")
+                    setBannerCta("Shop new in")
+                    setBannerDesktopImg("/assets/banners/hero-terracotta-widescreen.jpg")
+                    setMobileBannerImg("/assets/banners/hero-studio-mobile.jpg")
+                    setBannerAlt("Terracotta embroidered linen shirt in sandstone courtyard")
+                    setBannerTone("light")
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 hover:border-[#d4af37]/50 hover:text-white transition"
+                >
+                  + Terracotta Studio (Rust)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenAddBanner()
+                    setBannerKicker("After Dark")
+                    setBannerLine1("Evening")
+                    setBannerLine2("tailoring.")
+                    setBannerCta("Shop evening")
+                    setBannerDesktopImg("/assets/banners/hero-evening-desktop.jpg")
+                    setMobileBannerImg("/assets/site_banners/slide3_mobile.jpg")
+                    setBannerAlt("Navy embroidered linen shirt on an evening rooftop")
+                    setBannerTone("light")
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 hover:border-[#d4af37]/50 hover:text-white transition"
+                >
+                  + After Dark (Navy)
                 </button>
               </div>
 
@@ -3198,24 +3329,50 @@ export function AdminView() {
                   return (
                     <div
                       key={banner.id || index}
-                      className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${isActive ? "border-white/10 hover:border-[#d4af37]/40" : "border-white/5 opacity-75"
-                        }`}
+                      className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${
+                        isActive ? "border-white/10 hover:border-[#d4af37]/40" : "border-white/5 opacity-75"
+                      }`}
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 border border-white/10 font-mono text-xs font-bold text-[#d4af37]">
-                            #{index + 1}
-                          </span>
+                          {/* Slide index & Reorder Controls */}
+                          <div className="flex items-center gap-1">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 border border-white/10 font-mono text-xs font-bold text-[#d4af37]">
+                              #{index + 1}
+                            </span>
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveBanner(index, "up")}
+                                disabled={index === 0}
+                                title="Move Slide Up"
+                                className="flex h-4 w-5 items-center justify-center rounded bg-white/5 text-zinc-400 hover:bg-[#d4af37] hover:text-black disabled:opacity-30 disabled:pointer-events-none transition text-[9px]"
+                              >
+                                <ArrowUp className="h-2.5 w-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveBanner(index, "down")}
+                                disabled={index === bannerList.length - 1}
+                                title="Move Slide Down"
+                                className="flex h-4 w-5 items-center justify-center rounded bg-white/5 text-zinc-400 hover:bg-[#d4af37] hover:text-black disabled:opacity-30 disabled:pointer-events-none transition text-[9px]"
+                              >
+                                <ArrowDown className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          </div>
+
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">
                                 {banner.kicker || "Featured Slide"}
                               </span>
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  isActive
                                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                                     : "bg-white/10 text-zinc-400"
-                                  }`}
+                                }`}
                               >
                                 {isActive ? "● Live on Store" : "○ Draft / Paused"}
                               </span>
@@ -3229,22 +3386,35 @@ export function AdminView() {
                         {/* Action buttons */}
                         <div className="flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => handleToggleBannerActive(banner.id)}
-                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isActive
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                              isActive
                                 ? "border-white/10 bg-white/5 text-zinc-300 hover:text-white"
                                 : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                              }`}
+                            }`}
                           >
                             {isActive ? "Pause Slide" : "Make Live"}
                           </button>
                           <button
+                            type="button"
+                            onClick={() => handleDuplicateBanner(banner)}
+                            className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-white/10 hover:text-white transition flex items-center gap-1.5"
+                            title="Duplicate this slide"
+                          >
+                            <Copy className="h-3 w-3" />
+                            <span>Clone</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenEditBanner(banner)}
                             className="rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/15 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1.5"
                           >
                             <Edit3 className="h-3 w-3" />
-                            <span>Edit Banner</span>
+                            <span>Edit Slide</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteBanner(banner.id)}
                             className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500 hover:text-white transition"
                             title="Delete banner"
@@ -3254,62 +3424,152 @@ export function AdminView() {
                         </div>
                       </div>
 
-                      {/* Responsive Imagery Preview: Desktop vs Phone */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                      {/* Responsive Imagery Preview: Desktop (16:9) vs Phone Mockup (9:16) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1 items-start">
                         {/* PC Desktop Image (16:9 ratio) */}
-                        <div className="md:col-span-2 space-y-2">
+                        <div className="lg:col-span-7 space-y-2">
                           <div className="flex items-center justify-between text-xs text-zinc-400">
                             <span className="flex items-center gap-1.5 font-semibold text-white">
                               <Monitor className="h-3.5 w-3.5 text-[#d4af37]" />
-                              Desktop (PC / Widescreen Image)
+                              Desktop (PC Widescreen 16:9)
                             </span>
-                            <span className="font-mono text-[10px]">1920 × 1080 Landscape</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[10px] text-zinc-400">1920 × 1080</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setZoomImageModal({
+                                    url: banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg",
+                                    title: `Desktop View: ${banner.kicker || "Hero Slide"}`,
+                                    isMobile: false,
+                                  })
+                                }
+                                className="text-[11px] text-[#d4af37] hover:underline flex items-center gap-1"
+                              >
+                                <ExternalLink className="h-3 w-3" /> Pura Dekho
+                              </button>
+                            </div>
                           </div>
-                          <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-inner group">
-                            <Image
-                              src={banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg"}
-                              alt={banner.kicker || "Desktop Slide"}
-                              fill
-                              className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                              <div className="text-white">
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#d4af37]">
-                                  {banner.kicker}
-                                </p>
-                                <p className="font-serif text-sm font-bold">
-                                  {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
-                                </p>
+
+                          {/* Desktop Browser Window Mockup */}
+                          <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0d0f12] shadow-2xl">
+                            <div className="bg-[#181b22] px-3 py-1.5 border-b border-white/10 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/70" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
+                              </div>
+                              <div className="text-[10px] font-mono text-zinc-400 bg-black/50 rounded px-2.5 py-0.5 max-w-[240px] truncate border border-white/5">
+                                gayatribhai.com{banner.link || "/shop"}
+                              </div>
+                              <div className="w-8" />
+                            </div>
+                            <div className="relative aspect-[16/9] w-full bg-black group">
+                              <Image
+                                src={banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg"}
+                                alt={banner.kicker || "Desktop Slide"}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent flex items-end p-4">
+                                <div className="text-white">
+                                  <p className="text-[10px] uppercase font-bold tracking-widest text-[#d4af37]">
+                                    {banner.kicker}
+                                  </p>
+                                  <p className="font-serif text-base font-bold">
+                                    {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
+                                  </p>
+                                  <span className="inline-block mt-2 rounded-full bg-white text-black px-3 py-0.5 text-[10px] font-bold shadow">
+                                    {banner.cta || "Shop Linen"} →
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Mobile Phone Image (9:16 portrait ratio) */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-zinc-400">
+                        {/* Mobile Phone Mockup (9:16 portrait ratio) */}
+                        <div className="lg:col-span-5 space-y-2 flex flex-col items-center">
+                          <div className="flex items-center justify-between text-xs text-zinc-400 w-full max-w-[210px]">
                             <span className="flex items-center gap-1.5 font-semibold text-white">
                               <Smartphone className="h-3.5 w-3.5 text-[#d4af37]" />
-                              Mobile (Phone Touch Screen)
+                              Mobile Phone (9:16)
                             </span>
-                            <span className="font-mono text-[10px]">768 × 1376 Portrait</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg",
+                                  title: `Mobile Phone View: ${banner.kicker || "Hero Slide"}`,
+                                  isMobile: true,
+                                })
+                              }
+                              className="text-[11px] text-[#d4af37] hover:underline flex items-center gap-1"
+                              title="Inspect full uncropped mobile image"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Pura Dikhe
+                            </button>
                           </div>
-                          <div className="relative aspect-[9/16] max-h-[220px] w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-inner mx-auto group">
+
+                          {/* Authentic Luxury Smartphone Mockup */}
+                          <div className="relative w-[170px] sm:w-[180px] aspect-[9/16] rounded-[34px] border-[5px] border-[#252831] bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group">
+                            {/* Dynamic Island Pill Notch */}
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 h-3.5 w-16 rounded-full bg-black/95 flex items-center justify-between px-2 pointer-events-none ring-1 ring-white/10">
+                              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+                            </div>
+
+                            {/* Phone Top Status Bar */}
+                            <div className="absolute top-1 inset-x-3 z-20 flex justify-between items-center text-[7.5px] text-white/80 font-mono pointer-events-none">
+                              <span>9:41</span>
+                              <span>●● 100%</span>
+                            </div>
+
+                            {/* Mobile Image */}
                             <Image
                               src={banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg"}
                               alt={banner.kicker || "Mobile Slide"}
                               fill
-                              className="object-cover"
+                              className="object-cover transition duration-300 group-hover:scale-105"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
-                              <div className="text-white">
-                                <p className="text-[9px] uppercase font-bold text-[#d4af37]">{banner.kicker}</p>
-                                <span className="inline-block rounded-full bg-white text-black px-2 py-0.5 text-[8px] font-bold mt-1">
-                                  {banner.cta || "Shop"}
+
+                            {/* Storefront Mobile Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex items-end p-3 pointer-events-none">
+                              <div className="text-white space-y-0.5">
+                                <p className="text-[8px] uppercase tracking-wider font-bold text-[#d4af37]">
+                                  {banner.kicker}
+                                </p>
+                                <p className="font-serif text-[11px] font-bold leading-tight line-clamp-2">
+                                  {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
+                                </p>
+                                <span className="inline-block rounded-full bg-white text-black px-2.5 py-0.5 text-[8px] font-bold mt-1 shadow">
+                                  {banner.cta || "Shop"} →
                                 </span>
                               </div>
                             </div>
+
+                            {/* Bottom Home Indicator Bar */}
+                            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-30 h-1 w-12 rounded-full bg-white/50 pointer-events-none" />
+
+                            {/* Hover Overlay: Zoom / Pura Dikhe */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg",
+                                  title: `Mobile Phone View: ${banner.kicker || "Hero Slide"}`,
+                                  isMobile: true,
+                                })
+                              }
+                              className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-semibold backdrop-blur-xs cursor-pointer z-40"
+                            >
+                              <Eye className="h-5 w-5 text-[#d4af37]" />
+                              <span>Pura Dikhe (Zoom)</span>
+                              <span className="text-[9px] text-zinc-300 font-normal">Click for Full Photo</span>
+                            </button>
                           </div>
+
+                          <span className="font-mono text-[9px] text-zinc-400">768 × 1376 Vertical Full-Bleed</span>
                         </div>
                       </div>
 
@@ -5328,141 +5588,412 @@ export function AdminView() {
 
       {/* ── HOMEPAGE HERO BANNER SLIDER MODAL (PC & MOBILE IMAGERY) ── */}
       {showBannerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl border border-[#d4af37]/30 bg-[#12141a] p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+          <div className="relative w-full max-w-4xl max-h-[94vh] overflow-y-auto rounded-3xl border border-[#d4af37]/40 bg-[#12141a] p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
-                  <Sparkles className="h-5 w-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
+                  <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
                   <h3 className="font-serif text-xl font-bold text-white">
-                    {editingBannerId ? "Edit Hero Slider Slide" : "Add New Homepage Slider Slide"}
+                    {editingBannerId ? "Edit Hero Slider Slide & Imagery" : "Create New Homepage Hero Slide"}
                   </h3>
-                  <p className="text-xs text-zinc-400">Configure separate high-res images for PC / Desktop and Mobile Phones</p>
+                  <p className="text-xs text-zinc-400">
+                    Dual responsive imagery: configure crisp horizontal for PC (16:9) and vertical touch mockup for Phones (9:16)
+                  </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowBannerModal(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition"
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleSaveBanner} className="space-y-6">
-              {/* Copy / Text Headlines */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Kicker / Top Subtitle</label>
-                  <input
-                    type="text"
-                    value={bannerKicker}
-                    onChange={(e) => setBannerKicker(e.target.value)}
-                    placeholder="e.g. Summer Atelier '26"
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                    required
-                  />
+              {/* ── INTERACTIVE LIVE PREVIEW STUDIO (DESKTOP & MOBILE PHONE) ── */}
+              <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-4 sm:p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
+                      <Eye className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="font-serif text-sm font-bold text-white">
+                      Live Storefront Simulator Preview
+                    </span>
+                    <span className="text-[11px] text-zinc-400 hidden sm:inline">• Live real-time typography & crop</span>
+                  </div>
+
+                  {/* Preview fit toggle */}
+                  <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setBannerPreviewFit("cover")}
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition ${
+                        bannerPreviewFit === "cover"
+                          ? "bg-[#d4af37] text-black font-bold"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      📱 Screen Fill (9:16)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBannerPreviewFit("contain")}
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition ${
+                        bannerPreviewFit === "contain"
+                          ? "bg-[#d4af37] text-black font-bold"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                      title="Inspect full uncropped image without cropping"
+                    >
+                      🖼️ Full Photo (Pura Dikhe)
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">CTA Button Text</label>
-                  <input
-                    type="text"
-                    value={bannerCta}
-                    onChange={(e) => setBannerCta(e.target.value)}
-                    placeholder="e.g. Shop linen"
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Hero Headline Line 1</label>
-                  <input
-                    type="text"
-                    value={bannerLine1}
-                    onChange={(e) => setBannerLine1(e.target.value)}
-                    placeholder="e.g. Woven"
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Hero Headline Line 2</label>
-                  <input
-                    type="text"
-                    value={bannerLine2}
-                    onChange={(e) => setBannerLine2(e.target.value)}
-                    placeholder="e.g. by hand."
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Target Link</label>
-                  <input
-                    type="text"
-                    value={bannerLink}
-                    onChange={(e) => setBannerLink(e.target.value)}
-                    placeholder="/shop or /product/..."
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Text Tone</label>
-                  <select
-                    value={bannerTone}
-                    onChange={(e) => setBannerTone(e.target.value as "light" | "dark")}
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
-                  >
-                    <option value="light">Light (White text on dark/rich photos)</option>
-                    <option value="dark">Dark (Dark text on light photos)</option>
-                  </select>
+
+                {/* Dual Screen Simulator */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-1 items-start">
+                  {/* Desktop Preview */}
+                  <div className="md:col-span-7 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                      <span className="flex items-center gap-1 font-semibold text-white">
+                        <Monitor className="h-3 w-3 text-[#d4af37]" /> Desktop PC (16:9)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setZoomImageModal({
+                            url: bannerDesktopImg || "/assets/site_banners/slide1_desktop.jpg",
+                            title: `Desktop View: ${bannerKicker || "Hero Slide"}`,
+                            isMobile: false,
+                          })
+                        }
+                        className="text-[#d4af37] hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" /> Pura Dekho
+                      </button>
+                    </div>
+
+                    <div className="rounded-xl overflow-hidden border border-white/10 bg-[#161922] shadow-xl">
+                      <div className="bg-[#1e222b] px-3 py-1 border-b border-white/10 flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-rose-500/80" />
+                        <div className="w-2 h-2 rounded-full bg-amber-500/80" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-500/80" />
+                        <span className="text-[9px] font-mono text-zinc-400 ml-2 truncate">
+                          gayatribhai.com{bannerLink || "/shop"}
+                        </span>
+                      </div>
+                      <div className="relative aspect-[16/9] w-full bg-black">
+                        {bannerDesktopImg ? (
+                          <Image
+                            src={bannerDesktopImg}
+                            alt="Desktop preview"
+                            fill
+                            className={bannerPreviewFit === "contain" ? "object-contain bg-zinc-950" : "object-cover"}
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+                            No Desktop Image Selected
+                          </div>
+                        )}
+                        {/* Live Overlay */}
+                        <div
+                          className={`absolute inset-0 flex items-end p-4 ${
+                            bannerTone === "dark"
+                              ? "bg-gradient-to-t from-white/90 via-transparent to-transparent text-black"
+                              : "bg-gradient-to-t from-black/85 via-black/20 to-transparent text-white"
+                          }`}
+                        >
+                          <div>
+                            <p className="text-[9px] uppercase font-bold tracking-widest text-[#d4af37]">
+                              {bannerKicker || "Featured Atelier"}
+                            </p>
+                            <p className="font-serif text-sm sm:text-base font-bold leading-tight">
+                              {bannerLine1 || "Headline Line 1"} {bannerLine2 || "Line 2"}
+                            </p>
+                            <span className="inline-block mt-2 rounded-full bg-white text-black px-3 py-0.5 text-[9px] font-bold shadow">
+                              {bannerCta || "Shop Now"} →
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Phone Mockup */}
+                  <div className="md:col-span-5 space-y-1.5 flex flex-col items-center">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400 w-full max-w-[170px]">
+                      <span className="flex items-center gap-1 font-semibold text-white">
+                        <Smartphone className="h-3 w-3 text-[#d4af37]" /> Phone (9:16)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setZoomImageModal({
+                            url: bannerMobileImg || "/assets/site_banners/slide1_mobile.jpg",
+                            title: `Mobile View: ${bannerKicker || "Hero Slide"}`,
+                            isMobile: true,
+                          })
+                        }
+                        className="text-[#d4af37] hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" /> Pura Dikhe
+                      </button>
+                    </div>
+
+                    {/* Smartphone Frame */}
+                    <div className="relative w-[160px] aspect-[9/16] rounded-[30px] border-[5px] border-[#252831] bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group">
+                      {/* Dynamic Island */}
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 h-3.5 w-14 rounded-full bg-black/95 flex items-center justify-between px-2 pointer-events-none ring-1 ring-white/10">
+                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+                      </div>
+
+                      {/* Phone Status */}
+                      <div className="absolute top-1 inset-x-3 z-20 flex justify-between items-center text-[7.5px] text-white/80 font-mono pointer-events-none">
+                        <span>9:41</span>
+                        <span>●● 100%</span>
+                      </div>
+
+                      {/* Mobile Image */}
+                      {bannerMobileImg ? (
+                        <Image
+                          src={bannerMobileImg}
+                          alt="Mobile preview"
+                          fill
+                          className={bannerPreviewFit === "contain" ? "object-contain bg-zinc-950" : "object-cover"}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+                          No Mobile Image
+                        </div>
+                      )}
+
+                      {/* Live Mobile Text Overlay */}
+                      <div
+                        className={`absolute inset-0 flex items-end p-2.5 pointer-events-none ${
+                          bannerTone === "dark"
+                            ? "bg-gradient-to-t from-white/95 via-white/30 to-transparent text-black"
+                            : "bg-gradient-to-t from-black/90 via-black/30 to-transparent text-white"
+                        }`}
+                      >
+                        <div className="space-y-0.5">
+                          <p className="text-[7.5px] uppercase tracking-wider font-bold text-[#d4af37]">
+                            {bannerKicker || "Featured"}
+                          </p>
+                          <p className="font-serif text-[10px] font-bold leading-tight line-clamp-2">
+                            {bannerLine1 || "Line 1"} {bannerLine2 || ""}
+                          </p>
+                          <span className="inline-block rounded-full bg-white text-black px-2 py-0.5 text-[7px] font-bold mt-0.5 shadow">
+                            {bannerCta || "Shop"} →
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Home Indicator */}
+                      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-30 h-1 w-10 rounded-full bg-white/50 pointer-events-none" />
+
+                      {/* Hover action to zoom */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setZoomImageModal({
+                            url: bannerMobileImg || "/assets/site_banners/slide1_mobile.jpg",
+                            title: `Mobile View: ${bannerKicker || "Hero Slide"}`,
+                            isMobile: true,
+                          })
+                        }
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-semibold backdrop-blur-xs cursor-pointer z-40"
+                      >
+                        <Eye className="h-4 w-4 text-[#d4af37]" />
+                        <span>Pura Dikhe</span>
+                      </button>
+                    </div>
+
+                    <span className="font-mono text-[9px] text-zinc-400">768 × 1376 Vertical Full-Bleed</span>
+                  </div>
                 </div>
               </div>
 
-              {/* ── RESPONSIVE IMAGERY: PC DESKTOP VS PHONE MOBILE ── */}
+              {/* ── COPY, HEADLINES & CTA SETTINGS ── */}
+              <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-5 space-y-4">
+                <div className="border-b border-white/10 pb-2 flex items-center justify-between">
+                  <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                    <span>Slide Typography, Headlines & Button Links</span>
+                  </h4>
+                  <span className="text-[11px] text-zinc-400">Live on Storefront Hero</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Kicker with quick chips */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Kicker / Top Subtitle <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerKicker}
+                      onChange={(e) => setBannerKicker(e.target.value)}
+                      placeholder="e.g. Summer Atelier '26"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                      required
+                    />
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {["Summer Atelier '26", "The Resort Edit", "New Arrivals", "Limited Edition", "After Dark"].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setBannerKicker(tag)}
+                          className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-[#d4af37] hover:bg-white/10 transition"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CTA Button Text with quick chips */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      CTA Button Text <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerCta}
+                      onChange={(e) => setBannerCta(e.target.value)}
+                      placeholder="e.g. Shop linen"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                      required
+                    />
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {["Shop linen", "Shop resort", "Shop new in", "Explore collection", "Shop evening"].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setBannerCta(tag)}
+                          className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-[#d4af37] hover:bg-white/10 transition"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Headline Line 1 */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Hero Headline Line 1 <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerLine1}
+                      onChange={(e) => setBannerLine1(e.target.value)}
+                      placeholder="e.g. Woven"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  {/* Headline Line 2 */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Hero Headline Line 2 (Italic Accent)
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerLine2}
+                      onChange={(e) => setBannerLine2(e.target.value)}
+                      placeholder="e.g. by hand."
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Target Link with quick chips */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Target Link <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerLink}
+                      onChange={(e) => setBannerLink(e.target.value)}
+                      placeholder="/shop or /category/contemporary"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                      required
+                    />
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {[
+                        { label: "/shop", path: "/shop" },
+                        { label: "Contemporary", path: "/category/contemporary" },
+                        { label: "Beachside", path: "/category/beachside" },
+                        { label: "Heritage", path: "/category/heritage" },
+                        { label: "About", path: "/about" },
+                      ].map((item) => (
+                        <button
+                          key={item.path}
+                          type="button"
+                          onClick={() => setBannerLink(item.path)}
+                          className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-[#d4af37] hover:bg-white/10 transition"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Text Tone */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Text Contrast Tone
+                    </label>
+                    <select
+                      value={bannerTone}
+                      onChange={(e) => setBannerTone(e.target.value as "light" | "dark")}
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                    >
+                      <option value="light">Light (White text with dark gradient — recommended for photos)</option>
+                      <option value="dark">Dark (Dark text with bright/ivory background)</option>
+                    </select>
+                    <span className="text-[10px] text-zinc-400 mt-1 block">
+                      Controls whether white or dark text overlays the banner imagery.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── RESPONSIVE IMAGES: SEPARATE PC & PHONE UPLOADS & PRESETS ── */}
               <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-5 space-y-5">
                 <div className="border-b border-white/10 pb-2">
                   <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-[#d4af37]" />
-                    <span>Responsive Slider Images (Separate for PC & Mobile)</span>
+                    <span>Responsive Images (Tailored for PC & Mobile Devices)</span>
                   </h4>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Desktop requires wide horizontal ratio, while mobile devices show vertical portrait frames.
+                    Desktop screens require wide landscape (16:9), while smartphones show vertical portrait (9:16). Select or upload both for crystal-clear store presentation.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Desktop PC Image */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Desktop PC Image Controls */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5 font-bold text-white">
                         <Monitor className="h-4 w-4 text-[#d4af37]" />
-                        Desktop (PC / Laptop)
+                        Desktop (PC / Laptop 16:9)
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400">1920 × 1080 (16:9)</span>
-                    </div>
-
-                    <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-white/10 bg-black">
-                      {bannerDesktopImg ? (
-                        <Image
-                          src={bannerDesktopImg}
-                          alt="Desktop preview"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-zinc-500">
-                          No Desktop Image
-                        </div>
-                      )}
+                      <span className="text-[10px] font-mono text-zinc-400">1920 × 1080</span>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-semibold text-white hover:bg-white/10 transition">
+                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition">
                         <Upload className="h-3.5 w-3.5 text-[#d4af37]" />
-                        <span>Upload Desktop Image</span>
+                        <span>Upload Desktop Image File</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -5479,37 +6010,73 @@ export function AdminView() {
                         required
                       />
                     </div>
+
+                    {/* Desktop Presets */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">
+                        Desktop Image Presets:
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/site_banners/slide1_desktop.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Atelier Slide 1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/site_banners/slide2_desktop.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Resort Slide 2
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/banners/hero-terracotta-widescreen.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Terracotta Widescreen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/banners/hero-evening-desktop.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Evening Dusk Desktop
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/banners/hero-atelier-widescreen.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Atelier Ultra Wide
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerDesktopImg("/assets/site_banners/slide3_desktop.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Slide 3 Desktop
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Mobile Phone Image */}
+                  {/* Mobile Phone Image Controls */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5 font-bold text-white">
                         <Smartphone className="h-4 w-4 text-[#d4af37]" />
-                        Mobile (Phone Screen)
+                        Mobile (Phone Screen 9:16)
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400">768 × 1376 (9:16)</span>
-                    </div>
-
-                    <div className="relative aspect-[16/9] md:aspect-[9/16] md:max-h-[175px] w-full rounded-xl overflow-hidden border border-white/10 bg-black mx-auto">
-                      {bannerMobileImg ? (
-                        <Image
-                          src={bannerMobileImg}
-                          alt="Mobile preview"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-zinc-500">
-                          No Mobile Image
-                        </div>
-                      )}
+                      <span className="text-[10px] font-mono text-zinc-400">768 × 1376</span>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-semibold text-white hover:bg-white/10 transition">
+                      <label className="cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition">
                         <Upload className="h-3.5 w-3.5 text-[#d4af37]" />
-                        <span>Upload Mobile Image</span>
+                        <span>Upload Mobile Image File</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -5525,6 +6092,57 @@ export function AdminView() {
                         className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
                         required
                       />
+                    </div>
+
+                    {/* Mobile Presets */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">
+                        Mobile Phone Image Presets:
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/site_banners/slide1_mobile.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Slide 1 Mobile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/site_banners/slide2_mobile.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Slide 2 Mobile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/site_banners/slide3_mobile.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Slide 3 Mobile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/banners/hero-studio-mobile.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Studio Mobile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/banners/after-dark-portrait.jpg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          After Dark Portrait
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileBannerImg("/assets/site_banners/hero_model_photo.jpeg")}
+                          className="rounded-lg border border-white/5 bg-[#161922] p-1.5 text-left text-zinc-300 hover:border-[#d4af37]/40 hover:text-white transition truncate"
+                        >
+                          Hero Model Portrait
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5617,6 +6235,66 @@ export function AdminView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: HIGH-RES BANNER IMAGE FULL PREVIEW (PURA DIKHE) ── */}
+      {zoomImageModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/92 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="relative max-w-4xl max-h-[95vh] w-full flex flex-col items-center">
+            {/* Header */}
+            <div className="w-full flex items-center justify-between pb-3 text-white">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
+                  {zoomImageModal.isMobile ? <Smartphone className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+                </span>
+                <div>
+                  <h4 className="font-serif text-sm font-bold">{zoomImageModal.title}</h4>
+                  <p className="text-[10px] text-zinc-400 font-mono">
+                    {zoomImageModal.isMobile
+                      ? "Full Mobile Ratio: 768 × 1376 (9:16 portrait)"
+                      : "Full Desktop Ratio: 1920 × 1080 (16:9 widescreen)"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={zoomImageModal.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/10 flex items-center gap-1.5 transition"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Open Full Image</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setZoomImageModal(null)}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Uncropped Image Display (Pura Dikhe) */}
+            <div
+              className={`relative w-full flex items-center justify-center rounded-2xl overflow-hidden border border-white/15 bg-zinc-950 p-2 shadow-2xl ${
+                zoomImageModal.isMobile ? "max-w-[380px] aspect-[9/16]" : "max-w-4xl aspect-[16/9]"
+              }`}
+            >
+              <Image
+                src={zoomImageModal.url}
+                alt={zoomImageModal.title}
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-2 text-center">
+              100% Uncropped Original View ("Pura Dikhe") • Press ✕ or click outside to close
+            </p>
           </div>
         </div>
       )}

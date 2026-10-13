@@ -18,6 +18,7 @@ type Slide = {
   mobile: string
   alt: string
   tone: "light" | "dark"
+  link?: string
   desktopPos?: string
   mobilePos?: string
 }
@@ -354,7 +355,7 @@ export default function HeroSlider() {
                 <div className="mt-6 overflow-hidden md:mt-9">
                   <div className="hero-reveal">
                     <Link
-                      href={slide.desktopPos || "/shop"}
+                      href={slide.link || "/shop"}
                       className={`group inline-flex h-11 items-center gap-2.5 rounded-full px-6 text-xs font-semibold uppercase tracking-[0.14em] transition-colors md:h-14 md:px-9 md:text-[13px] md:gap-3 ${
                         slide.tone === "dark"
                           ? "bg-[#1a1410] text-white hover:bg-black"
