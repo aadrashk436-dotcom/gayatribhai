@@ -1,8 +1,52 @@
 import { NextResponse } from "next/server";
 import { products as localProducts } from "@/products";
+import fs from "fs";
+import path from "path";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function getProductsFilePath() {
+  return path.join(process.cwd(), "backend", "src", "data", "db.json");
+}
+
+function readStoredProducts() {
+  try {
+    const filePath = getProductsFilePath();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      if (Array.isArray(data.products) && data.products.length > 0) {
+        return data.products.map((p: any) => ({
+          ...p,
+          price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
+          mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("Could not read stored products:", err);
+  }
+  return null;
+}
+
+function saveProductToDb(newProduct: any) {
+  try {
+    const filePath = getProductsFilePath();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      data.products = data.products || [];
+      const existingIdx = data.products.findIndex((p: any) => p.id === newProduct.id || p.slug === newProduct.slug);
+      if (existingIdx >= 0) {
+        data.products[existingIdx] = { ...data.products[existingIdx], ...newProduct, updated_at: new Date().toISOString() };
+      } else {
+        data.products.unshift(newProduct);
+      }
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+    }
+  } catch (err) {
+    console.warn("Could not save product to file:", err);
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -11,8 +55,9 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
     const sort = searchParams.get("sort");
 
-    let items = localProducts;
-    let source = "local";
+    const stored = readStoredProducts();
+    let items = stored || localProducts;
+    let source = stored ? "db" : "local";
 
     if (SUPABASE_URL && SUPABASE_KEY) {
       try {
@@ -132,6 +177,7 @@ export async function POST(request: Request) {
         });
         if (res.ok) {
           const created = await res.json();
+          saveProductToDb(created[0] || newProduct);
           return NextResponse.json({ success: true, product: created[0] || newProduct });
         }
       } catch (err: any) {
@@ -139,7 +185,8 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, product: newProduct, note: "Saved locally" });
+    saveProductToDb(newProduct);
+    return NextResponse.json({ success: true, product: newProduct, note: "Saved to local atelier database" });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to create product" }, { status: 500 });
   }
