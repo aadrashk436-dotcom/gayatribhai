@@ -1202,6 +1202,28 @@
       "tier": "Silver",
       "points": 250,
       "createdAt": "2026-10-13T14:38:31.300Z"
+    },
+    {
+      "id": "cust_1791904008588",
+      "name": "Test User",
+      "email": "testuser@gmail.com",
+      "phone": "",
+      "tier": "Silver",
+      "points": 250,
+      "authProvider": "otp",
+      "createdAt": "2026-10-13T15:06:48.588Z"
+    },
+    {
+      "id": "cust_1791904009129",
+      "name": "Gayatri Puri",
+      "email": "gayatripuri634@gmail.com",
+      "phone": "",
+      "avatar": "",
+      "googleId": "",
+      "tier": "Silver",
+      "points": 250,
+      "authProvider": "google",
+      "createdAt": "2026-10-13T15:06:49.129Z"
     }
   ],
   "addresses": [
@@ -1382,5 +1404,6 @@
     "shiprocket_email": "gayatripuri634@gmail.com",
     "free_shipping_threshold": 1999,
     "support_phone": "+91 9876543210"
-  }
+  },
+  "otps": {}
 }
