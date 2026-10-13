@@ -47,6 +47,15 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
+  // Dedicated full-viewport workspace for Atelier Admin Suite
+  if (view === "admin") {
+    return (
+      <div className="app admin-root h-screen w-full overflow-hidden bg-[#0d0f12]">
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <SmoothScroll />

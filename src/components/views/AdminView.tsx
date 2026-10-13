@@ -458,7 +458,7 @@ export function AdminView() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-zinc-100 flex flex-col antialiased selection:bg-[#d4af37] selection:text-black">
+    <div className="h-screen w-full bg-[#0d0f12] text-zinc-100 flex overflow-hidden antialiased selection:bg-[#d4af37] selection:text-black">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl border border-[#d4af37]/40 bg-[#14171d]/95 px-5 py-3.5 shadow-2xl backdrop-blur-xl text-sm font-semibold text-white animate-in slide-in-from-top-4 duration-300">
@@ -467,14 +467,12 @@ export function AdminView() {
         </div>
       )}
 
-      {/* Main Container Layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* ── DESKTOP & MOBILE SIDEBAR ── */}
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 w-72 flex-col border-r border-white/10 bg-[#121418] transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
+      {/* ── DESKTOP & MOBILE SIDEBAR (STICKY / FIXED) ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 h-screen flex-shrink-0 flex flex-col border-r border-white/10 bg-[#121418] transition-transform duration-300 ease-in-out lg:static lg:h-screen lg:w-72 lg:shrink-0 lg:flex lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
           {/* Sidebar Brand Header */}
           <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
             <Link href="/admin" className="flex items-center gap-3">
@@ -511,7 +509,7 @@ export function AdminView() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2 admin-scroll">
             <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Management</p>
             {navItems.map((item) => {
               const IconComp = item.icon
@@ -581,10 +579,13 @@ export function AdminView() {
           />
         )}
 
-        {/* ── RIGHT MAIN CONTENT AREA ── */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* ── RIGHT MAIN CONTENT AREA (INDEPENDENTLY SCROLLABLE) ── */}
+        <main
+          data-lenis-prevent
+          className="flex-1 h-screen overflow-y-auto min-w-0 flex flex-col admin-scroll scroll-smooth focus:outline-none"
+        >
           {/* Top Bar Header */}
-          <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-white/10 bg-[#0d0f12]/90 px-4 sm:px-8 backdrop-blur-xl gap-4">
+          <header className="sticky top-0 z-20 flex h-20 shrink-0 items-center justify-between border-b border-white/10 bg-[#0d0f12]/95 px-4 sm:px-8 backdrop-blur-xl gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMobileMenuOpen(true)}
@@ -655,7 +656,7 @@ export function AdminView() {
           </header>
 
           {/* Dynamic Content View Container */}
-          <div className="p-4 sm:p-8 space-y-8 flex-1">
+          <div className="p-4 sm:p-8 space-y-8 flex-1 pb-24">
             {/* ══════════════ TAB 1: DASHBOARD ══════════════ */}
             {activeTab === "Dashboard" && (
               <div className="space-y-8">
@@ -1467,7 +1468,6 @@ export function AdminView() {
             )}
           </div>
         </main>
-      </div>
 
       {/* ── MODAL: ADD NEW SHIRT ── */}
       {showAddShirtModal && (
