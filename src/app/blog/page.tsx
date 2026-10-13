@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { BLOG_POSTS } from "@/data/blogData"
+import { getStoredBlogPosts } from "@/lib/blogs"
 import BlogClient from "./BlogClient"
 
 const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
@@ -29,6 +29,8 @@ export const metadata: Metadata = {
 }
 
 export default function BlogPage() {
+  const publishedPosts = getStoredBlogPosts(false)
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Blog",
@@ -41,7 +43,7 @@ export default function BlogPage() {
       name: "AVYR by Gayatri",
       logo: `${BASE_URL}/favicon.svg`,
     },
-    blogPost: BLOG_POSTS.map((post) => ({
+    blogPost: publishedPosts.map((post) => ({
       "@type": "BlogPosting",
       headline: post.title,
       description: post.excerpt,

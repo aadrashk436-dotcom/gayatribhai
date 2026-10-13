@@ -32,26 +32,39 @@ export type CartItem = {
   quantity: number
 }
 
+export interface BlogSEO {
+  metaTitle?: string
+  metaDescription?: string
+  keywords?: string[]
+  canonicalUrl?: string
+  ogImage?: string
+  altText?: string
+  noIndex?: boolean
+}
+
 export interface BlogPost {
   id: string
   slug: string
   title: string
-  subtitle: string
+  subtitle?: string
   excerpt: string
   content: string[]
-  keyTakeaways: string[]
+  keyTakeaways?: string[]
   author: {
     name: string
     role: string
     avatar: string
   }
-  category: "Craft & Atelier" | "Style Guides" | "Fabric Science" | "Resort Life"
+  category: "Craft & Atelier" | "Style Guides" | "Fabric Science" | "Resort Life" | string
   coverImage: string
   readTime: string
   date: string
   tags: string[]
   featured?: boolean
-  relatedProductIds: string[]
+  relatedProductIds?: string[]
+  is_published?: boolean
+  views_count?: number
+  seo?: BlogSEO
 }
 
 export interface ReelItem {

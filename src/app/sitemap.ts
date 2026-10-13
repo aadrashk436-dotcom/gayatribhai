@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 import { products } from "@/lib/products"
-import { BLOG_POSTS } from "@/data/blogData"
+import { getStoredBlogPosts } from "@/lib/blogs"
 
 const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
 
@@ -33,7 +33,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }))
 
-  const blogPages: MetadataRoute.Sitemap = BLOG_POSTS.map((post) => ({
+  const blogPosts = getStoredBlogPosts(false)
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,

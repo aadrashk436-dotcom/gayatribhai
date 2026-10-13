@@ -16,9 +16,23 @@ export interface BlogPreviewSectionProps {
 export function BlogPreviewSection({
   onOpenArticle,
 }: BlogPreviewSectionProps) {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(() =>
+    BLOG_POSTS.filter((p) => p.is_published !== false)
+  )
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/blogs")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBlogPosts(data.filter((b: BlogPost) => b.is_published !== false))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const checkScrollState = () => {
     const el = scrollRef.current
@@ -37,7 +51,7 @@ export function BlogPreviewSection({
       el.removeEventListener("scroll", checkScrollState)
       window.removeEventListener("resize", checkScrollState)
     }
-  }, [])
+  }, [blogPosts])
 
   const handleScroll = (direction: "left" | "right") => {
     const el = scrollRef.current
@@ -125,7 +139,7 @@ export function BlogPreviewSection({
           className="flex gap-5 overflow-x-auto px-5 pb-6 pt-1 md:gap-7 md:px-10 lg:px-14 snap-x snap-mandatory scrollbar-none"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          {BLOG_POSTS.map((post) => {
+          {blogPosts.map((post) => {
             const articleUrl = getBlogUrl(post.slug)
             return (
               <article

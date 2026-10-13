@@ -16,6 +16,7 @@ export interface BlogViewProps {
   addToCart: (p: Product) => void
   selectedBlogId?: string | null
   setSelectedBlogId?: (id: string | null) => void
+  postsOverride?: BlogPost[]
 }
 
 export function BlogView({
@@ -24,16 +25,33 @@ export function BlogView({
   addToCart,
   selectedBlogId,
   setSelectedBlogId,
+  postsOverride,
 }: BlogViewProps) {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(() => postsOverride || BLOG_POSTS)
   const [selectedCategory, setSelectedCategory] = useState<string>("All Essays")
   const [activeArticle, setActiveArticle] = useState<BlogPost | null>(() => {
     if (selectedBlogId) {
-      return BLOG_POSTS.find((p) => p.id === selectedBlogId) || null
+      return (postsOverride || BLOG_POSTS).find((p) => p.id === selectedBlogId) || null
     }
     return null
   })
   const [copied, setCopied] = useState(false)
   const [currentUrl, setCurrentUrl] = useState("")
+
+  useEffect(() => {
+    if (postsOverride && postsOverride.length > 0) {
+      setBlogPosts(postsOverride)
+      return
+    }
+    fetch("/api/blogs")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBlogPosts(data.filter((b: BlogPost) => b.is_published !== false))
+        }
+      })
+      .catch(() => {})
+  }, [postsOverride])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -44,13 +62,13 @@ export function BlogView({
   // Sync when selectedBlogId changes from outside (e.g. from Home page click)
   useEffect(() => {
     if (selectedBlogId) {
-      const match = BLOG_POSTS.find((p) => p.id === selectedBlogId)
+      const match = blogPosts.find((p) => p.id === selectedBlogId)
       if (match) {
         setActiveArticle(match)
         window.scrollTo({ top: 0, behavior: "smooth" })
       }
     }
-  }, [selectedBlogId])
+  }, [selectedBlogId, blogPosts])
 
   // Scroll to top whenever a new article is opened
   useEffect(() => {
@@ -69,10 +87,10 @@ export function BlogView({
 
   const filteredPosts =
     selectedCategory === "All Essays"
-      ? BLOG_POSTS
-      : BLOG_POSTS.filter((p) => p.category === selectedCategory)
+      ? blogPosts
+      : blogPosts.filter((p) => p.category === selectedCategory)
 
-  const featuredPost = BLOG_POSTS.find((p) => p.featured) || BLOG_POSTS[0]
+  const featuredPost = blogPosts.find((p) => p.featured) || blogPosts[0] || BLOG_POSTS[0]
 
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(window.location.href)
@@ -96,10 +114,10 @@ export function BlogView({
   // 1. FULL PAGE ARTICLE READER VIEW
   // =========================================================================
   if (activeArticle) {
-    const currentIndex = BLOG_POSTS.findIndex((p) => p.id === activeArticle.id)
-    const prevPost = currentIndex > 0 ? BLOG_POSTS[currentIndex - 1] : null
+    const currentIndex = blogPosts.findIndex((p) => p.id === activeArticle.id)
+    const prevPost = currentIndex > 0 ? blogPosts[currentIndex - 1] : null
     const nextPost =
-      currentIndex < BLOG_POSTS.length - 1 ? BLOG_POSTS[currentIndex + 1] : null
+      currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null
 
     return (
       <div className="full-page-article-view">
@@ -186,20 +204,22 @@ export function BlogView({
           </div>
 
           {/* Atelier Key Takeaways Box */}
-          <div className="article-takeaways-card">
-            <div className="takeaways-header">
-              <Icon name="sparkles" size={16} />
-              <span>ATELIER KEY TAKEAWAYS</span>
+          {activeArticle.keyTakeaways && activeArticle.keyTakeaways.length > 0 && (
+            <div className="article-takeaways-card">
+              <div className="takeaways-header">
+                <Icon name="sparkles" size={16} />
+                <span>ATELIER KEY TAKEAWAYS</span>
+              </div>
+              <ul>
+                {activeArticle.keyTakeaways.map((point, idx) => (
+                  <li key={idx}>
+                    <Icon name="check" size={14} />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul>
-              {activeArticle.keyTakeaways.map((point, idx) => (
-                <li key={idx}>
-                  <Icon name="check" size={14} />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          )}
 
           {/* Editorial Paragraphs */}
           <div className="article-body-typography">
@@ -224,7 +244,7 @@ export function BlogView({
           </div>
 
           {/* Featured Shirts from this Essay */}
-          {activeArticle.relatedProductIds.length > 0 && (
+          {activeArticle.relatedProductIds && activeArticle.relatedProductIds.length > 0 && (
             <section className="article-featured-shirts-section">
               <div className="featured-shirts-head">
                 <span className="eyebrow">From This Story</span>

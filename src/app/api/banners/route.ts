@@ -18,6 +18,8 @@ export interface BannerSlide {
   link: string;
   is_active: boolean;
   sort_order: number;
+  seo_heading?: string;
+  seo_keywords?: string[];
 }
 
 export const INITIAL_BANNERS: BannerSlide[] = [

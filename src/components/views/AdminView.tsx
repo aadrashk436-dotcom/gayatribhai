@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -46,8 +46,12 @@ import {
   EyeOff,
   Monitor,
   Smartphone,
+  Globe,
+  BookOpen,
 } from "lucide-react"
 import { products as initialProducts, Product } from "@/lib/products"
+import { BLOG_POSTS as initialBlogPosts } from "@/data/blogData"
+import type { BlogPost } from "@/types"
 
 // Format money in Indian currency notation
 function formatINR(amount: number) {
@@ -482,6 +486,63 @@ export function AdminView() {
   const [bannerLink, setBannerLink] = useState("/shop")
   const [bannerTone, setBannerTone] = useState<"light" | "dark">("light")
   const [bannerActive, setBannerActive] = useState(true)
+  const [bannerAlt, setBannerAlt] = useState("Ivory hand-embroidered French linen shirt on an Aegean terrace")
+  const [bannerSeoHeading, setBannerSeoHeading] = useState("H1")
+  const [bannerSeoKeywords, setBannerSeoKeywords] = useState("french linen shirts, luxury menswear, resortwear")
+
+  // ── BLOG CMS & SEO STUDIO STATES ──
+  const [blogList, setBlogList] = useState<BlogPost[]>(initialBlogPosts)
+  const [blogSearchQuery, setBlogSearchQuery] = useState("")
+  const [blogCategoryFilter, setBlogCategoryFilter] = useState("All")
+  const [blogStatusFilter, setBlogStatusFilter] = useState<"All" | "Published" | "Draft">("All")
+  const [showAddBlogModal, setShowAddBlogModal] = useState(false)
+  const [editBlogModal, setEditBlogModal] = useState<BlogPost | null>(null)
+  const [deleteBlogModal, setDeleteBlogModal] = useState<BlogPost | null>(null)
+  const [blogActiveTab, setBlogActiveTab] = useState<"content" | "seo">("content")
+
+  // Blog Form Fields
+  const [blogTitle, setBlogTitle] = useState("")
+  const [blogSubtitle, setBlogSubtitle] = useState("")
+  const [blogSlug, setBlogSlug] = useState("")
+  const [blogCategory, setBlogCategory] = useState("Craft & Atelier")
+  const [blogAuthorName, setBlogAuthorName] = useState("Gayatri Puri")
+  const [blogAuthorRole, setBlogAuthorRole] = useState("Founder & Master Curator")
+  const [blogExcerpt, setBlogExcerpt] = useState("")
+  const [blogContent, setBlogContent] = useState("")
+  const [blogKeyTakeaways, setBlogKeyTakeaways] = useState("")
+  const [blogCoverImage, setBlogCoverImage] = useState("/assets/site_banners/slide1_desktop.jpg")
+  const [blogReadTime, setBlogReadTime] = useState("5 min read")
+  const [blogTags, setBlogTags] = useState("French Linen, Heritage Craft, Summer Style")
+  const [blogFeatured, setBlogFeatured] = useState(false)
+  const [blogPublished, setBlogPublished] = useState(true)
+
+  // Blog SEO Fields
+  const [blogMetaTitle, setBlogMetaTitle] = useState("")
+  const [blogMetaDescription, setBlogMetaDescription] = useState("")
+  const [blogKeywords, setBlogKeywords] = useState("")
+  const [blogCanonicalUrl, setBlogCanonicalUrl] = useState("")
+  const [blogOgImage, setBlogOgImage] = useState("")
+  const [blogAltText, setBlogAltText] = useState("")
+  const [blogNoIndex, setBlogNoIndex] = useState(false)
+
+  // Global Page-Level SEO Settings
+  const [siteSeoSettings, setSiteSeoSettings] = useState({
+    home: {
+      metaTitle: "GAYATRI BHAI | Handcrafted Luxury French Linen Shirts",
+      metaDescription: "Discover artisanal resortwear and heirloom hand-embroidered French linen shirts crafted with generational master Karigar perfection in India.",
+      keywords: "luxury linen shirts, hand embroidered shirts, cuban collar linen, resortwear india",
+    },
+    shop: {
+      metaTitle: "Shop Artisan Linen Shirts | Gayatri Bhai Collection",
+      metaDescription: "Explore our limited drops of 100% pure organic French linen shirts with single-needle botanical and resort embroidery.",
+      keywords: "buy linen shirts online, resort collection, handcrafted clothing",
+    },
+    blog: {
+      metaTitle: "The AVYR Journal | Essays on Craft, Linen Science & Sartorial Art",
+      metaDescription: "Delve into the stories behind our atelier. In-depth guides to French flax, embroidery techniques, resort styling, and conscious luxury living.",
+      keywords: "linen care, fabric science, cuban collar styling, artisan craft",
+    },
+  })
 
   // Multi-select state for bulk order actions
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
@@ -561,6 +622,63 @@ export function AdminView() {
       return matchSearch && matchStatus
     })
   }, [orderList, searchQuery, orderStatusFilter])
+
+  // Filtered Blog Posts for CMS
+  const filteredBlogs = useMemo(() => {
+    return blogList.filter((b) => {
+      const q = blogSearchQuery.toLowerCase().trim()
+      const matchesSearch =
+        !q ||
+        b.title.toLowerCase().includes(q) ||
+        (b.subtitle && b.subtitle.toLowerCase().includes(q)) ||
+        b.slug.toLowerCase().includes(q) ||
+        (b.author?.name && b.author.name.toLowerCase().includes(q)) ||
+        (Array.isArray(b.tags) && b.tags.some((t) => t.toLowerCase().includes(q)))
+
+      const matchesCat = blogCategoryFilter === "All" || b.category === blogCategoryFilter
+
+      const isPub = b.is_published !== false
+      const matchesStatus =
+        blogStatusFilter === "All" ||
+        (blogStatusFilter === "Published" && isPub) ||
+        (blogStatusFilter === "Draft" && !isPub)
+
+      return matchesSearch && matchesCat && matchesStatus
+    })
+  }, [blogList, blogSearchQuery, blogCategoryFilter, blogStatusFilter])
+
+  // Initial live data synchronization
+  useEffect(() => {
+    // Live blogs
+    fetch("/api/blogs?all=true")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBlogList(data)
+        }
+      })
+      .catch((e) => console.warn("Could not load blogs:", e))
+
+    // Live banners
+    fetch("/api/banners")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBannerList(data)
+        }
+      })
+      .catch((e) => console.warn("Could not load banners:", e))
+
+    // Live SEO settings
+    fetch("/api/seo")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.home) {
+          setSiteSeoSettings(data)
+        }
+      })
+      .catch((e) => console.warn("Could not load SEO settings:", e))
+  }, [])
 
   // Low stock inventory calculation
   const lowStockCount = useMemo(() => {
@@ -987,8 +1105,8 @@ export function AdminView() {
       newShirtImages.length > 0
         ? newShirtImages
         : [
-            "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
-          ]
+          "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+        ]
 
     const activeSizes = Object.entries(newShirtStock)
       .filter(([_, qty]) => qty > 0)
@@ -1184,6 +1302,9 @@ export function AdminView() {
     setBannerLink("/shop")
     setBannerTone("light")
     setBannerActive(true)
+    setBannerAlt("Ivory hand-embroidered French linen shirt on an Aegean seaside stone terrace")
+    setBannerSeoHeading("H1")
+    setBannerSeoKeywords("french linen shirts, luxury menswear, resortwear")
     setShowBannerModal(true)
   }
 
@@ -1198,6 +1319,13 @@ export function AdminView() {
     setBannerLink(banner.link || "/shop")
     setBannerTone(banner.tone || "light")
     setBannerActive(banner.is_active !== false)
+    setBannerAlt(banner.alt || `${banner.kicker || "Hero"} - ${banner.lines?.[0] || ""}`)
+    setBannerSeoHeading(banner.seo_heading || "H1")
+    setBannerSeoKeywords(
+      Array.isArray(banner.seo_keywords)
+        ? banner.seo_keywords.join(", ")
+        : banner.seo_keywords || ""
+    )
     setShowBannerModal(true)
   }
 
@@ -1210,10 +1338,15 @@ export function AdminView() {
       cta: bannerCta,
       desktop: bannerDesktopImg,
       mobile: bannerMobileImg,
-      alt: `${bannerKicker} - ${bannerLine1} ${bannerLine2}`,
+      alt: bannerAlt || `${bannerKicker} - ${bannerLine1} ${bannerLine2}`,
       tone: bannerTone,
       link: bannerLink,
       is_active: bannerActive,
+      seo_heading: bannerSeoHeading,
+      seo_keywords: bannerSeoKeywords
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean),
       sort_order: editingBannerId
         ? bannerList.find((b) => b.id === editingBannerId)?.sort_order || 1
         : bannerList.length + 1,
@@ -1228,7 +1361,7 @@ export function AdminView() {
 
     setBannerList(updatedList)
     setShowBannerModal(false)
-    showToast("Homepage Hero Banner saved & live!")
+    showToast("Homepage Hero Banner & SEO settings saved!")
 
     try {
       await fetch("/api/banners", {
@@ -1291,6 +1424,231 @@ export function AdminView() {
     }
     reader.readAsDataURL(file)
     e.target.value = ""
+  }
+
+  // ── BLOG CMS & SEO HANDLERS ──
+  const handleOpenAddBlog = () => {
+    setEditBlogModal(null)
+    setBlogTitle("")
+    setBlogSubtitle("")
+    setBlogSlug("")
+    setBlogCategory("Craft & Atelier")
+    setBlogAuthorName("Gayatri Puri")
+    setBlogAuthorRole("Founder & Master Curator")
+    setBlogExcerpt("")
+    setBlogContent("")
+    setBlogKeyTakeaways("")
+    setBlogCoverImage("/assets/site_banners/slide1_desktop.jpg")
+    setBlogReadTime("5 min read")
+    setBlogTags("French Linen, Heritage Craft, Summer Style")
+    setBlogFeatured(false)
+    setBlogPublished(true)
+    setBlogMetaTitle("")
+    setBlogMetaDescription("")
+    setBlogKeywords("luxury linen shirts, artisan embroidery, gayatri bhai atelier")
+    setBlogCanonicalUrl("")
+    setBlogOgImage("")
+    setBlogAltText("")
+    setBlogNoIndex(false)
+    setBlogActiveTab("content")
+    setShowAddBlogModal(true)
+  }
+
+  const handleOpenEditBlog = (blog: BlogPost) => {
+    setEditBlogModal(blog)
+    setBlogTitle(blog.title || "")
+    setBlogSubtitle(blog.subtitle || "")
+    setBlogSlug(blog.slug || "")
+    setBlogCategory(blog.category || "Craft & Atelier")
+    setBlogAuthorName(blog.author?.name || "Gayatri Puri")
+    setBlogAuthorRole(blog.author?.role || "Founder & Master Curator")
+    setBlogExcerpt(blog.excerpt || "")
+    setBlogContent(
+      Array.isArray(blog.content) ? blog.content.join("\n\n") : (blog.content as any) || ""
+    )
+    setBlogKeyTakeaways(
+      Array.isArray(blog.keyTakeaways) ? blog.keyTakeaways.join("\n") : ""
+    )
+    setBlogCoverImage(blog.coverImage || "/assets/site_banners/slide1_desktop.jpg")
+    setBlogReadTime(blog.readTime || "5 min read")
+    setBlogTags(Array.isArray(blog.tags) ? blog.tags.join(", ") : "")
+    setBlogFeatured(Boolean(blog.featured))
+    setBlogPublished(blog.is_published !== false)
+    setBlogMetaTitle(blog.seo?.metaTitle || `${blog.title} | Gayatri Bhai Journal`)
+    setBlogMetaDescription(blog.seo?.metaDescription || blog.excerpt || "")
+    setBlogKeywords(
+      Array.isArray(blog.seo?.keywords) ? blog.seo.keywords.join(", ") : ""
+    )
+    setBlogCanonicalUrl(blog.seo?.canonicalUrl || "")
+    setBlogOgImage(blog.seo?.ogImage || blog.coverImage || "")
+    setBlogAltText(blog.seo?.altText || blog.title || "")
+    setBlogNoIndex(Boolean(blog.seo?.noIndex))
+    setBlogActiveTab("content")
+    setShowAddBlogModal(true)
+  }
+
+  const handleToggleBlogPublish = async (blogId: string) => {
+    const blog = blogList.find((b) => b.id === blogId)
+    if (!blog) return
+    const newStatus = !(blog.is_published !== false)
+
+    setBlogList((prev) =>
+      prev.map((b) => (b.id === blogId ? { ...b, is_published: newStatus } : b))
+    )
+    showToast(
+      newStatus
+        ? `"${blog.title}" is now LIVE on store!`
+        : `"${blog.title}" is now HIDDEN (Draft).`
+    )
+
+    try {
+      await fetch("/api/blogs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: blogId, is_published: newStatus }),
+      })
+    } catch (e) {
+      console.warn("Could not sync blog visibility to API:", e)
+    }
+  }
+
+  const handleOpenDeleteBlog = (blog: BlogPost) => {
+    setDeleteBlogModal(blog)
+  }
+
+  const handleConfirmDeleteBlog = async () => {
+    if (!deleteBlogModal) return
+    const idToDelete = deleteBlogModal.id
+    const titleToDelete = deleteBlogModal.title
+    setBlogList((prev) => prev.filter((b) => b.id !== idToDelete))
+    setDeleteBlogModal(null)
+    showToast(`"${titleToDelete}" removed from journal.`)
+
+    try {
+      await fetch(`/api/blogs?id=${encodeURIComponent(idToDelete)}`, {
+        method: "DELETE",
+      })
+    } catch (e) {
+      console.warn("Could not sync delete blog to API:", e)
+    }
+  }
+
+  const handleSaveBlog = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!blogTitle.trim()) {
+      showToast("Please enter a blog article title.")
+      return
+    }
+
+    const contentParagraphs = blogContent
+      .split("\n\n")
+      .map((p) => p.trim())
+      .filter(Boolean)
+
+    const keyTakeawaysArray = blogKeyTakeaways
+      .split("\n")
+      .map((k) => k.trim())
+      .filter(Boolean)
+
+    const tagsArray = blogTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+
+    const keywordsArray = blogKeywords
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean)
+
+    const slugToUse = (blogSlug.trim() || blogTitle.trim())
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+
+    const blogPayload: Partial<BlogPost> = {
+      id: editBlogModal ? editBlogModal.id : `blog-${Date.now()}`,
+      title: blogTitle.trim(),
+      subtitle: blogSubtitle.trim(),
+      slug: slugToUse,
+      category: blogCategory,
+      excerpt: blogExcerpt.trim() || blogContent.slice(0, 150) + "...",
+      content: contentParagraphs.length > 0 ? contentParagraphs : [blogExcerpt],
+      keyTakeaways: keyTakeawaysArray,
+      author: {
+        name: blogAuthorName.trim() || "Gayatri Puri",
+        role: blogAuthorRole.trim() || "Master Curator",
+        avatar: (blogAuthorName.trim() || "GP").slice(0, 2).toUpperCase(),
+      },
+      coverImage: blogCoverImage.trim() || "/assets/site_banners/slide1_desktop.jpg",
+      readTime: blogReadTime.trim() || "5 min read",
+      date:
+        editBlogModal?.date ||
+        new Date().toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }),
+      tags: tagsArray,
+      featured: blogFeatured,
+      is_published: blogPublished,
+      seo: {
+        metaTitle: blogMetaTitle.trim() || `${blogTitle.trim()} | Gayatri Bhai Journal`,
+        metaDescription: blogMetaDescription.trim() || blogExcerpt.slice(0, 155),
+        keywords: keywordsArray,
+        canonicalUrl:
+          blogCanonicalUrl.trim() ||
+          `https://gayatribhaishop-zkde-eight.vercel.app/blog/${slugToUse}`,
+        ogImage: blogOgImage.trim() || blogCoverImage.trim(),
+        altText: blogAltText.trim() || blogTitle.trim(),
+        noIndex: blogNoIndex,
+      },
+    }
+
+    if (editBlogModal) {
+      setBlogList((prev) =>
+        prev.map((b) =>
+          b.id === editBlogModal.id ? ({ ...b, ...blogPayload } as BlogPost) : b
+        )
+      )
+      showToast(`Article "${blogTitle}" updated successfully!`)
+      try {
+        await fetch("/api/blogs", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(blogPayload),
+        })
+      } catch (err) {
+        console.warn("Could not sync edit blog to API:", err)
+      }
+    } else {
+      setBlogList((prev) => [blogPayload as BlogPost, ...prev])
+      showToast(`Article "${blogTitle}" created & published to CMS!`)
+      try {
+        await fetch("/api/blogs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(blogPayload),
+        })
+      } catch (err) {
+        console.warn("Could not sync new blog to API:", err)
+      }
+    }
+
+    setShowAddBlogModal(false)
+    setEditBlogModal(null)
+  }
+
+  const handleSaveSeoSettings = async () => {
+    showToast("Global Page SEO settings saved & synced with search engines!")
+    try {
+      await fetch("/api/seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(siteSeoSettings),
+      })
+    } catch (e) {
+      console.warn("Could not sync SEO settings:", e)
+    }
   }
 
   const handleAddCouponSubmit = (e: React.FormEvent) => {
@@ -1359,6 +1717,7 @@ export function AdminView() {
     { name: "Coupons", icon: Ticket, badge: couponList.length },
     { name: "Shiprocket", icon: Truck, badge: "Live" },
     { name: "Marketing", icon: ImageIcon, badge: null },
+    { name: "Blog CMS", icon: BookOpen, badge: `${blogList.length}` },
     { name: "Settings", icon: Settings, badge: null },
   ]
 
@@ -1426,8 +1785,8 @@ export function AdminView() {
                   setMobileMenuOpen(false)
                 }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-wider transition-all duration-150 ${isActive
-                    ? "bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20 font-bold"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                  ? "bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20 font-bold"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                   }`}
               >
                 <div className="flex items-center gap-3">
@@ -1437,12 +1796,12 @@ export function AdminView() {
                 {item.badge !== null && (
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive
-                        ? "bg-black/20 text-black"
-                        : item.badge === "Live"
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : String(item.badge).includes("Alert")
-                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                            : "bg-white/10 text-zinc-300"
+                      ? "bg-black/20 text-black"
+                      : item.badge === "Live"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : String(item.badge).includes("Alert")
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          : "bg-white/10 text-zinc-300"
                       }`}
                   >
                     {item.badge}
@@ -1554,6 +1913,17 @@ export function AdminView() {
                 <span className="hidden sm:inline">Export CSV</span>
               </button>
             )}
+
+            {activeTab === "Blog CMS" && (
+              <button
+                onClick={handleOpenAddBlog}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black shadow-md hover:brightness-110 active:scale-95 transition"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Write New Article</span>
+                <span className="sm:hidden">New Blog</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -1662,8 +2032,8 @@ export function AdminView() {
                         <div
                           style={{ height: `${item.h}%` }}
                           className={`w-full max-w-[42px] rounded-t-lg transition-all duration-300 ${idx === 5
-                              ? "bg-gradient-to-t from-[#d4af37] to-[#f3e5ab] shadow-lg shadow-[#d4af37]/20"
-                              : "bg-white/10 hover:bg-white/20"
+                            ? "bg-gradient-to-t from-[#d4af37] to-[#f3e5ab] shadow-lg shadow-[#d4af37]/20"
+                            : "bg-white/10 hover:bg-white/20"
                             }`}
                         />
                         <span className="text-[11px] font-semibold text-zinc-400 mt-2">{item.m}</span>
@@ -1704,8 +2074,8 @@ export function AdminView() {
                             </div>
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold shrink-0 ${stockTotal <= 10
-                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                 }`}
                             >
                               {stockTotal} units left
@@ -1775,10 +2145,10 @@ export function AdminView() {
                           <td className="py-3.5 px-3">
                             <span
                               className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${ord.status === "Delivered"
-                                  ? "bg-emerald-500/20 text-emerald-300"
-                                  : ord.status === "Dispatched"
-                                    ? "bg-blue-500/20 text-blue-300"
-                                    : "bg-amber-500/20 text-amber-300"
+                                ? "bg-emerald-500/20 text-emerald-300"
+                                : ord.status === "Dispatched"
+                                  ? "bg-blue-500/20 text-blue-300"
+                                  : "bg-amber-500/20 text-amber-300"
                                 }`}
                             >
                               {ord.status}
@@ -1823,8 +2193,8 @@ export function AdminView() {
                       key={cat}
                       onClick={() => setCategoryFilter(cat)}
                       className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition shrink-0 ${categoryFilter === cat
-                          ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
-                          : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                        ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
+                        : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                     >
                       {cat}
@@ -1851,11 +2221,10 @@ export function AdminView() {
                     return (
                       <div
                         key={p.id}
-                        className={`rounded-2xl border bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group transition duration-200 ${
-                          isHidden
+                        className={`rounded-2xl border bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group transition duration-200 ${isHidden
                             ? "border-amber-500/30 opacity-90"
                             : "border-white/10 hover:border-[#d4af37]/40"
-                        }`}
+                          }`}
                       >
                         <div>
                           <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3">
@@ -1907,11 +2276,10 @@ export function AdminView() {
                               {Object.entries(p.stock).map(([size, count]) => (
                                 <span
                                   key={size}
-                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${
-                                    count <= 2
+                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-mono font-semibold ${count <= 2
                                       ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                                       : "bg-white/5 text-zinc-300 border border-white/10"
-                                  }`}
+                                    }`}
                                 >
                                   {size}: {count}
                                 </span>
@@ -1940,11 +2308,10 @@ export function AdminView() {
                             {/* Visibility Toggle Button */}
                             <button
                               onClick={() => handleToggleProductVisibility(p)}
-                              className={`rounded-lg border p-2 transition ${
-                                isHidden
+                              className={`rounded-lg border p-2 transition ${isHidden
                                   ? "border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/30"
                                   : "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
-                              }`}
+                                }`}
                               title={isHidden ? "Unhide and publish to store" : "Hide from customer storefront"}
                             >
                               {isHidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -2006,8 +2373,8 @@ export function AdminView() {
                       key={st.name}
                       onClick={() => setOrderStatusFilter(st.name)}
                       className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${orderStatusFilter === st.name
-                          ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
-                          : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                        ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
+                        : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                     >
                       <span>{st.name}</span>
@@ -2170,8 +2537,8 @@ export function AdminView() {
                             <td className="py-3.5 px-3">
                               <span
                                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${ord.paymentStatus === "Paid"
-                                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                    : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
                                   }`}
                               >
                                 <CheckCircle2 className="h-2.5 w-2.5" />
@@ -2185,14 +2552,14 @@ export function AdminView() {
                             <td className="py-3.5 px-3">
                               <span
                                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${ord.status === "Delivered"
-                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                    : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
-                                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                      : ord.status === "Verified"
-                                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                                        : ord.status === "Cancelled"
-                                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                    : ord.status === "Verified"
+                                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                      : ord.status === "Cancelled"
+                                        ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                   }`}
                               >
                                 {ord.status}
@@ -2327,10 +2694,10 @@ export function AdminView() {
                           <td className="py-4 px-4">
                             <span
                               className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${c.tier === "Platinum"
-                                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                  : c.tier === "Gold"
-                                    ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30"
-                                    : "bg-zinc-500/20 text-zinc-300"
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                : c.tier === "Gold"
+                                  ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30"
+                                  : "bg-zinc-500/20 text-zinc-300"
                                 }`}
                             >
                               {c.tier} Member
@@ -2444,32 +2811,29 @@ export function AdminView() {
                     <div className="inline-flex rounded-xl border border-white/10 bg-[#0d0f12] p-1 text-xs">
                       <button
                         onClick={() => setInventoryStockFilter("all")}
-                        className={`rounded-lg px-3 py-1 font-semibold transition ${
-                          inventoryStockFilter === "all"
+                        className={`rounded-lg px-3 py-1 font-semibold transition ${inventoryStockFilter === "all"
                             ? "bg-[#d4af37] text-black shadow font-bold"
                             : "text-zinc-400 hover:text-white"
-                        }`}
+                          }`}
                       >
                         All ({productList.length})
                       </button>
                       <button
                         onClick={() => setInventoryStockFilter("low")}
-                        className={`rounded-lg px-3 py-1 font-semibold transition flex items-center gap-1 ${
-                          inventoryStockFilter === "low"
+                        className={`rounded-lg px-3 py-1 font-semibold transition flex items-center gap-1 ${inventoryStockFilter === "low"
                             ? "bg-amber-500 text-black shadow font-bold"
                             : "text-zinc-400 hover:text-amber-400"
-                        }`}
+                          }`}
                       >
                         <span>Low Stock</span>
                         <span className="text-[10px] font-mono font-bold">({inventoryStats.lowStockItems})</span>
                       </button>
                       <button
                         onClick={() => setInventoryStockFilter("out")}
-                        className={`rounded-lg px-3 py-1 font-semibold transition flex items-center gap-1 ${
-                          inventoryStockFilter === "out"
+                        className={`rounded-lg px-3 py-1 font-semibold transition flex items-center gap-1 ${inventoryStockFilter === "out"
                             ? "bg-rose-500 text-white shadow font-bold"
                             : "text-zinc-400 hover:text-rose-400"
-                        }`}
+                          }`}
                       >
                         <span>Out of Stock</span>
                         <span className="text-[10px] font-mono font-bold">({inventoryStats.outOfStockItems})</span>
@@ -2515,9 +2879,8 @@ export function AdminView() {
                           return (
                             <tr
                               key={p.id}
-                              className={`hover:bg-white/[0.02] transition group ${
-                                isHidden ? "opacity-75 bg-amber-500/[0.02]" : ""
-                              }`}
+                              className={`hover:bg-white/[0.02] transition group ${isHidden ? "opacity-75 bg-amber-500/[0.02]" : ""
+                                }`}
                             >
                               {/* Product Photo & Details */}
                               <td className="py-3.5 px-3">
@@ -2590,13 +2953,12 @@ export function AdminView() {
                                     <div className="inline-flex flex-col items-center">
                                       <span className="text-[9px] font-bold text-zinc-400 mb-0.5">{sz}</span>
                                       <div
-                                        className={`inline-flex items-center rounded-lg border px-1 py-0.5 shadow-sm transition ${
-                                          qty === 0
+                                        className={`inline-flex items-center rounded-lg border px-1 py-0.5 shadow-sm transition ${qty === 0
                                             ? "border-rose-500/40 bg-rose-500/10 text-rose-300"
                                             : qty < 5
-                                            ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                                            : "border-white/10 bg-[#0d0f12] text-white"
-                                        }`}
+                                              ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                                              : "border-white/10 bg-[#0d0f12] text-white"
+                                          }`}
                                       >
                                         <button
                                           type="button"
@@ -2631,19 +2993,18 @@ export function AdminView() {
                                     {totalUnits} <span className="text-[10px] text-zinc-400 font-normal">pcs</span>
                                   </span>
                                   <span
-                                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold mt-1 ${
-                                      totalUnits === 0
+                                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold mt-1 ${totalUnits === 0
                                         ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                                         : totalUnits < 10
-                                        ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                    }`}
+                                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                          : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                      }`}
                                   >
                                     {totalUnits === 0
                                       ? "Out of Stock"
                                       : totalUnits < 10
-                                      ? "Low Stock"
-                                      : "Healthy"}
+                                        ? "Low Stock"
+                                        : "Healthy"}
                                   </span>
                                 </div>
                               </td>
@@ -2669,11 +3030,10 @@ export function AdminView() {
                                   <button
                                     type="button"
                                     onClick={() => handleToggleProductVisibility(p)}
-                                    className={`rounded-lg border p-1.5 transition ${
-                                      isHidden
+                                    className={`rounded-lg border p-1.5 transition ${isHidden
                                         ? "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
                                         : "border-white/10 bg-white/5 text-zinc-300 hover:text-white hover:bg-white/10"
-                                    }`}
+                                      }`}
                                     title={isHidden ? "Unhide product on store" : "Hide product from store"}
                                   >
                                     {isHidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -2838,9 +3198,8 @@ export function AdminView() {
                   return (
                     <div
                       key={banner.id || index}
-                      className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${
-                        isActive ? "border-white/10 hover:border-[#d4af37]/40" : "border-white/5 opacity-75"
-                      }`}
+                      className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${isActive ? "border-white/10 hover:border-[#d4af37]/40" : "border-white/5 opacity-75"
+                        }`}
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
                         <div className="flex items-center gap-3">
@@ -2853,11 +3212,10 @@ export function AdminView() {
                                 {banner.kicker || "Featured Slide"}
                               </span>
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                  isActive
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive
                                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                                     : "bg-white/10 text-zinc-400"
-                                }`}
+                                  }`}
                               >
                                 {isActive ? "● Live on Store" : "○ Draft / Paused"}
                               </span>
@@ -2872,11 +3230,10 @@ export function AdminView() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleToggleBannerActive(banner.id)}
-                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
-                              isActive
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isActive
                                 ? "border-white/10 bg-white/5 text-zinc-300 hover:text-white"
                                 : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                            }`}
+                              }`}
                           >
                             {isActive ? "Pause Slide" : "Make Live"}
                           </button>
@@ -2958,14 +3315,28 @@ export function AdminView() {
 
                       {/* Footer Info Strip */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-white/10 text-xs text-zinc-400">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <span>Button: <strong className="text-white">{banner.cta || "Shop Linen"}</strong></span>
                           <span>•</span>
                           <span>Target Link: <code className="text-[#d4af37] font-mono">{banner.link || "/shop"}</code></span>
+                          {banner.alt && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Globe className="h-3 w-3 text-[#d4af37]" />
+                                Alt: <em className="text-zinc-300 italic truncate max-w-[200px]">"{banner.alt}"</em>
+                              </span>
+                            </>
+                          )}
                         </div>
-                        <span className="text-[11px] text-zinc-400">
-                          Text Tone: <strong className="text-zinc-200 capitalize">{banner.tone || "light"}</strong>
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] font-mono text-[#d4af37]">
+                            SEO {banner.seo_heading || "H1"}
+                          </span>
+                          <span className="text-[11px] text-zinc-400">
+                            Tone: <strong className="text-zinc-200 capitalize">{banner.tone || "light"}</strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )
@@ -2974,16 +3345,360 @@ export function AdminView() {
             </div>
           )}
 
-          {/* ══════════════ TAB 9: SETTINGS ══════════════ */}
+          {/* ══════════════ TAB 9: BLOG CMS & EDITORIAL JOURNAL STUDIO ══════════════ */}
+          {activeTab === "Blog CMS" && (
+            <div className="space-y-6">
+              {/* Studio Header Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-3 py-0.5 text-[10px] font-bold text-[#d4af37]">
+                      <Sparkles className="h-3 w-3" /> Editorial CMS & SEO Studio
+                    </span>
+                    <span className="text-[11px] text-zinc-400">
+                      • {blogList.filter((b) => b.is_published !== false).length} Live on Store
+                    </span>
+                  </div>
+                  <h4 className="font-serif text-lg font-bold text-white mt-1">
+                    Atelier Journal Articles & SEO Content Manager
+                  </h4>
+                  <p className="text-xs text-zinc-400 mt-0.5 max-w-2xl">
+                    Publish new stories, edit craft essays, hide/unhide articles, manage Google SERP snippet previews, focus keywords, and social share OpenGraph metadata.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href="/blog"
+                    target="_blank"
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/10 transition"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>View Live Journal</span>
+                  </Link>
+                  <button
+                    onClick={handleOpenAddBlog}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-[#d4af37]/20 hover:brightness-110 active:scale-95 transition"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Write New Article</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Metrics Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl border border-white/10 bg-[#14171d] p-4">
+                  <div className="flex items-center justify-between text-zinc-400 text-xs">
+                    <span>Total Essays</span>
+                    <BookOpen className="h-4 w-4 text-[#d4af37]" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold font-serif text-white mt-1">{blogList.length}</p>
+                  <span className="text-[10px] text-zinc-400">In atelier database</span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#14171d] p-4">
+                  <div className="flex items-center justify-between text-zinc-400 text-xs">
+                    <span>Published (Live)</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold font-serif text-emerald-400 mt-1">
+                    {blogList.filter((b) => b.is_published !== false).length}
+                  </p>
+                  <span className="text-[10px] text-emerald-400/80">Visible to search & patrons</span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#14171d] p-4">
+                  <div className="flex items-center justify-between text-zinc-400 text-xs">
+                    <span>Drafts / Hidden</span>
+                    <EyeOff className="h-4 w-4 text-amber-400" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold font-serif text-amber-400 mt-1">
+                    {blogList.filter((b) => b.is_published === false).length}
+                  </p>
+                  <span className="text-[10px] text-zinc-400">Hidden from storefront</span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#14171d] p-4">
+                  <div className="flex items-center justify-between text-zinc-400 text-xs">
+                    <span>Total Read Views</span>
+                    <TrendingUp className="h-4 w-4 text-cyan-400" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold font-serif text-white mt-1">
+                    {blogList.reduce((acc, b) => acc + (b.views_count || 350), 0).toLocaleString()}
+                  </p>
+                  <span className="text-[10px] text-zinc-400">Patron readership</span>
+                </div>
+              </div>
+
+              {/* Search, Category & Status Filter Bar */}
+              <div className="rounded-2xl border border-white/10 bg-[#14171d] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={blogSearchQuery}
+                    onChange={(e) => setBlogSearchQuery(e.target.value)}
+                    placeholder="Search articles by title, keywords, tag, author..."
+                    className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
+                  />
+                  {blogSearchQuery && (
+                    <button
+                      onClick={() => setBlogSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Category Dropdown */}
+                  <select
+                    value={blogCategoryFilter}
+                    onChange={(e) => setBlogCategoryFilter(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Fabric Science">Fabric Science</option>
+                    <option value="Style Guides">Style Guides</option>
+                    <option value="Craft & Atelier">Craft & Atelier</option>
+                    <option value="Resort Life">Resort Life</option>
+                  </select>
+
+                  {/* Status Pills */}
+                  <div className="flex rounded-xl border border-white/10 bg-[#0d0f12] p-1">
+                    {(["All", "Published", "Draft"] as const).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setBlogStatusFilter(status)}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          blogStatusFilter === status
+                            ? "bg-[#d4af37] text-black font-bold shadow"
+                            : "text-zinc-400 hover:text-white"
+                        }`}
+                      >
+                        {status === "All" ? "All" : status === "Published" ? "Live" : "Drafts"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Articles List */}
+              {filteredBlogs.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-[#14171d] p-12 text-center space-y-4">
+                  <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-zinc-400">
+                    <BookOpen className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h5 className="font-serif text-lg font-bold text-white">No Blog Articles Found</h5>
+                    <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
+                      No journal essays match your search or filter criteria. Clear filters or create a new article to get started.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleOpenAddBlog}
+                    className="rounded-xl bg-[#d4af37] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition"
+                  >
+                    Write First Article
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredBlogs.map((blog, index) => {
+                    const isPublished = blog.is_published !== false
+                    const hasSeo = Boolean(blog.seo?.metaTitle && blog.seo?.metaDescription)
+                    return (
+                      <div
+                        key={blog.id || index}
+                        className={`rounded-2xl border bg-[#14171d] p-5 shadow-xl transition space-y-4 ${
+                          isPublished
+                            ? "border-white/10 hover:border-[#d4af37]/40"
+                            : "border-amber-500/20 bg-[#14171d]/80 opacity-80"
+                        }`}
+                      >
+                        {/* Top Row: Meta & Actions */}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="relative h-16 w-24 sm:h-20 sm:w-32 rounded-xl overflow-hidden border border-white/10 bg-black shrink-0">
+                              <Image
+                                src={blog.coverImage || "/assets/site_banners/slide1_desktop.jpg"}
+                                alt={blog.title}
+                                fill
+                                className="object-cover"
+                              />
+                              {blog.featured && (
+                                <span className="absolute top-1.5 left-1.5 rounded-full bg-[#d4af37] text-black px-1.5 py-0.5 text-[8px] font-extrabold uppercase">
+                                  Featured
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full bg-white/5 border border-white/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#d4af37]">
+                                  {blog.category || "Craft & Atelier"}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                    isPublished
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                  }`}
+                                >
+                                  {isPublished ? "● Live on Store" : "○ Draft / Hidden"}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[9px] font-mono ${
+                                    hasSeo
+                                      ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                                      : "bg-zinc-800 text-zinc-400"
+                                  }`}
+                                >
+                                  {hasSeo ? "✓ SEO Ready" : "SEO Basic"}
+                                </span>
+                              </div>
+
+                              <h5 className="font-serif text-base font-bold text-white mt-1 line-clamp-1 hover:text-[#d4af37] transition">
+                                {blog.title}
+                              </h5>
+                              <p className="text-xs text-zinc-400 line-clamp-1 mt-0.5">
+                                {blog.subtitle || blog.excerpt}
+                              </p>
+
+                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-zinc-500 mt-1">
+                                <span>By <strong className="text-zinc-300">{blog.author?.name || "Gayatri Puri"}</strong></span>
+                                <span>•</span>
+                                <span>{blog.date}</span>
+                                <span>•</span>
+                                <span>{blog.readTime || "5 min read"}</span>
+                                <span>•</span>
+                                <span className="font-mono text-zinc-400">/blog/{blog.slug}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Quick Action Buttons */}
+                          <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-center">
+                            {/* Live View Button */}
+                            <Link
+                              href={`/blog/${blog.slug}`}
+                              target="_blank"
+                              className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+                              title="Preview article on live storefront"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+
+                            {/* Visibility Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBlogPublish(blog.id)}
+                              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                                isPublished
+                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                              }`}
+                              title={isPublished ? "Hide from customer view" : "Publish live to journal"}
+                            >
+                              {isPublished ? (
+                                <>
+                                  <EyeOff className="h-3.5 w-3.5" />
+                                  <span>Hide / Draft</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span>Make Live</span>
+                                </>
+                              )}
+                            </button>
+
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditBlog(blog)}
+                              className="flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/15 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                              <span>Edit Article</span>
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDeleteBlog(blog)}
+                              className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                              title="Delete article"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Article SEO & Tags Snapshot */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1 text-zinc-400">
+                          <div className="space-y-1">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                              Google Search Meta Title
+                            </span>
+                            <p className="text-xs font-medium text-zinc-200 truncate">
+                              {blog.seo?.metaTitle || `${blog.title} | Gayatri Bhai Journal`}
+                            </p>
+                            <p className="text-[11px] text-zinc-400 line-clamp-1">
+                              {blog.seo?.metaDescription || blog.excerpt}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                              Focus Keywords & Topics
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {Array.isArray(blog.seo?.keywords) && blog.seo.keywords.length > 0 ? (
+                                blog.seo.keywords.slice(0, 4).map((kw, i) => (
+                                  <span
+                                    key={i}
+                                    className="rounded-md bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-zinc-300"
+                                  >
+                                    #{kw}
+                                  </span>
+                                ))
+                              ) : Array.isArray(blog.tags) && blog.tags.length > 0 ? (
+                                blog.tags.slice(0, 4).map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="rounded-md bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-zinc-300"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-[11px] text-zinc-400 italic">No focus keywords set</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════════ TAB 10: SETTINGS & GLOBAL SEO STUDIO ══════════════ */}
           {activeTab === "Settings" && (
-            <div className="space-y-6 max-w-3xl">
+            <div className="space-y-8 max-w-4xl">
+              {/* Store Identity Card */}
               <div className="rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-xl space-y-6">
                 <div>
                   <h4 className="font-serif text-lg font-bold text-white">Store Identity & Live Credentials</h4>
                   <p className="text-xs text-zinc-400">Verified e-commerce platform configuration</p>
                 </div>
 
-                <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-zinc-400 mb-1">Brand Name</label>
                     <input
@@ -3023,12 +3738,205 @@ export function AdminView() {
                       className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-white font-mono"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* 🌟 PAGE-LEVEL SEO & SEARCH ENGINE CONFIGURATION */}
+              <div className="rounded-2xl border border-[#d4af37]/30 bg-[#14171d] p-6 shadow-2xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-3 py-0.5 text-[10px] font-bold text-[#d4af37]">
+                        <Globe className="h-3 w-3" /> Search Engine Optimization
+                      </span>
+                    </div>
+                    <h4 className="font-serif text-lg font-bold text-white mt-1">
+                      Global & Page-Level SEO Manager
+                    </h4>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Configure meta titles, meta descriptions, and search keywords for Homepage, Shop, and Blog pages.
+                    </p>
+                  </div>
 
                   <button
-                    onClick={() => showToast("Store settings are locked and safely stored in .env")}
-                    className="rounded-xl bg-[#d4af37] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition"
+                    onClick={handleSaveSeoSettings}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-[#d4af37]/20 hover:brightness-110 active:scale-95 transition shrink-0"
                   >
-                    Save Configuration
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Save All SEO Settings</span>
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Homepage SEO */}
+                  <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#d4af37] uppercase tracking-wider">
+                        1. Homepage SEO (/)
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">Primary Domain Landing</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Homepage Meta Title</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.home.metaTitle}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              home: { ...prev.home, metaTitle: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Homepage Meta Description</label>
+                        <textarea
+                          rows={2}
+                          value={siteSeoSettings.home.metaDescription}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              home: { ...prev.home, metaDescription: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Focus Keywords (Comma-separated)</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.home.keywords}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              home: { ...prev.home, keywords: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shop Page SEO */}
+                  <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#d4af37] uppercase tracking-wider">
+                        2. Shop & Catalog SEO (/shop)
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">Products Listing Page</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Shop Meta Title</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.shop.metaTitle}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              shop: { ...prev.shop, metaTitle: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Shop Meta Description</label>
+                        <textarea
+                          rows={2}
+                          value={siteSeoSettings.shop.metaDescription}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              shop: { ...prev.shop, metaDescription: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Shop Focus Keywords</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.shop.keywords}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              shop: { ...prev.shop, keywords: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Blog Page SEO */}
+                  <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#d4af37] uppercase tracking-wider">
+                        3. Editorial Blog & Journal SEO (/blog)
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">Content Marketing Hub</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Blog Hub Meta Title</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.blog.metaTitle}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              blog: { ...prev.blog, metaTitle: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Blog Hub Meta Description</label>
+                        <textarea
+                          rows={2}
+                          value={siteSeoSettings.blog.metaDescription}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              blog: { ...prev.blog, metaDescription: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-300 mb-1">Blog Hub Focus Keywords</label>
+                        <input
+                          type="text"
+                          value={siteSeoSettings.blog.keywords}
+                          onChange={(e) =>
+                            setSiteSeoSettings((prev) => ({
+                              ...prev,
+                              blog: { ...prev.blog, keywords: e.target.value },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleSaveSeoSettings}
+                    className="rounded-xl bg-[#d4af37] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition shadow-lg"
+                  >
+                    Save All SEO Configurations
                   </button>
                 </div>
               </div>
@@ -3165,11 +4073,10 @@ export function AdminView() {
                           key={preset.url}
                           type="button"
                           onClick={() => handleTogglePresetImage(preset.url)}
-                          className={`flex items-center gap-2 rounded-xl p-1.5 pr-3 border text-[11px] font-medium shrink-0 transition ${
-                            isSelected
+                          className={`flex items-center gap-2 rounded-xl p-1.5 pr-3 border text-[11px] font-medium shrink-0 transition ${isSelected
                               ? "border-[#d4af37] bg-[#d4af37]/20 text-white font-semibold"
                               : "border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:border-white/20"
-                          }`}
+                            }`}
                         >
                           <div className="relative h-7 w-7 rounded-lg overflow-hidden shrink-0 border border-white/10">
                             <Image src={preset.url} alt={preset.label} fill className="object-cover" />
@@ -3661,14 +4568,14 @@ export function AdminView() {
                   <h3 className="font-serif text-xl font-bold text-white">Order #{inspectOrderModal.id}</h3>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${inspectOrderModal.status === "Delivered"
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                        : inspectOrderModal.status === "Assigned to Courier" || inspectOrderModal.status === "Dispatched"
-                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                          : inspectOrderModal.status === "Verified"
-                            ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                            : inspectOrderModal.status === "Cancelled"
-                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                              : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      : inspectOrderModal.status === "Assigned to Courier" || inspectOrderModal.status === "Dispatched"
+                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                        : inspectOrderModal.status === "Verified"
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : inspectOrderModal.status === "Cancelled"
+                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                       }`}
                   >
                     {inspectOrderModal.status}
@@ -3872,8 +4779,8 @@ export function AdminView() {
                   key={c.name}
                   onClick={() => setSelectedCourierName(c.name)}
                   className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${selectedCourierName === c.name
-                      ? "border-[#d4af37] bg-[#d4af37]/10"
-                      : "border-white/10 bg-white/5 hover:border-white/20"
+                    ? "border-[#d4af37] bg-[#d4af37]/10"
+                    : "border-white/10 bg-white/5 hover:border-white/20"
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -4128,9 +5035,8 @@ export function AdminView() {
                     return (
                       <div
                         key={idx}
-                        className={`relative rounded-xl overflow-hidden border ${
-                          isCover ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 shadow-lg" : "border-white/10 bg-black/40"
-                        } group flex flex-col justify-between`}
+                        className={`relative rounded-xl overflow-hidden border ${isCover ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 shadow-lg" : "border-white/10 bg-black/40"
+                          } group flex flex-col justify-between`}
                       >
                         <div className="relative aspect-square w-full bg-black">
                           <Image
@@ -4624,6 +5530,62 @@ export function AdminView() {
                 </div>
               </div>
 
+              {/* ── BANNER SEO & ACCESSIBILITY SETTINGS ── */}
+              <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-5 space-y-4">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-[#d4af37]" />
+                    <span>Banner Image SEO & Semantic Headings</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Configure alt text for Google Image indexing and semantic heading levels for screen readers and SEO spiders.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Image Alt Text (Crucial for Image Search)
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerAlt}
+                      onChange={(e) => setBannerAlt(e.target.value)}
+                      placeholder="e.g. Model in ivory French linen shirt on an Aegean terrace"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      SEO Heading Level
+                    </label>
+                    <select
+                      value={bannerSeoHeading}
+                      onChange={(e) => setBannerSeoHeading(e.target.value)}
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                    >
+                      <option value="H1">H1 (Hero Main Heading)</option>
+                      <option value="H2">H2 (Secondary Campaign)</option>
+                      <option value="H3">H3 (Subordinate Banner)</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Banner Focus Keywords (Comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={bannerSeoKeywords}
+                      onChange={(e) => setBannerSeoKeywords(e.target.value)}
+                      placeholder="e.g. french linen shirts, cuban collar, summer menswear"
+                      className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Status active checkbox */}
               <div className="flex items-center gap-3">
                 <input
@@ -4634,7 +5596,7 @@ export function AdminView() {
                   className="h-4 w-4 rounded accent-[#d4af37]"
                 />
                 <label htmlFor="bannerActiveCheckbox" className="text-xs font-semibold text-zinc-300 cursor-pointer">
-                  Publish Slide Live on Storefront (Uncheck to keep as draft)
+                  Publish Slide Live on Storefront (Uncheck to keep as draft / paused)
                 </label>
               </div>
 
@@ -4651,10 +5613,603 @@ export function AdminView() {
                   type="submit"
                   className="rounded-xl bg-[#d4af37] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-[#b8972e] transition shadow-lg"
                 >
-                  {editingBannerId ? "Update Slider Slide" : "Add Slide to Homepage"}
+                  {editingBannerId ? "Update Slider Slide & SEO" : "Add Slide to Homepage"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: BLOG ARTICLE CMS & SEO STUDIO ── */}
+      {showAddBlogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-4xl max-h-[94vh] overflow-y-auto rounded-3xl border border-[#d4af37]/40 bg-[#12141a] p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-3 py-0.5 text-[10px] font-bold text-[#d4af37]">
+                    <BookOpen className="h-3 w-3" /> Atelier Journal CMS
+                  </span>
+                  <span className="text-[11px] text-zinc-400">• Rich SEO & Social Metadata</span>
+                </div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mt-1">
+                  {editBlogModal ? `Edit Article: "${editBlogModal.title}"` : "Compose & Publish New Journal Article"}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Write thoughtful menswear essays, manage live storefront visibility, and customize Google search previews.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddBlogModal(false)
+                  setEditBlogModal(null)
+                }}
+                className="rounded-xl p-2 text-zinc-400 hover:text-white hover:bg-white/5 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Subtabs: Content & Details vs Google Search SEO Studio */}
+            <div className="flex border-b border-white/10 mb-6">
+              <button
+                type="button"
+                onClick={() => setBlogActiveTab("content")}
+                className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition ${
+                  blogActiveTab === "content"
+                    ? "border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10"
+                    : "border-transparent text-zinc-400 hover:text-white"
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                <span>1. Article Content & Story</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBlogActiveTab("seo")}
+                className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition ${
+                  blogActiveTab === "seo"
+                    ? "border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10"
+                    : "border-transparent text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Globe className="h-4 w-4" />
+                <span>2. Google Search & Social SEO Studio</span>
+                <span className="rounded-full bg-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[9px] font-mono">
+                  SERP
+                </span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBlog} className="space-y-6">
+              {/* TAB 1: CONTENT & DETAILS */}
+              {blogActiveTab === "content" && (
+                <div className="space-y-5 animate-in fade-in-50 duration-150">
+                  {/* Basic Metadata */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Article Title <span className="text-[#d4af37]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={blogTitle}
+                        onChange={(e) => {
+                          setBlogTitle(e.target.value)
+                          if (!editBlogModal && !blogSlug) {
+                            setBlogSlug(
+                              e.target.value
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, "-")
+                                .replace(/(^-|-$)/g, "")
+                            )
+                          }
+                        }}
+                        placeholder="e.g. The Connoisseur’s Guide to French Linen"
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-sm text-white focus:border-[#d4af37] focus:outline-none"
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Article Subtitle / Hook
+                      </label>
+                      <input
+                        type="text"
+                        value={blogSubtitle}
+                        onChange={(e) => setBlogSubtitle(e.target.value)}
+                        placeholder="e.g. Understanding natural flax fibers, breathability, and artisanal slub..."
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold text-zinc-300">
+                          URL Handle / Slug <span className="text-[#d4af37]">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBlogSlug(
+                              blogTitle
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, "-")
+                                .replace(/(^-|-$)/g, "")
+                            )
+                          }
+                          className="text-[10px] text-[#d4af37] hover:underline"
+                        >
+                          Auto Generate from Title
+                        </button>
+                      </div>
+                      <div className="flex items-center rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs text-zinc-400">
+                        <span className="font-mono text-zinc-500 mr-1">/blog/</span>
+                        <input
+                          type="text"
+                          value={blogSlug}
+                          onChange={(e) => setBlogSlug(e.target.value)}
+                          placeholder="guide-to-french-linen"
+                          className="w-full bg-transparent text-white font-mono focus:outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Editorial Category
+                      </label>
+                      <select
+                        value={blogCategory}
+                        onChange={(e) => setBlogCategory(e.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      >
+                        <option value="Craft & Atelier">Craft & Atelier</option>
+                        <option value="Fabric Science">Fabric Science</option>
+                        <option value="Style Guides">Style Guides</option>
+                        <option value="Resort Life">Resort Life</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Author Name</label>
+                      <input
+                        type="text"
+                        value={blogAuthorName}
+                        onChange={(e) => setBlogAuthorName(e.target.value)}
+                        placeholder="e.g. Gayatri Puri"
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Author Role / Title</label>
+                      <input
+                        type="text"
+                        value={blogAuthorRole}
+                        onChange={(e) => setBlogAuthorRole(e.target.value)}
+                        placeholder="e.g. Founder & Master Curator"
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cover Photography Picker */}
+                  <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-semibold text-white">
+                      <span className="flex items-center gap-1.5">
+                        <ImageIcon className="h-4 w-4 text-[#d4af37]" />
+                        Cover Photography
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">1920 × 1080 Landscape</span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                      <div className="relative h-24 w-40 rounded-xl overflow-hidden border border-white/10 bg-black shrink-0">
+                        {blogCoverImage ? (
+                          <Image src={blogCoverImage} alt="Cover preview" fill className="object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[10px] text-zinc-500">
+                            No Cover Image
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="w-full space-y-2">
+                        <input
+                          type="text"
+                          value={blogCoverImage}
+                          onChange={(e) => setBlogCoverImage(e.target.value)}
+                          placeholder="Enter image URL or select from presets below"
+                          className="w-full rounded-xl border border-white/10 bg-[#161922] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                          required
+                        />
+
+                        {/* Presets */}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {[
+                            { label: "Atelier Slide 1", url: "/assets/site_banners/slide1_desktop.jpg" },
+                            { label: "Resort Slide 2", url: "/assets/site_banners/slide2_desktop.jpg" },
+                            { label: "Terracotta Courtyard", url: "/assets/banners/hero-terracotta-widescreen.jpg" },
+                            { label: "Surat Craft Detail", url: "/assets/banners/craft-detail.jpg" },
+                            { label: "Evening Portrait", url: "/assets/banners/after-dark-portrait.jpg" },
+                            { label: "Folded Linens", url: "/assets/banners/folded-shirts.jpg" },
+                          ].map((p) => (
+                            <button
+                              key={p.url}
+                              type="button"
+                              onClick={() => setBlogCoverImage(p.url)}
+                              className={`rounded-lg px-2.5 py-1 text-[10px] font-medium border transition ${
+                                blogCoverImage === p.url
+                                  ? "border-[#d4af37] bg-[#d4af37]/20 text-white font-bold"
+                                  : "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                              }`}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Excerpt */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Excerpt / Summary (Card description & search snippet default)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={blogExcerpt}
+                      onChange={(e) => setBlogExcerpt(e.target.value)}
+                      placeholder="A short, evocative 2-3 sentence overview that intrigues the reader to read the full essay..."
+                      className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Full Article Content */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Full Article Body Paragraphs <span className="text-[#d4af37]">*</span>
+                      </label>
+                      <span className="text-[10px] text-zinc-400">Separate paragraphs with double Enter / blank line</span>
+                    </div>
+                    <textarea
+                      rows={7}
+                      value={blogContent}
+                      onChange={(e) => setBlogContent(e.target.value)}
+                      placeholder="Paragraph 1: Introduce the heritage, the fabric philosophy, or the styling narrative...&#10;&#10;Paragraph 2: Deep dive into the craftsman's technique, yarn counts, and summer comfort...&#10;&#10;Paragraph 3: Concluding styling suggestions and mindful fashion notes."
+                      className="w-full rounded-xl border border-white/10 bg-[#0d0f12] p-4 text-xs text-white leading-relaxed focus:border-[#d4af37] focus:outline-none font-sans"
+                      required
+                    />
+                  </div>
+
+                  {/* Key Takeaways & Tags */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Key Takeaways / Highlights (One point per line)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={blogKeyTakeaways}
+                        onChange={(e) => setBlogKeyTakeaways(e.target.value)}
+                        placeholder="Natural flax fibers wick 20% moisture before dampness.&#10;Organic slub variations are genuine artisan marks.&#10;140-165 GSM strikes perfect drape."
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] p-3 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                          Article Tags (Comma-separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={blogTags}
+                          onChange={(e) => setBlogTags(e.target.value)}
+                          placeholder="French Linen, Hand Embroidery, Summer Style, Slow Living"
+                          className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Read Time</label>
+                        <input
+                          type="text"
+                          value={blogReadTime}
+                          onChange={(e) => setBlogReadTime(e.target.value)}
+                          placeholder="e.g. 5 min read"
+                          className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visibility & Featured Checkboxes */}
+                  <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-white/10">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={blogPublished}
+                        onChange={(e) => setBlogPublished(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[#d4af37]"
+                      />
+                      <span className="text-xs font-semibold text-zinc-200">
+                        Publish Live on Storefront (Uncheck to save as draft / hidden)
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={blogFeatured}
+                        onChange={(e) => setBlogFeatured(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[#d4af37]"
+                      />
+                      <span className="text-xs font-semibold text-zinc-200">
+                        Feature in Top Journal Hero Slot
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: GOOGLE SEARCH & SOCIAL SEO STUDIO */}
+              {blogActiveTab === "seo" && (
+                <div className="space-y-6 animate-in fade-in-50 duration-150">
+                  {/* 🌟 LIVE GOOGLE SEARCH RESULT SNIPPET PREVIEW (SERP PREVIEW CARD) */}
+                  <div className="rounded-2xl border border-white/15 bg-[#090b0e] p-5 shadow-inner space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#d4af37]">
+                        <Globe className="h-4 w-4 text-[#d4af37]" />
+                        Live Google Search Result Preview
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">Desktop & Mobile Snippet</span>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-[#16181d] p-4 font-sans space-y-1.5 shadow">
+                      {/* Breadcrumb URL */}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37]/20 text-[#d4af37] text-[9px] font-bold">
+                          G
+                        </span>
+                        <span className="text-zinc-300">gayatribhai.com</span>
+                        <span>›</span>
+                        <span className="text-zinc-400">blog</span>
+                        <span>›</span>
+                        <span className="text-zinc-400 truncate max-w-[200px]">
+                          {blogSlug || "article-slug"}
+                        </span>
+                      </div>
+
+                      {/* Clickable Blue Google Search Title */}
+                      <h4 className="text-base sm:text-lg font-medium text-[#8ab4f8] hover:underline cursor-pointer leading-snug line-clamp-1">
+                        {blogMetaTitle || `${blogTitle || "Article Title"} | Gayatri Bhai Journal`}
+                      </h4>
+
+                      {/* Grey Snippet Description */}
+                      <p className="text-xs text-[#bdc1c6] leading-relaxed line-clamp-2">
+                        {blogMetaDescription ||
+                          blogExcerpt ||
+                          "Read this insightful artisanal guide on luxury linen craftsmanship, weave density, and summer resort style..."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* SEO Form Inputs */}
+                  <div className="space-y-4">
+                    {/* Meta Title */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold text-zinc-300">
+                          Google Search Meta Title (50–60 characters recommended)
+                        </label>
+                        <span
+                          className={`text-[10px] font-mono ${
+                            (blogMetaTitle || blogTitle).length >= 40 &&
+                            (blogMetaTitle || blogTitle).length <= 60
+                              ? "text-emerald-400"
+                              : "text-zinc-400"
+                          }`}
+                        >
+                          {(blogMetaTitle || blogTitle).length}/60 chars
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={blogMetaTitle}
+                        onChange={(e) => setBlogMetaTitle(e.target.value)}
+                        placeholder={blogTitle ? `${blogTitle} | Gayatri Bhai Journal` : "Enter SEO title"}
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Meta Description */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold text-zinc-300">
+                          Search Snippet Meta Description (140–160 characters recommended)
+                        </label>
+                        <span
+                          className={`text-[10px] font-mono ${
+                            (blogMetaDescription || blogExcerpt).length >= 120 &&
+                            (blogMetaDescription || blogExcerpt).length <= 160
+                              ? "text-emerald-400"
+                              : "text-zinc-400"
+                          }`}
+                        >
+                          {(blogMetaDescription || blogExcerpt).length}/160 chars
+                        </span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={blogMetaDescription}
+                        onChange={(e) => setBlogMetaDescription(e.target.value)}
+                        placeholder="Write a high-converting search snippet summarizing the value for patrons searching on Google..."
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Focus Keywords */}
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Primary Focus Keywords & Search Queries (Comma-separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={blogKeywords}
+                        onChange={(e) => setBlogKeywords(e.target.value)}
+                        placeholder="e.g. french linen shirts, mens resortwear, cuban collar styling"
+                        className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Cover Alt & OpenGraph Image */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                          Cover Photo Alt Text (Google Image SEO & Accessibility)
+                        </label>
+                        <input
+                          type="text"
+                          value={blogAltText}
+                          onChange={(e) => setBlogAltText(e.target.value)}
+                          placeholder="Describe the image content for search spiders"
+                          className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                          Social Share OG Image Override
+                        </label>
+                        <input
+                          type="text"
+                          value={blogOgImage}
+                          onChange={(e) => setBlogOgImage(e.target.value)}
+                          placeholder="Defaults to cover photography"
+                          className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                          Canonical URL Override (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={blogCanonicalUrl}
+                          onChange={(e) => setBlogCanonicalUrl(e.target.value)}
+                          placeholder={`https://gayatribhaishop-zkde-eight.vercel.app/blog/${blogSlug || "article"}`}
+                          className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-3.5 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* NoIndex check */}
+                    <div className="flex items-center gap-3 pt-2">
+                      <input
+                        type="checkbox"
+                        id="blogNoIndexCheck"
+                        checked={blogNoIndex}
+                        onChange={(e) => setBlogNoIndex(e.target.checked)}
+                        className="h-4 w-4 rounded accent-rose-500"
+                      />
+                      <label htmlFor="blogNoIndexCheck" className="text-xs text-zinc-400 cursor-pointer">
+                        Instruct search engines not to index this article (<code>noindex, nofollow</code>)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-5 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      blogPublished
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    }`}
+                  >
+                    Status: {blogPublished ? "Will Publish Live" : "Will Save as Draft / Hidden"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddBlogModal(false)
+                      setEditBlogModal(null)
+                    }}
+                    className="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition shadow-lg shadow-[#d4af37]/20"
+                  >
+                    {editBlogModal ? "Update Article & SEO" : "Publish Article to Store"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: DELETE BLOG CONFIRMATION ── */}
+      {deleteBlogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-[#14171d] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-white">Delete Journal Article?</h3>
+                <p className="text-[11px] text-zinc-400">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl border border-white/10 bg-[#0d0f12] space-y-1">
+              <span className="text-[10px] text-[#d4af37] font-semibold uppercase">
+                {deleteBlogModal.category}
+              </span>
+              <h5 className="text-xs font-bold text-white">{deleteBlogModal.title}</h5>
+              <p className="text-[11px] text-zinc-400">Slug: /blog/{deleteBlogModal.slug}</p>
+            </div>
+
+            <p className="text-xs text-zinc-300">
+              Are you sure you want to delete <strong className="text-white">"{deleteBlogModal.title}"</strong>? It will be removed from the journal, sitemap, and customer view.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setDeleteBlogModal(null)}
+                className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Keep Article
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteBlog}
+                className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-500 shadow-lg"
+              >
+                Delete Article
+              </button>
+            </div>
           </div>
         </div>
       )}

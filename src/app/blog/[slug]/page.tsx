@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { BLOG_POSTS } from "@/data/blogData"
+import { getStoredBlogPosts, getStoredBlogPostBySlug } from "@/lib/blogs"
 import BlogSlugClient from "./BlogSlugClient"
 
 interface BlogPageProps {
@@ -10,14 +10,15 @@ interface BlogPageProps {
 const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
 
 export async function generateStaticParams() {
-  return BLOG_POSTS.map((post) => ({
+  const posts = getStoredBlogPosts(false)
+  return posts.map((post) => ({
     slug: post.slug,
   }))
 }
 
 export async function generateMetadata({ params }: BlogPageProps): Promise<Metadata> {
   const { slug } = await params
-  const post = BLOG_POSTS.find((p) => p.slug === slug)
+  const post = getStoredBlogPostBySlug(slug, false)
 
   if (!post) {
     return {
@@ -26,18 +27,18 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
     }
   }
 
-  const title = `${post.title} | The AVYR Journal`
-  const description = post.excerpt
-  const imageUrl = post.coverImage.startsWith("http")
-    ? post.coverImage
-    : `${BASE_URL}${post.coverImage}`
+  const title = post.seo?.metaTitle || `${post.title} | The AVYR Journal`
+  const description = post.seo?.metaDescription || post.excerpt
+  const imageUrl = (post.seo?.ogImage || post.coverImage).startsWith("http")
+    ? (post.seo?.ogImage || post.coverImage)
+    : `${BASE_URL}${post.seo?.ogImage || post.coverImage}`
 
   return {
     title,
     description,
-    keywords: [...post.tags, "linen care", "artisanal fashion", "AVYR journal"],
+    keywords: post.seo?.keywords?.length ? post.seo.keywords : [...post.tags, "linen care", "artisanal fashion", "AVYR journal"],
     alternates: {
-      canonical: `${BASE_URL}/blog/${post.slug}`,
+      canonical: post.seo?.canonicalUrl || `${BASE_URL}/blog/${post.slug}`,
     },
     openGraph: {
       title,
@@ -46,13 +47,13 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
       siteName: "The AVYR Journal",
       type: "article",
       publishedTime: post.date,
-      authors: [post.author.name],
+      authors: [post.author?.name || "Gayatri Bhai Atelier"],
       images: [
         {
           url: imageUrl,
           width: 1200,
           height: 800,
-          alt: post.title,
+          alt: post.seo?.altText || post.title,
         },
       ],
     },
@@ -62,14 +63,15 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
       description,
       images: [imageUrl],
     },
+    robots: post.seo?.noIndex ? { index: false, follow: false } : undefined,
   }
 }
 
 export default async function BlogPage({ params }: BlogPageProps) {
   const { slug } = await params
-  const post = BLOG_POSTS.find((p) => p.slug === slug)
+  const post = getStoredBlogPostBySlug(slug, false)
 
-  if (!post) {
+  if (!post || post.is_published === false) {
     notFound()
   }
 
@@ -84,8 +86,8 @@ export default async function BlogPage({ params }: BlogPageProps) {
     datePublished: post.date,
     author: {
       "@type": "Person",
-      name: post.author.name,
-      jobTitle: post.author.role,
+      name: post.author?.name || "Gayatri Bhai Atelier",
+      jobTitle: post.author?.role || "Master Artisan",
     },
     publisher: {
       "@type": "Organization",
@@ -107,3 +109,4 @@ export default async function BlogPage({ params }: BlogPageProps) {
     </>
   )
 }
+
