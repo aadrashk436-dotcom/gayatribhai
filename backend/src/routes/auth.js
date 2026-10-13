@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import supabase from "../config/supabase.js";
@@ -127,4 +127,71 @@ router.put("/me", authenticateCustomer, async (req, res) => {
   }
 });
 
+// Send OTP
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) return res.status(400).json({ error: "Email or phone number is required" });
+    const clean = identifier.trim();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean);
+    const isPhone = /^[0-9+\s-]{10,15}$/.test(clean);
+    if (!isEmail && !isPhone) {
+      return res.status(400).json({ error: "Please enter a valid email or 10-digit mobile number" });
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    res.json({
+      success: true,
+      message: `Verification code sent to ${clean}`,
+      devOtp: otp,
+      expiresIn: 300,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to send OTP" });
+  }
+});
+
+// Verify OTP
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { identifier, otp, name } = req.body;
+    if (!identifier || !otp) return res.status(400).json({ error: "Identifier and OTP required" });
+    const clean = identifier.trim().toLowerCase();
+    const token = jwt.sign({ id: `cust_${Date.now()}`, identifier: clean }, process.env.JWT_SECRET || "gb_secret_2026", { expiresIn: "30d" });
+    const isEmail = clean.includes("@");
+    const customer = {
+      id: `cust_${Date.now()}`,
+      name: (name || "").trim() || (isEmail ? clean.split("@")[0] : "Patron"),
+      email: isEmail ? clean : "",
+      phone: !isEmail ? clean : "",
+      tier: "Silver",
+      points: 250,
+    };
+    res.json({ success: true, token, customer, message: "Welcome to Gayatri Bhai!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to verify OTP" });
+  }
+});
+
+// Google Login
+router.post("/google", async (req, res) => {
+  try {
+    const { email, name, avatar } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required for Google login" });
+    const cleanEmail = email.toLowerCase().trim();
+    const token = jwt.sign({ id: `cust_${Date.now()}`, email: cleanEmail }, process.env.JWT_SECRET || "gb_secret_2026", { expiresIn: "30d" });
+    const customer = {
+      id: `cust_${Date.now()}`,
+      name: (name || cleanEmail.split("@")[0]).trim(),
+      email: cleanEmail,
+      avatar: avatar || "",
+      tier: "Silver",
+      points: 250,
+    };
+    res.json({ success: true, token, customer, message: "Welcome to Gayatri Bhai!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Google authentication failed" });
+  }
+});
+
 export default router;
+

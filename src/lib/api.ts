@@ -186,6 +186,47 @@ export async function apiSignup(formData: { name: string; email: string; phone?:
   return data;
 }
 
+// ─── OTP Authentication ───
+export async function apiSendOtp(identifier: string) {
+  const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ identifier }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new AuthError(data.error || "Failed to send verification code", res.status, data);
+  return data;
+}
+
+export async function apiVerifyOtp(identifier: string, otp: string, name?: string) {
+  const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ identifier, otp, name }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new AuthError(data.error || "Invalid verification code", res.status, data);
+  if (data.token && typeof window !== "undefined") {
+    localStorage.setItem("gb_customer_token", data.token);
+  }
+  return data;
+}
+
+// ─── Google Authentication ───
+export async function apiGoogleLogin(payload: { credential?: string; email?: string; name?: string; avatar?: string }) {
+  const res = await fetch(`${API_BASE_URL}/auth/google`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new AuthError(data.error || "Google login failed", res.status, data);
+  if (data.token && typeof window !== "undefined") {
+    localStorage.setItem("gb_customer_token", data.token);
+  }
+  return data;
+}
+
 // ─── Dynamic Razorpay SDK Loader ───
 export function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
