@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState, useEffect } from "react"
 import { products } from "../../products"
 import type { BlogPost, Product, View } from "../../types"
 import ProductCard from "../product/ProductCard"
@@ -28,6 +28,22 @@ export interface HomeViewProps {
 export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart, onOpenArticle }: HomeViewProps) {
   const root = useRef<HTMLDivElement>(null)
   useReveal(root)
+  const [items, setItems] = useState<Product[]>(products)
+
+  useEffect(() => {
+    let isMounted = true
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.products?.length && isMounted) {
+          setItems(data.products)
+        }
+      })
+      .catch((err) => console.warn("API products fallback:", err))
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   return (
     <div ref={root} className="home-v2 bg-background text-foreground">
@@ -38,7 +54,7 @@ export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart, onO
       <section className="px-5 pb-16 md:px-10 md:pb-24 lg:px-14">
         <SectionHead kicker="Just in" title={["New", "arrivals."]} href="/shop" />
         <div data-stagger className="grid grid-cols-2 gap-x-3 gap-y-8 md:gap-x-5 lg:grid-cols-4">
-          {products.slice(0, 8).map((p) => (
+          {items.slice(0, 8).map((p) => (
             <ProductCard
               key={p.id}
               product={p}
@@ -55,7 +71,7 @@ export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart, onO
       <PerkBanners />
 
       <HorizontalShowcase
-        items={products.slice(8, 18)}
+        items={items.slice(8, 18)}
         wishlist={wishlist}
         toggleWish={toggleWish}
         openProduct={openProduct}

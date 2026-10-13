@@ -132,12 +132,26 @@ CREATE TABLE IF NOT EXISTS public.settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8. ADMIN USERS TABLE
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT DEFAULT 'super_admin',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Disable Row Level Security so Public API / Service Role can access smoothly
 ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coupons DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.banners DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contacts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contacts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings DISABLE ROW LEVEL SECURITY;
 
@@ -210,16 +224,18 @@ ON CONFLICT (id) DO UPDATE SET
   image_url = EXCLUDED.image_url;
 
 -- ==============================================================================
--- INSERT ADMIN / STORE SETTINGS
+-- INSERT STORE ADMIN USER
 -- ==============================================================================
-INSERT INTO public.settings (key, value)
-VALUES
-  ('store_profile', '{"name": "Gayatri Bhai", "tagline": "Pure French Linen Shirts & Handcrafted Elegance", "support_email": "purigayatri006@gmail.com", "phone": "+91 98765 43210"}'::jsonb),
-  ('shipping_policy', '{"free_shipping_threshold": 199900, "flat_rate": 9900}'::jsonb),
-  ('payment_gateway', '{"provider": "razorpay", "key_id": "rzp_live_Tl6lD0OL5uKch9", "mode": "live"}'::jsonb)
-ON CONFLICT (key) DO UPDATE SET
-  value = EXCLUDED.value,
-  updated_at = NOW();
+INSERT INTO public.admin_users (id, email, password_hash, name, role, is_active)
+VALUES (
+  'admin_super_1',
+  'gayatripuri634@gmail.com',
+  '$2a$10$NQKlq5vwJ0AzCudcnEZDZeWS5fDwtlWuGKrEe4haxUH7al9vAGcze',
+  'Gayatri Puri',
+  'super_admin',
+  true
+) ON CONFLICT (email) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash;
 `;
 
 fs.writeFileSync('supabase_setup_all.sql', sql);

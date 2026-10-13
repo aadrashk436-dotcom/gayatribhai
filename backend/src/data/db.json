@@ -1381,7 +1381,7 @@
     {
       "id": "admin_super_1",
       "email": "gayatripuri634@gmail.com",
-      "password_hash": "$2a$10$e1jgJLngi7xSSjLjMGlduu2wbF0nnL5BDZ1NFNyzlDZrGbU46oOEi",
+      "password_hash": "$2a$10$MNMyPFvfU4yQxXUGvn9z5OpH91ITGD2.cW0zQGAosDHBQnLVD4YbC",
       "name": "Gayatri Puri",
       "role": "super_admin",
       "is_active": true

@@ -22,6 +22,23 @@ export function ShopView({
   toggleWish,
   addToCart,
 }: ShopViewProps) {
+  const [productList, setProductList] = useState<Product[]>(products)
+
+  useEffect(() => {
+    let isMounted = true
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.products?.length && isMounted) {
+          setProductList(data.products)
+        }
+      })
+      .catch((err) => console.warn("ShopView API products fallback:", err))
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   // Filter states
   const [sort, setSort] = useState("Recommended")
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -155,7 +172,7 @@ export function ShopView({
 
   // Filtered and sorted product list
   const list = useMemo(() => {
-    let result = [...products]
+    let result = [...productList]
 
     // 1. Category
     if (category !== "All Shirts") {
@@ -331,6 +348,7 @@ export function ShopView({
     minRating,
     availability,
     sort,
+    productList,
   ])
 
   return (
