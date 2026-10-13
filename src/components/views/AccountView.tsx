@@ -258,8 +258,13 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <div className="-mt-12 flex flex-col gap-5 md:-mt-16 md:flex-row md:items-end md:justify-between">
           <div className="flex items-end gap-4 md:gap-6">
-            <div className="profile-avatar flex size-24 shrink-0 items-center justify-center rounded-full border-4 border-background bg-foreground font-display text-3xl text-background md:size-32 md:text-4xl">
-              {initials}
+            <div className="profile-avatar relative flex size-24 shrink-0 overflow-hidden items-center justify-center rounded-full border-4 border-background bg-foreground font-display text-3xl text-background md:size-32 md:text-4xl shadow-md">
+              {user.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatar} alt={user.name} className="size-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <div className="pb-1" data-profile-item>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-accent">

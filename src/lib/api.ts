@@ -1,6 +1,18 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : typeof window !== "undefined" ? "/api" : "http://localhost:3000/api");
+const API_BASE_URL = (() => {
+  if (typeof window !== "undefined") {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.startsWith("/")) return envUrl;
+    if (envUrl && !envUrl.includes("localhost:5000")) return envUrl;
+    return "/api";
+  }
+  if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes("localhost:5000")) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api`;
+  }
+  return "http://localhost:3000/api";
+})();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "gb_pub_live_2026_xK9mN3pQ7rT1vW5";
 
 function getHeaders(token?: string) {
@@ -225,7 +237,14 @@ export async function apiVerifyOtp(identifier: string, otp: string, name?: strin
 }
 
 // ─── Google Authentication ───
-export async function apiGoogleLogin(payload: { credential?: string; email?: string; name?: string; avatar?: string }) {
+export async function apiGoogleLogin(payload: {
+  credential?: string;
+  accessToken?: string;
+  access_token?: string;
+  email?: string;
+  name?: string;
+  avatar?: string;
+}) {
   const res = await fetch(`${API_BASE_URL}/auth/google`, {
     method: "POST",
     headers: getHeaders(),
@@ -237,6 +256,19 @@ export async function apiGoogleLogin(payload: { credential?: string; email?: str
     localStorage.setItem("gb_customer_token", data.token);
   }
   return data;
+}
+
+export function apiLogout() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("gb_customer_token");
+  }
+}
+
+export function apiGetCurrentToken(): string | null {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("gb_customer_token");
+  }
+  return null;
 }
 
 // ─── Dynamic Razorpay SDK Loader ───

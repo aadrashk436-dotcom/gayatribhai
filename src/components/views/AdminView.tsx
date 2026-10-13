@@ -388,11 +388,11 @@ export function AdminView() {
       prev.map((o) =>
         o.id === orderId
           ? {
-              ...o,
-              status: "Verified" as const,
-              verifiedBy: "Gayatri Puri (Admin)",
-              verifiedAt: "Just now",
-            }
+            ...o,
+            status: "Verified" as const,
+            verifiedBy: "Gayatri Puri (Admin)",
+            verifiedAt: "Just now",
+          }
           : o
       )
     )
@@ -401,11 +401,11 @@ export function AdminView() {
       setInspectOrderModal((prev) =>
         prev
           ? {
-              ...prev,
-              status: "Verified",
-              verifiedBy: "Gayatri Puri (Admin)",
-              verifiedAt: "Just now",
-            }
+            ...prev,
+            status: "Verified",
+            verifiedBy: "Gayatri Puri (Admin)",
+            verifiedAt: "Just now",
+          }
           : null
       )
     }
@@ -430,11 +430,11 @@ export function AdminView() {
       prev.map((o) =>
         o.id === orderId
           ? {
-              ...o,
-              status: "Assigned to Courier" as const,
-              courier,
-              awb: newAwb,
-            }
+            ...o,
+            status: "Assigned to Courier" as const,
+            courier,
+            awb: newAwb,
+          }
           : o
       )
     )
@@ -443,11 +443,11 @@ export function AdminView() {
       setInspectOrderModal((prev) =>
         prev
           ? {
-              ...prev,
-              status: "Assigned to Courier",
-              courier,
-              awb: newAwb,
-            }
+            ...prev,
+            status: "Assigned to Courier",
+            courier,
+            awb: newAwb,
+          }
           : null
       )
     }
@@ -483,10 +483,10 @@ export function AdminView() {
       prev.map((o) =>
         o.id === orderId
           ? {
-              ...o,
-              status: "Cancelled" as const,
-              cancelReason: reason || "Cancelled by Store Admin",
-            }
+            ...o,
+            status: "Cancelled" as const,
+            cancelReason: reason || "Cancelled by Store Admin",
+          }
           : o
       )
     )
@@ -495,10 +495,10 @@ export function AdminView() {
       setInspectOrderModal((prev) =>
         prev
           ? {
-              ...prev,
-              status: "Cancelled",
-              cancelReason: reason || "Cancelled by Store Admin",
-            }
+            ...prev,
+            status: "Cancelled",
+            cancelReason: reason || "Cancelled by Store Admin",
+          }
           : null
       )
     }
@@ -679,12 +679,12 @@ export function AdminView() {
       city: pin.startsWith("11")
         ? "New Delhi"
         : pin.startsWith("40")
-        ? "Mumbai"
-        : pin.startsWith("39")
-        ? "Surat (Local)"
-        : pin.startsWith("56")
-        ? "Bengaluru"
-        : "Pan India Metro",
+          ? "Mumbai"
+          : pin.startsWith("39")
+            ? "Surat (Local)"
+            : pin.startsWith("56")
+              ? "Bengaluru"
+              : "Pan India Metro",
       delhivery: "₹49 (2-3 Business Days)",
       blueDart: "₹95 (Next Day Air Express)",
       dtdc: "₹55 (3-4 Business Days)",

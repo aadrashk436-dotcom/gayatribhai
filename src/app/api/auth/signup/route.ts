@@ -88,6 +88,7 @@ export async function POST(request: Request) {
           name: customer.name,
           email: customer.email,
           phone: customer.phone,
+          avatar: "",
           tier: customer.tier,
           points: customer.points,
         },

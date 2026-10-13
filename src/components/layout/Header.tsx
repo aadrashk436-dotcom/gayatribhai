@@ -193,9 +193,14 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
               aria-label={user ? `Account: ${user.name}` : "Sign in"}
             >
               {user ? (
-                <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background">
-                  {user.name.slice(0, 1).toUpperCase()}
-                </span>
+                user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar} alt={user.name} className="size-7 rounded-full object-cover border border-border" />
+                ) : (
+                  <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background">
+                    {user.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )
               ) : (
                 <>
                   <Icon name="user" size={15} />
@@ -286,9 +291,14 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-3 rounded-sm bg-surface-2 p-3"
           >
-            <span className="flex size-11 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background">
-              {user ? user.name.slice(0, 2).toUpperCase() : <Icon name="user" size={18} />}
-            </span>
+            {user?.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatar} alt={user.name} className="size-11 rounded-full object-cover border border-border" />
+            ) : (
+              <span className="flex size-11 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background">
+                {user ? user.name.slice(0, 2).toUpperCase() : <Icon name="user" size={18} />}
+              </span>
+            )}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold">{user ? user.name : "Sign in / Join"}</span>
               <span className="block truncate text-xs text-muted-foreground">{user ? "View profile & orders" : "Track orders, save favourites"}</span>
