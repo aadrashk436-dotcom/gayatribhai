@@ -72,6 +72,42 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
   const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0
   const finalTotal = Math.max(0, subtotal - couponDiscount + (subtotal >= 1999 ? 0 : 99))
 
+  // Combined Multi-Item Shipment Calculations (Amazon / Courier logistics)
+  const totalWeight = detailed.reduce((acc, x) => acc + (Number(x.product.weight) || 0.35) * x.quantity, 0)
+  const maxL = Math.max(30, ...detailed.map((x) => Number(x.product.length) || 30))
+  const maxB = Math.max(25, ...detailed.map((x) => Number(x.product.breadth) || 25))
+  const totalH = detailed.reduce((acc, x) => acc + (Number(x.product.height) || 4) * x.quantity, 0)
+  const volumetricWeight = (maxL * maxB * totalH) / 5000
+  const billableWeight = Math.max(0.5, Math.max(totalWeight, volumetricWeight))
+
+  const [shippingPincode, setShippingPincode] = useState("")
+  const [shippingQuote, setShippingQuote] = useState<any>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
+
+  const handleCheckShipping = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!/^\d{6}$/.test(shippingPincode.trim())) return
+    setShippingLoading(true)
+    try {
+      const res = await fetch("/api/shipping/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deliveryPincode: shippingPincode.trim(),
+          items: detailed.map((x) => ({ productId: x.product.id, quantity: x.quantity })),
+        }),
+      })
+      const data = await res.json()
+      if (data?.couriers) {
+        setShippingQuote(data)
+      }
+    } catch (e) {
+      console.warn("Shipping check error:", e)
+    } finally {
+      setShippingLoading(false)
+    }
+  }
+
   const handleUpdate = (item: CartItem, amount: number) => {
     if (item.quantity + amount <= 0) {
       handleRemove(item)
@@ -263,6 +299,78 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
               </span>
             )}
           </div>
+
+          {/* ── LIVE PINCODE COURIER ESTIMATOR (MULTI-PRODUCT SHIPMENT) ── */}
+          <form onSubmit={handleCheckShipping} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "11px", color: "var(--muted-foreground)", fontWeight: 600 }}>
+              Estimate Courier Delivery to Your Pincode
+            </span>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                placeholder="Enter 6-digit pincode"
+                maxLength={6}
+                value={shippingPincode}
+                onChange={(e) => setShippingPincode(e.target.value.replace(/\D/g, ""))}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  borderRadius: "4px",
+                  padding: "6px 10px",
+                  fontSize: "12px",
+                  color: "inherit",
+                }}
+              />
+              <Button variant="outline" type="submit" disabled={shippingLoading || shippingPincode.length !== 6}>
+                {shippingLoading ? "..." : "Check Rates"}
+              </Button>
+            </div>
+            {shippingQuote && (
+              <div
+                style={{
+                  background: "rgba(212, 175, 55, 0.06)",
+                  border: "1px solid rgba(212, 175, 55, 0.25)",
+                  borderRadius: "6px",
+                  padding: "8px 10px",
+                  fontSize: "11px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#d4af37", fontWeight: 700 }}>
+                  <span>PIN {shippingQuote.deliveryPincode} Serviceable</span>
+                  <span>{subtotal >= 1999 ? "FREE SHIPPING" : "From ₹" + shippingQuote.recommended?.rate}</span>
+                </div>
+                <p style={{ margin: "4px 0 0", color: "var(--muted-foreground)" }}>
+                  {shippingQuote.recommended?.name} ({shippingQuote.recommended?.etd})
+                </p>
+              </div>
+            )}
+          </form>
+
+          {/* ── CONSOLIDATED PACKAGE WEIGHT & DIMENSIONS SUMMARY ── */}
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>📦 Combined Package ({cart.reduce((a, b) => a + b.quantity, 0)} Items)</span>
+              <strong style={{ color: "var(--foreground)" }}>{totalWeight.toFixed(2)} kg</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
+              <span>Box Dimensions: {maxL} × {maxB} × {totalH} cm</span>
+              <span>Billable: <b style={{ color: "#d4af37" }}>{billableWeight.toFixed(2)} kg</b></span>
+            </div>
+          </div>
+
           <dl>
             <div>
               <dt>MRP total</dt>

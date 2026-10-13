@@ -1,11 +1,13 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { products } from "../../products"
 import type { Address, CartItem, User, View } from "../../types"
 import { money } from "../../utils/format"
 import Button from "../common/Button"
 import Icon from "../common/Icon"
+import { useStore } from "@/lib/store"
+import { loadRazorpayScript, apiCreateOrder, apiVerifyPayment } from "../../lib/api"
 
 export interface CheckoutViewProps {
   cart: CartItem[]
@@ -15,18 +17,18 @@ export interface CheckoutViewProps {
   user?: User | null
 }
 
-import { useStore } from "@/lib/store"
-
 export function AddressStep({
   onNext,
   addresses = [],
   go,
   user,
+  onSelectAddress,
 }: {
   onNext: () => void
   addresses?: Address[]
   go: (v: View) => void
   user?: User | null
+  onSelectAddress?: (addr: Address) => void
 }) {
   const saveAddress = useStore((s) => s.saveAddress)
   const [selectedId, setSelectedId] = useState<string>(() => {
@@ -76,6 +78,7 @@ export function AddressStep({
     }
     saveAddress(newAddr)
     setSelectedId(newAddr.id)
+    onSelectAddress?.(newAddr)
     setShowAddForm(false)
     onNext()
   }
@@ -94,7 +97,10 @@ export function AddressStep({
                 <div
                   key={addr.id}
                   className={`address-card ${isSelected ? "selected" : ""}`}
-                  onClick={() => setSelectedId(addr.id)}
+                  onClick={() => {
+                    setSelectedId(addr.id)
+                    onSelectAddress?.(addr)
+                  }}
                 >
                   <span className="radio" />
                   <div>
@@ -105,108 +111,98 @@ export function AddressStep({
                       )}
                     </strong>
                     <p>
-                      {addr.street}
-                      <br />
-                      {addr.city}, {addr.state} - {addr.pincode}
+                      {addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                     </p>
-                    <p>{addr.phone}</p>
+                    <p className="phone">Phone: {addr.phone}</p>
                   </div>
                 </div>
               )
             })}
           </div>
-
-          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
-            <button
-              className="add-address"
-              type="button"
-              onClick={() => setShowAddForm(true)}
+          <div className="step-actions">
+            <Button variant="outline" onClick={() => setShowAddForm(true)}>
+              + Add New Address
+            </Button>
+            <Button
+              className="continue"
+              onClick={() => {
+                const chosen = addresses.find((a) => a.id === selectedId) || addresses[0]
+                if (chosen) onSelectAddress?.(chosen)
+                onNext()
+              }}
             >
-              <Icon name="plus" /> Add New Address
-            </button>
+              Continue to Delivery <Icon name="arrow" />
+            </Button>
           </div>
-
-          <Button
-            className="continue"
-            onClick={onNext}
-            disabled={!selectedId}
-          >
-            Deliver to this address <Icon name="arrow" />
-          </Button>
         </>
       ) : (
-        <form onSubmit={handleSaveAndContinue} className="checkout-new-addr-form" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
-          <div>
-            <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Full Name</label>
-            <input
-              style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-              placeholder="e.g. Gayatri Puri"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            {errors.name && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.name}</span>}
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <form onSubmit={handleSaveAndContinue} className="address-form-grid">
+          <div className="form-row">
             <div>
-              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Phone (10 digits)</label>
+              <label>Full Name</label>
               <input
-                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-                placeholder="9876543210"
+                type="text"
+                placeholder="Receiver's name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+              {errors.name && <span className="err-text">{errors.name}</span>}
+            </div>
+            <div>
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                placeholder="10-digit mobile number"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
-              {errors.phone && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.phone}</span>}
-            </div>
-
-            <div>
-              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Postal Pincode</label>
-              <input
-                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-                placeholder="400001"
-                value={formData.pincode}
-                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-              />
-              {errors.pincode && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.pincode}</span>}
+              {errors.phone && <span className="err-text">{errors.phone}</span>}
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Street Address / Flat / Landmark</label>
-            <input
-              style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-              placeholder="House/Flat No., Building, Street Name"
+            <label>Street Address / Flat / Floor</label>
+            <textarea
+              rows={2}
+              placeholder="House/Flat number, Building name, Street, Landmark"
               value={formData.street}
               onChange={(e) => setFormData({ ...formData, street: e.target.value })}
             />
-            {errors.street && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.street}</span>}
+            {errors.street && <span className="err-text">{errors.street}</span>}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div className="form-row" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
             <div>
-              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>City</label>
+              <label>City</label>
               <input
-                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-                placeholder="Mumbai"
+                type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               />
-              {errors.city && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.city}</span>}
+              {errors.city && <span className="err-text">{errors.city}</span>}
             </div>
-
             <div>
-              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>State</label>
+              <label>State</label>
               <input
-                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
-                placeholder="Maharashtra"
+                type="text"
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
               />
-              {errors.state && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.state}</span>}
+              {errors.state && <span className="err-text">{errors.state}</span>}
+            </div>
+            <div>
+              <label>Pincode</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+              />
+              {errors.pincode && <span className="err-text">{errors.pincode}</span>}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+          <div className="step-actions">
             {addresses.length > 0 && (
               <Button variant="outline" type="button" onClick={() => setShowAddForm(false)}>
                 Cancel
@@ -223,41 +219,193 @@ export function AddressStep({
 }
 
 export function DeliveryStep({
+  cart,
+  pincode,
+  subtotal,
+  selectedCourier,
+  onSelectCourier,
+  packageSummary,
+  onPackageCalculated,
   onNext,
   onBack,
 }: {
+  cart: CartItem[]
+  pincode: string
+  subtotal: number
+  selectedCourier: any
+  onSelectCourier: (courier: any, rate: number) => void
+  packageSummary: any
+  onPackageCalculated: (summary: any) => void
   onNext: () => void
   onBack: () => void
 }) {
+  const [loading, setLoading] = useState(false)
+  const [couriers, setCouriers] = useState<any[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    async function calculateShipment() {
+      setLoading(true)
+      try {
+        const res = await fetch("/api/shipping/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deliveryPincode: pincode || "400001",
+            items: cart.map((c) => ({ productId: c.id, quantity: c.quantity })),
+          }),
+        })
+        const data = await res.json()
+        if (!cancelled && data) {
+          if (Array.isArray(data.couriers)) {
+            setCouriers(data.couriers)
+          }
+          if (data.packageSummary) {
+            onPackageCalculated(data.packageSummary)
+          }
+
+          // Set default courier if none selected
+          if (!selectedCourier && data.couriers && data.couriers.length > 0) {
+            const first = data.couriers[0]
+            const initialRate = subtotal >= 1999 ? 0 : first.rate
+            onSelectCourier(first, initialRate)
+          }
+        }
+      } catch (e) {
+        console.warn("Could not calculate live shipping:", e)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    calculateShipment()
+    return () => {
+      cancelled = true
+    }
+  }, [pincode, cart.length])
+
   return (
     <>
       <span className="eyebrow">Step 2 of 3</span>
-      <h1>Choose delivery speed</h1>
-      <div className="delivery-option selected">
-        <span className="radio" />
-        <Icon name="truck" />
-        <div>
-          <strong>
-            Standard delivery <b>FREE</b>
+      <h1>Select Delivery Speed & Courier Partner</h1>
+
+      {/* ── PACKAGE WEIGHT & VOLUMETRIC DIMENSIONS BANNER (AMAZON / LOGISTICS) ── */}
+      <div
+        style={{
+          border: "1px solid var(--border)",
+          background: "rgba(212, 175, 55, 0.05)",
+          borderRadius: "12px",
+          padding: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <strong style={{ fontSize: "13px", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Icon name="truck" size={16} />
+            Consolidated Order Shipment ({cart.reduce((a, b) => a + b.quantity, 0)} Items)
           </strong>
-          <p>Arrives by Tuesday, 28 April</p>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#d4af37", fontFamily: "monospace" }}>
+            Destination PIN: {pincode}
+          </span>
         </div>
-      </div>
-      <div className="delivery-option">
-        <span className="radio" />
-        <Icon name="truck" />
-        <div>
-          <strong>
-            Express delivery <b>₹149</b>
-          </strong>
-          <p>Arrives by Sunday, 26 April</p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+          <span>
+            Dead Weight: <b style={{ color: "var(--foreground)" }}>{packageSummary?.deadWeightKg ?? (cart.length * 0.35).toFixed(2)} kg</b>
+          </span>
+          <span>•</span>
+          <span>
+            Dimensions: <b style={{ color: "var(--foreground)" }}>
+              {packageSummary?.dimensions?.length ?? 30} × {packageSummary?.dimensions?.breadth ?? 25} × {packageSummary?.dimensions?.height ?? (cart.length * 4)} cm
+            </b>
+          </span>
+          <span>•</span>
+          <span>
+            Volumetric: <b style={{ color: "var(--foreground)" }}>{packageSummary?.volumetricWeightKg ?? 0.6} kg</b>
+          </span>
+          <span>•</span>
+          <span>
+            Billable Weight: <b style={{ color: "#d4af37" }}>{packageSummary?.billableWeightKg ?? 0.6} kg</b>
+          </span>
         </div>
+
+        {subtotal >= 1999 && (
+          <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#10b981", fontWeight: 600 }}>
+            🎉 You have unlocked Complimentary Free Atelier Shipping on orders over ₹1,999!
+          </p>
+        )}
       </div>
-      <div className="step-actions">
+
+      {loading ? (
+        <div style={{ padding: "30px", textAlign: "center", color: "var(--muted-foreground)", fontSize: "13px" }}>
+          Calculating live courier serviceability and rates for PIN {pincode}...
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {couriers.map((courier: any) => {
+            const isSelected = selectedCourier?.id === courier.id || selectedCourier?.name === courier.name
+            // Standard delivery is free if subtotal >= 1999
+            const isFreeEligible = subtotal >= 1999 && (courier.mode === "SURFACE" || courier.rate <= 99)
+            const effectiveRate = isFreeEligible ? 0 : courier.rate
+
+            return (
+              <div
+                key={courier.id || courier.name}
+                className={`delivery-option ${isSelected ? "selected" : ""}`}
+                style={{
+                  cursor: "pointer",
+                  border: isSelected ? "1.5px solid #d4af37" : "1px solid var(--border)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  background: isSelected ? "rgba(212, 175, 55, 0.08)" : "transparent",
+                  transition: "all 0.2s ease",
+                }}
+                onClick={() => onSelectCourier(courier, effectiveRate)}
+              >
+                <span className="radio" style={{ borderColor: isSelected ? "#d4af37" : "inherit" }} />
+                <Icon name="truck" size={20} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <strong style={{ fontSize: "14px", color: "var(--foreground)" }}>
+                      {courier.name}{" "}
+                      {courier.tag && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: "rgba(212, 175, 55, 0.2)",
+                            color: "#d4af37",
+                            marginLeft: "6px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {courier.tag}
+                        </span>
+                      )}
+                    </strong>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: effectiveRate === 0 ? "#10b981" : "#d4af37" }}>
+                      {effectiveRate === 0 ? "FREE" : money(effectiveRate)}
+                    </span>
+                  </div>
+                  <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                    Estimated transit: {courier.etd || "2-3 business days"} • Mode: {courier.mode || "EXPRESS"}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="step-actions" style={{ marginTop: "24px" }}>
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={onNext}>
+        <Button onClick={onNext} className="continue">
           Continue to payment <Icon name="arrow" />
         </Button>
       </div>
@@ -281,18 +429,16 @@ export function PaymentStep({
       <span className="eyebrow">Step 3 of 3</span>
       <h1>Choose payment method</h1>
       <div className="payment-tabs">
-        {["UPI", "Card", "Net Banking", "Wallet", "Cash on Delivery"].map(
-          (x) => (
-            <button
-              className={method === x ? "active" : ""}
-              onClick={() => setMethod(x)}
-              key={x}
-              type="button"
-            >
-              {x}
-            </button>
-          ),
-        )}
+        {["UPI", "Card", "Net Banking", "Wallet", "Cash on Delivery"].map((x) => (
+          <button
+            className={method === x ? "active" : ""}
+            onClick={() => setMethod(x)}
+            key={x}
+            type="button"
+          >
+            {x}
+          </button>
+        ))}
       </div>
       <div className="payment-panel">
         {method === "UPI" ? (
@@ -301,9 +447,7 @@ export function PaymentStep({
               UPI ID
               <input placeholder="yourname@bank" />
             </label>
-            <p>
-              Or pay securely using your preferred UPI app through Razorpay.
-            </p>
+            <p>Or pay securely using your preferred UPI app through Razorpay.</p>
           </>
         ) : method === "Card" ? (
           <>
@@ -324,8 +468,7 @@ export function PaymentStep({
           </>
         ) : (
           <p>
-            Select your preferred {method.toLowerCase()} option securely on the
-            next screen.
+            Select your preferred {method.toLowerCase()} option securely on the next screen.
           </p>
         )}
       </div>
@@ -338,8 +481,6 @@ export function PaymentStep({
     </>
   )
 }
-
-import { loadRazorpayScript, apiCreateOrder, apiVerifyPayment } from "../../lib/api"
 
 export function CheckoutView({
   cart,
@@ -355,30 +496,43 @@ export function CheckoutView({
     "GB-" + Math.floor(100000 + Math.random() * 900000)
   )
 
-  const total = cart.reduce(
+  const subtotal = cart.reduce(
     (sum, x) =>
       sum + (products.find((p) => p.id === x.id)?.price || 0) * x.quantity,
-    0,
+    0
   )
+
+  const [selectedAddress, setSelectedAddress] = useState<Address>(() => {
+    return (
+      addresses.find((a) => a.isDefault) ||
+      addresses[0] || {
+        id: "addr_default",
+        name: user?.name || "Customer",
+        phone: user?.phone || "9876543210",
+        street: "Atelier Street",
+        city: "Indore",
+        state: "Madhya Pradesh",
+        pincode: "452001",
+        type: "HOME",
+        isDefault: true,
+      }
+    )
+  })
+
+  const [selectedCourier, setSelectedCourier] = useState<any>(null)
+  const [shippingFee, setShippingFee] = useState<number>(subtotal >= 1999 ? 0 : 99)
+  const [packageSummary, setPackageSummary] = useState<any>(null)
+
+  const finalTotal = subtotal + shippingFee
 
   const handlePay = async () => {
     setIsPaying(true)
     try {
       const loaded = await loadRazorpayScript()
       if (!loaded) {
-        // Fallback if network blocked
         setStep(4)
         setComplete(true)
         return
-      }
-
-      const activeAddress = addresses[0] || {
-        name: user?.name || "Customer",
-        phone: "9876543210",
-        street: "Atelier Street",
-        city: "Indore",
-        state: "Madhya Pradesh",
-        pincode: "452001",
       }
 
       const orderItems = cart.map((item) => ({
@@ -388,10 +542,20 @@ export function CheckoutView({
       }))
 
       let rzpOrderId = ""
-      let finalAmount = total * 100 // paise
+      let finalAmount = finalTotal * 100 // paise
 
       try {
-        const orderRes = await apiCreateOrder(orderItems, activeAddress)
+        const orderRes = await apiCreateOrder(
+          orderItems,
+          selectedAddress,
+          undefined,
+          undefined,
+          {
+            shippingFee,
+            selectedCourier,
+            packageSummary,
+          }
+        )
         if (orderRes?.razorpayOrderId) {
           rzpOrderId = orderRes.razorpayOrderId
           finalAmount = orderRes.amount
@@ -411,9 +575,9 @@ export function CheckoutView({
         description: "Artisanal Luxury Shirts",
         order_id: rzpOrderId || undefined,
         prefill: {
-          name: user?.name || activeAddress.name,
+          name: user?.name || selectedAddress.name,
           email: user?.email || "care@gayatribhai.com",
-          contact: activeAddress.phone,
+          contact: selectedAddress.phone,
         },
         theme: {
           color: "#d4af37",
@@ -448,26 +612,37 @@ export function CheckoutView({
   if (complete) {
     return (
       <div className="confirmation">
-        <div className="confirmation-mark">
-          <Icon name="check" size={36} />
+        <div className="confirmation-badge">
+          <Icon name="check" size={24} />
         </div>
-        <span className="eyebrow">Order Confirmed</span>
-        <h1>Thank you for choosing craft.</h1>
-        <p>
-          Your order <strong>#{confirmedOrderId}</strong> has been placed. We’ll keep you
-          updated as it moves from our atelier to your doorstep.
+        <h1>Order Confirmed</h1>
+        <p className="order-num">Reference: #{confirmedOrderId}</p>
+        <p className="copy">
+          Thank you for choosing Gayatri Bhai. Your garments are being hand-pressed and packaged in our signature box. We have dispatched tracking details to your registered phone.
         </p>
-        <div className="order-card">
-          <span>
-            Expected delivery<strong>Tuesday, 28 April</strong>
-          </span>
-          <span>
-            Payment<strong>UPI · Paid</strong>
-          </span>
-          <span>
-            Order total<strong>{money(total)}</strong>
-          </span>
-        </div>
+
+        {selectedCourier && (
+          <div
+            style={{
+              margin: "16px auto",
+              padding: "12px 18px",
+              background: "rgba(212, 175, 55, 0.08)",
+              border: "1px solid rgba(212, 175, 55, 0.3)",
+              borderRadius: "10px",
+              maxWidth: "400px",
+              fontSize: "12px",
+              textAlign: "left",
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 700, color: "#d4af37" }}>
+              🚚 Shipping Partner: {selectedCourier.name}
+            </p>
+            <p style={{ margin: "4px 0 0", color: "var(--muted-foreground)" }}>
+              Estimated transit: {selectedCourier.etd || "2-3 business days"}
+            </p>
+          </div>
+        )}
+
         <div>
           <Button
             onClick={() => {
@@ -493,11 +668,7 @@ export function CheckoutView({
 
   return (
     <div className="checkout-page">
-      <button
-        className="checkout-logo"
-        onClick={() => go("home")}
-        type="button"
-      >
+      <button className="checkout-logo" onClick={() => go("home")} type="button">
         AVYR <small>SECURE CHECKOUT</small>
       </button>
       <div className="checkout-progress">
@@ -516,14 +687,28 @@ export function CheckoutView({
               addresses={addresses}
               go={go}
               user={user}
+              onSelectAddress={(addr) => setSelectedAddress(addr)}
             />
           )}
           {step === 2 && (
-            <DeliveryStep onNext={() => setStep(3)} onBack={() => setStep(1)} />
+            <DeliveryStep
+              cart={cart}
+              pincode={selectedAddress?.pincode || "400001"}
+              subtotal={subtotal}
+              selectedCourier={selectedCourier}
+              onSelectCourier={(courier, rate) => {
+                setSelectedCourier(courier)
+                setShippingFee(rate)
+              }}
+              packageSummary={packageSummary}
+              onPackageCalculated={(summary) => setPackageSummary(summary)}
+              onNext={() => setStep(3)}
+              onBack={() => setStep(1)}
+            />
           )}
           {step === 3 && (
             <PaymentStep
-              total={total}
+              total={finalTotal}
               onPay={handlePay}
               onBack={() => setStep(2)}
             />
@@ -550,16 +735,26 @@ export function CheckoutView({
           <dl>
             <div>
               <dt>Subtotal</dt>
-              <dd>{money(total)}</dd>
+              <dd>{money(subtotal)}</dd>
             </div>
             <div>
-              <dt>Shipping</dt>
-              <dd>Free</dd>
+              <dt>Shipping {selectedCourier ? `(${selectedCourier.name})` : ""}</dt>
+              <dd style={{ color: shippingFee === 0 ? "#10b981" : "inherit" }}>
+                {shippingFee === 0 ? "FREE" : money(shippingFee)}
+              </dd>
             </div>
+            {packageSummary && (
+              <div style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
+                <dt>Combined Package</dt>
+                <dd>
+                  {packageSummary.billableWeightKg} kg ({packageSummary.dimensions.length}×{packageSummary.dimensions.breadth}×{packageSummary.dimensions.height} cm)
+                </dd>
+              </div>
+            )}
           </dl>
           <div className="checkout-total">
             <span>Total</span>
-            <strong>{money(total)}</strong>
+            <strong>{money(finalTotal)}</strong>
           </div>
           <p>
             <Icon name="shield" size={16} /> Secure checkout · 7-day returns

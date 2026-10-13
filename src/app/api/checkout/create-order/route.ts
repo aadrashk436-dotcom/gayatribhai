@@ -8,7 +8,7 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "bCNz3b7Dumt4cNUaHsq3dF7A"
 
 export async function POST(request: Request) {
   try {
-    const { items, address, couponCode } = await request.json();
+    const { items, address, couponCode, shippingFee, selectedCourier, packageSummary } = await request.json();
     if (!items || !items.length) {
       return NextResponse.json({ error: "Cart items are required" }, { status: 400 });
     }
@@ -31,7 +31,14 @@ export async function POST(request: Request) {
       }
     }
 
-    const shipping = subtotal >= 199900 ? 0 : 9900;
+    // Dynamic courier rate or free if subtotal >= 1999 (unless express selected)
+    let shipping = 0;
+    if (typeof shippingFee === "number") {
+      shipping = Math.round(shippingFee * 100);
+    } else {
+      shipping = subtotal >= 199900 ? 0 : 9900;
+    }
+
     const total = Math.max(100, subtotal - discount + shipping); // in paise
     const orderNumber = "GB-" + Date.now().toString().slice(-6);
 
@@ -78,6 +85,10 @@ export async function POST(request: Request) {
           discount,
           shipping,
           total,
+          courierName: selectedCourier?.name || "Blue Dart Express Air",
+          courierId: selectedCourier?.id,
+          courierRate: shipping / 100,
+          packageSummary: packageSummary || {},
           paymentMethod: "ONLINE_RAZORPAY",
           paymentStatus: "PENDING",
           razorpayOrderId: rzpData.id,

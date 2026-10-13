@@ -514,6 +514,12 @@ export function AdminView() {
   })
   const [quickStockValue, setQuickStockValue] = useState("5")
 
+  // Package Weight & Dimensions (Amazon / Shiprocket Shipping Logistics)
+  const [newShirtWeight, setNewShirtWeight] = useState("0.35") // Weight in kg (350g)
+  const [newShirtLength, setNewShirtLength] = useState("30")   // Package length in cm
+  const [newShirtBreadth, setNewShirtBreadth] = useState("25") // Package width/breadth in cm
+  const [newShirtHeight, setNewShirtHeight] = useState("4")    // Package height in cm
+
   // Form states for Add Coupon
   const [newCouponCode, setNewCouponCode] = useState("")
   const [newCouponDiscount, setNewCouponDiscount] = useState("15")
@@ -1018,6 +1024,11 @@ export function AdminView() {
       reviews: 1,
       badge: newShirtBadge || "New",
       stock: newShirtStock,
+      weight: parseFloat(newShirtWeight) || 0.35,
+      length: parseFloat(newShirtLength) || 30,
+      breadth: parseFloat(newShirtBreadth) || 25,
+      height: parseFloat(newShirtHeight) || 4,
+      is_visible: true,
     }
 
     setProductList([newProduct, ...productList])
@@ -3348,6 +3359,136 @@ export function AdminView() {
                 </div>
               </div>
 
+              {/* ── SECTION: PACKAGE WEIGHT & DIMENSIONS (AMAZON / SHIPROCKET LOGISTICS) ── */}
+              <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+                  <div>
+                    <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-[#d4af37]" />
+                      Package Weight & Shipping Dimensions
+                    </h4>
+                    <p className="text-[11px] text-zinc-400">
+                      Amazon & Shiprocket courier standard: shipping rates calculate from Dead Weight vs Volumetric Weight
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#d4af37]">
+                      Divisor: 5000
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block font-semibold text-zinc-300 mb-1 text-xs">
+                      Weight (kg) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.05"
+                        required
+                        value={newShirtWeight}
+                        onChange={(e) => setNewShirtWeight(e.target.value)}
+                        placeholder="0.35"
+                        className="w-full rounded-xl border border-white/10 bg-[#14171d] px-3 py-2 text-white font-mono text-xs focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">kg</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">
+                      = {(Number(newShirtWeight || 0) * 1000).toFixed(0)} grams
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-zinc-300 mb-1 text-xs">
+                      Length (L in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        required
+                        value={newShirtLength}
+                        onChange={(e) => setNewShirtLength(e.target.value)}
+                        placeholder="30"
+                        className="w-full rounded-xl border border-white/10 bg-[#14171d] px-3 py-2 text-white font-mono text-xs focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Garment fold length</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-zinc-300 mb-1 text-xs">
+                      Breadth / Width (B in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        required
+                        value={newShirtBreadth}
+                        onChange={(e) => setNewShirtBreadth(e.target.value)}
+                        placeholder="25"
+                        className="w-full rounded-xl border border-white/10 bg-[#14171d] px-3 py-2 text-white font-mono text-xs focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Box / satchel width</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-zinc-300 mb-1 text-xs">
+                      Height (H in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        required
+                        value={newShirtHeight}
+                        onChange={(e) => setNewShirtHeight(e.target.value)}
+                        placeholder="4"
+                        className="w-full rounded-xl border border-white/10 bg-[#14171d] px-3 py-2 text-white font-mono text-xs focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Folded box thickness</span>
+                  </div>
+                </div>
+
+                {/* Volumetric vs Dead Weight Comparison Box */}
+                <div className="rounded-xl border border-white/5 bg-[#14171d] p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase font-semibold">Dead Weight:</span>
+                      <p className="font-mono font-bold text-white">{Number(newShirtWeight || 0).toFixed(2)} kg</p>
+                    </div>
+                    <span className="text-zinc-600">vs</span>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase font-semibold">Volumetric Weight:</span>
+                      <p className="font-mono font-bold text-[#d4af37]">
+                        {((Number(newShirtLength || 30) * Number(newShirtBreadth || 25) * Number(newShirtHeight || 4)) / 5000).toFixed(2)} kg
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-right">
+                    <span className="text-[10px] font-bold uppercase text-emerald-400">Billable Courier Weight</span>
+                    <p className="font-mono font-bold text-white text-sm">
+                      {Math.max(
+                        Number(newShirtWeight || 0.35),
+                        (Number(newShirtLength || 30) * Number(newShirtBreadth || 25) * Number(newShirtHeight || 4)) / 5000
+                      ).toFixed(2)} kg
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* ── SECTION 4: SIZE MATRIX & STOCK ALLOCATION ── */}
               <div className="rounded-xl border border-white/10 bg-[#0d0f12] p-4 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -4062,6 +4203,146 @@ export function AdminView() {
                       />
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* ── SHIPPING PACKAGE WEIGHT & DIMENSIONS (AMAZON / SHIPROCKET) ── */}
+              <div className="rounded-2xl border border-white/10 bg-[#0d0f12] p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                  <div>
+                    <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-[#d4af37]" />
+                      <span>Shipping Package Weight & Dimensions</span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Used to calculate live courier delivery rates (Shiprocket, BlueDart, Delhivery)
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#d4af37]">
+                    Divisor: 5000
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                      Weight (kg) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.05"
+                        value={editProductModal.weight ?? 0.35}
+                        onChange={(e) =>
+                          setEditProductModal({
+                            ...editProductModal,
+                            weight: Number(e.target.value) || 0.35,
+                          })
+                        }
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white font-mono focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">kg</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">
+                      = {((editProductModal.weight ?? 0.35) * 1000).toFixed(0)} grams
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                      Length (L in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        value={editProductModal.length ?? 30}
+                        onChange={(e) =>
+                          setEditProductModal({
+                            ...editProductModal,
+                            length: Number(e.target.value) || 30,
+                          })
+                        }
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white font-mono focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Garment fold length</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                      Breadth (B in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        value={editProductModal.breadth ?? 25}
+                        onChange={(e) =>
+                          setEditProductModal({
+                            ...editProductModal,
+                            breadth: Number(e.target.value) || 25,
+                          })
+                        }
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white font-mono focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Box / satchel width</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                      Height (H in cm) <span className="text-[#d4af37]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        value={editProductModal.height ?? 4}
+                        onChange={(e) =>
+                          setEditProductModal({
+                            ...editProductModal,
+                            height: Number(e.target.value) || 4,
+                          })
+                        }
+                        className="w-full rounded-xl border border-white/10 bg-[#161922] px-3 py-2 text-xs text-white font-mono focus:border-[#d4af37] focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">cm</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 block">Package thickness</span>
+                  </div>
+                </div>
+
+                {/* Volumetric comparison pill */}
+                <div className="rounded-xl border border-white/5 bg-[#14171d] p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase font-semibold">Dead Weight:</span>
+                      <p className="font-mono font-bold text-white">{(editProductModal.weight ?? 0.35).toFixed(2)} kg</p>
+                    </div>
+                    <span className="text-zinc-600">vs</span>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase font-semibold">Volumetric Weight:</span>
+                      <p className="font-mono font-bold text-[#d4af37]">
+                        {(((editProductModal.length ?? 30) * (editProductModal.breadth ?? 25) * (editProductModal.height ?? 4)) / 5000).toFixed(2)} kg
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-right">
+                    <span className="text-[10px] font-bold uppercase text-emerald-400">Billable Courier Weight</span>
+                    <p className="font-mono font-bold text-white text-sm">
+                      {Math.max(
+                        editProductModal.weight ?? 0.35,
+                        ((editProductModal.length ?? 30) * (editProductModal.breadth ?? 25) * (editProductModal.height ?? 4)) / 5000
+                      ).toFixed(2)} kg
+                    </p>
+                  </div>
                 </div>
               </div>
 

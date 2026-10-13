@@ -18,6 +18,10 @@ export type Product = {
   badge: string
   stock: Record<string, number>
   is_visible?: boolean
+  weight?: number // Weight in kg (e.g. 0.35 kg = 350 grams)
+  length?: number // Package length in cm (e.g. 30 cm)
+  breadth?: number // Package width/breadth in cm (e.g. 25 cm)
+  height?: number // Package height in cm (e.g. 4 cm)
 }
 
 export const products: Product[] = [

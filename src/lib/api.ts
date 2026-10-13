@@ -88,12 +88,24 @@ export async function apiCreateOrder(
   items: Array<{ productId: string; quantity: number; size: string }>,
   address: any,
   couponCode?: string,
-  token?: string
+  token?: string,
+  shippingOptions?: {
+    shippingFee?: number;
+    selectedCourier?: any;
+    packageSummary?: any;
+  }
 ) {
   const res = await fetch(`${API_BASE_URL}/checkout/create-order`, {
     method: "POST",
     headers: getHeaders(token),
-    body: JSON.stringify({ items, address, couponCode }),
+    body: JSON.stringify({
+      items,
+      address,
+      couponCode,
+      shippingFee: shippingOptions?.shippingFee,
+      selectedCourier: shippingOptions?.selectedCourier,
+      packageSummary: shippingOptions?.packageSummary,
+    }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to create order");
