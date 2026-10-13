@@ -304,6 +304,7 @@ export function CheckoutView({
           } catch (e) {
             console.error("Payment verify notification:", e)
           }
+          setCart([])
           setStep(4)
           setComplete(true)
         },

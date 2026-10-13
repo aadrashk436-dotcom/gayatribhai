@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "bCNz3b7Dumt4cNUaHsq3dF7A";
 
@@ -21,9 +23,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
     }
 
+    // Update order status in database
+    try {
+      const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
+      if (fs.existsSync(dbPath)) {
+        const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+        if (db.orders) {
+          const order = db.orders.find((o: any) => o.razorpayOrderId === razorpay_order_id);
+          if (order) {
+            order.paymentStatus = "PAID";
+            order.status = "CONFIRMED";
+            order.razorpayPaymentId = razorpay_payment_id;
+            order.paidAt = new Date().toISOString();
+            fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
+          }
+        }
+      }
+    } catch (saveErr) {
+      console.warn("Could not update order status:", saveErr);
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Payment signature verified successfully",
+      message: "Payment signature verified successfully. Order confirmed!",
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
     });

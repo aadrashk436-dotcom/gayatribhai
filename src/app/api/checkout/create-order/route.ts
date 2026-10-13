@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { products } from "@/products";
+import fs from "fs";
+import path from "path";
 
 const KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_Tl6lD0OL5uKch9";
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "bCNz3b7Dumt4cNUaHsq3dF7A";
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
         notes: {
           customer_name: address?.name || "Customer",
           city: address?.city || "",
+          phone: address?.phone || "",
         },
       }),
     });
@@ -55,6 +58,36 @@ export async function POST(request: Request) {
     const rzpData = await rzpRes.json();
     if (!rzpRes.ok) {
       throw new Error(rzpData.error?.description || "Razorpay order creation failed");
+    }
+
+    // Save order in resilient store
+    try {
+      const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
+      if (fs.existsSync(dbPath)) {
+        const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+        db.orders = db.orders || [];
+        db.orders.unshift({
+          id: `ord_${Date.now()}`,
+          orderNumber,
+          customerName: address?.name || "Customer",
+          customerEmail: address?.email || "customer@gayatribhai.com",
+          customerPhone: address?.phone || "+91 98765 43210",
+          shippingAddress: address || {},
+          items,
+          subtotal,
+          discount,
+          shipping,
+          total,
+          paymentMethod: "ONLINE_RAZORPAY",
+          paymentStatus: "PENDING",
+          razorpayOrderId: rzpData.id,
+          status: "PROCESSING",
+          createdAt: new Date().toISOString(),
+        });
+        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
+      }
+    } catch (saveErr) {
+      console.warn("Could not save initial order:", saveErr);
     }
 
     return NextResponse.json({

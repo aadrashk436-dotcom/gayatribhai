@@ -124,42 +124,11 @@ export const useStore = create<AppState>()(
       },
 
       // ── User ──────────────────────────────────────────────
-      user: {
-        id: "usr_1",
-        name: "Arjun Mehta saransh",
-        email: "arjun@example.com",
-        phone: "+91 98765 43210",
-        joinedDate: "April 2026",
-      },
+      user: null,
       setUser: (user) => set({ user }),
 
       // ── Addresses ─────────────────────────────────────────
-      addresses: [
-        {
-          id: "addr_1",
-          name: "Arjun Mehta",
-          phone: "+91 98765 43210",
-          street: "14, Sea View Apartments, Bandra West",
-          area: "Near Pali Hill",
-          city: "Mumbai",
-          state: "Maharashtra",
-          pincode: "400050",
-          type: "HOME",
-          isDefault: true,
-        },
-        {
-          id: "addr_2",
-          name: "Arjun Mehta",
-          phone: "+91 98765 43210",
-          street: "Floor 4, Peninsula Business Park, Tower B",
-          area: "Lower Parel",
-          city: "Mumbai",
-          state: "Maharashtra",
-          pincode: "400013",
-          type: "WORK",
-          isDefault: false,
-        },
-      ],
+      addresses: [],
       saveAddress: (addr) =>
         set((state) => {
           let next = [...state.addresses]

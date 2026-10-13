@@ -1202,6 +1202,16 @@
       "total_spent": 479800,
       "total_orders": 2,
       "created_at": "2026-10-08T13:32:53.443Z"
+    },
+    {
+      "id": "cust_1791901218850",
+      "name": "Rohit Verma",
+      "email": "rohit.verma.test@example.com",
+      "phone": "+91 98765 12345",
+      "password": "SecurePassword123!",
+      "tier": "Silver",
+      "points": 250,
+      "createdAt": "2026-10-13T14:20:18.850Z"
     }
   ],
   "addresses": [
@@ -1221,6 +1231,36 @@
     }
   ],
   "orders": [
+    {
+      "id": "ord_1791901219701",
+      "orderNumber": "GB-219403",
+      "customerName": "Rohit Verma",
+      "customerEmail": "customer@gayatribhai.com",
+      "customerPhone": "+91 98765 12345",
+      "shippingAddress": {
+        "name": "Rohit Verma",
+        "phone": "+91 98765 12345",
+        "street": "Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400001"
+      },
+      "items": [
+        {
+          "id": "69ba28a30b819d3f52ce23a2",
+          "quantity": 1
+        }
+      ],
+      "subtotal": 210000,
+      "discount": 21000,
+      "shipping": 0,
+      "total": 189000,
+      "paymentMethod": "ONLINE_RAZORPAY",
+      "paymentStatus": "PENDING",
+      "razorpayOrderId": "order_TnQJ3rEaRL4nZD",
+      "status": "PROCESSING",
+      "createdAt": "2026-10-13T14:20:19.701Z"
+    },
     {
       "id": "ord_demo_101",
       "order_number": "ORD-2026-8819",
