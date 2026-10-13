@@ -64,13 +64,13 @@ export function DuoBanners() {
           <div data-reveal-img className="relative aspect-[4/5] md:aspect-[5/6]">
             <Image src={b.image} alt={b.alt} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[cubic-bezier(.2,.7,.2,1)] group-hover:scale-105" />
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 via-40% to-transparent" />
           <div className="absolute inset-x-6 bottom-6 flex items-end justify-between text-white md:inset-x-8 md:bottom-8">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] opacity-85">{b.kicker}</p>
-              <h3 className="mt-2 font-display text-[clamp(1.9rem,6.5vw,3.2rem)] leading-none md:text-5xl">{b.title}</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#cca466] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">{b.kicker}</p>
+              <h3 className="mt-2 font-display text-[clamp(1.9rem,6.5vw,3.2rem)] leading-none text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] md:text-5xl">{b.title}</h3>
             </div>
-            <span className="inline-flex items-center gap-2 border-b border-white/80 pb-1 text-xs font-semibold uppercase tracking-[0.16em]">
+            <span className="inline-flex items-center gap-2 border-b border-white/80 pb-1 text-xs font-semibold uppercase tracking-[0.16em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
               Shop <Arrow />
             </span>
           </div>

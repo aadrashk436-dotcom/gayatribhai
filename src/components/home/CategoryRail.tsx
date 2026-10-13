@@ -34,15 +34,21 @@ export default function CategoryRail() {
                 sizes="(max-width: 768px) 72vw, 25vw"
                 className="object-cover object-top transition-transform duration-[1.2s] ease-[cubic-bezier(.2,.7,.2,1)] group-hover:scale-[1.06]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-transparent" />
+              {/* Deep multi-stop dark scrim to guarantee 100% crystal-clear text contrast on white & light shirts */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 via-45% to-black/10" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/90 to-transparent" />
             </div>
             <div className="absolute inset-x-4 bottom-4 flex items-end justify-between text-white md:inset-x-5 md:bottom-5">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.2em] opacity-80">{cat.count}</p>
-                <h3 className="mt-1 font-display text-2xl leading-none md:text-[1.9rem]">{cat.name}</h3>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#cca466] drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+                  {cat.count}
+                </p>
+                <h3 className="mt-1 font-display text-2xl font-medium leading-none text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] md:text-[1.9rem]">
+                  {cat.name}
+                </h3>
               </div>
-              <span className="flex size-10 items-center justify-center rounded-full bg-white text-[#111] transition-transform duration-500 group-hover:-rotate-45">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-[#111] shadow-[0_4px_16px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:scale-105 group-hover:bg-[#cca466] group-hover:text-black group-hover:-rotate-45">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M5 12h14m-5-5 5 5-5 5" />
                 </svg>
               </span>
