@@ -1672,5 +1672,119 @@
     "free_shipping_threshold": 1999,
     "support_phone": "+91 9876543210"
   },
-  "otps": {}
+  "otps": {},
+  "banners": [
+    {
+      "id": "atelier",
+      "kicker": "Summer Atelier '26",
+      "lines": [
+        "Woven",
+        "by hand."
+      ],
+      "cta": "Shop linen",
+      "desktop": "/assets/site_banners/slide1_desktop.jpg",
+      "mobile": "/assets/site_banners/slide1_mobile.jpg",
+      "alt": "Model in an ivory hand-embroidered French linen shirt on an Aegean seaside stone terrace",
+      "tone": "light",
+      "link": "/shop",
+      "is_active": true,
+      "sort_order": 1,
+      "seo_heading": "H1",
+      "seo_keywords": [
+        "french linen shirts",
+        "luxury menswear",
+        "resortwear",
+        "hand embroidery"
+      ]
+    },
+    {
+      "id": "resort",
+      "kicker": "The Resort Edit",
+      "lines": [
+        "Coastal",
+        "state."
+      ],
+      "cta": "Shop resort",
+      "desktop": "/assets/site_banners/slide2_desktop.jpg",
+      "mobile": "/assets/site_banners/slide2_mobile.jpg",
+      "alt": "Model relaxing on a luxury coastal villa terrace in a sky-blue Cuban collar linen shirt",
+      "tone": "light",
+      "link": "/shop",
+      "is_active": true,
+      "sort_order": 2,
+      "seo_heading": "H2",
+      "seo_keywords": [
+        "resort shirts",
+        "cuban collar",
+        "summer vacation fashion"
+      ]
+    },
+    {
+      "id": "studio",
+      "kicker": "New Arrivals",
+      "lines": [
+        "Rust &",
+        "ease."
+      ],
+      "cta": "Shop new in",
+      "desktop": "/assets/banners/hero-terracotta-widescreen.jpg",
+      "mobile": "/assets/banners/hero-studio-mobile.jpg",
+      "alt": "Model walking through a sunlit sandstone courtyard in a terracotta embroidered linen shirt",
+      "tone": "light",
+      "link": "/shop",
+      "is_active": true,
+      "sort_order": 3,
+      "seo_heading": "H2",
+      "seo_keywords": [
+        "terracotta shirt",
+        "botanical embroidery",
+        "artisan menswear"
+      ]
+    },
+    {
+      "id": "evening",
+      "kicker": "After Dark",
+      "lines": [
+        "Evening",
+        "tailoring."
+      ],
+      "cta": "Shop evening",
+      "desktop": "/assets/banners/hero-evening-desktop.jpg",
+      "mobile": "/assets/site_banners/slide3_mobile.jpg",
+      "alt": "Model on an evening rooftop at dusk in a navy embroidered shirt",
+      "tone": "light",
+      "link": "/shop",
+      "is_active": true,
+      "sort_order": 4,
+      "seo_heading": "H2",
+      "seo_keywords": [
+        "navy embroidered shirt",
+        "evening resortwear",
+        "luxury menswear"
+      ]
+    }
+  ],
+  "seo_settings": {
+    "home": {
+      "metaTitle": "GAYATRI BHAI | Handcrafted Luxury French Linen Shirts",
+      "metaDescription": "Discover artisanal resortwear and heirloom hand-embroidered French linen shirts crafted with generational master Karigar perfection in India.",
+      "keywords": "luxury linen shirts, hand embroidered shirts, cuban collar linen, resortwear india, designer shirts",
+      "ogImage": "/assets/site_banners/slide1_desktop.jpg",
+      "canonicalUrl": "https://gayatribhaishop-zkde-eight.vercel.app"
+    },
+    "shop": {
+      "metaTitle": "Shop Artisan Linen Shirts | Gayatri Bhai Collection",
+      "metaDescription": "Explore our limited drops of 100% pure organic French linen shirts with single-needle botanical and resort embroidery.",
+      "keywords": "buy linen shirts online, resort collection, handcrafted clothing, men luxury fashion",
+      "ogImage": "/assets/site_banners/slide2_desktop.jpg",
+      "canonicalUrl": "https://gayatribhaishop-zkde-eight.vercel.app/shop"
+    },
+    "blog": {
+      "metaTitle": "The AVYR Journal | Essays on Craft, Linen Science & Sartorial Art",
+      "metaDescription": "Delve into the stories behind our atelier. In-depth guides to French flax, embroidery techniques, resort styling, and conscious luxury living.",
+      "keywords": "linen care, fabric science, cuban collar styling, artisan craft, menswear essays",
+      "ogImage": "/assets/site_banners/slide2_desktop.jpg",
+      "canonicalUrl": "https://gayatribhaishop-zkde-eight.vercel.app/blog"
+    }
+  }
 }

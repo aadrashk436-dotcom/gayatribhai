@@ -51,6 +51,10 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
 } from "lucide-react"
 import { products as initialProducts, Product } from "@/lib/products"
 import { BLOG_POSTS as initialBlogPosts } from "@/data/blogData"
@@ -497,7 +501,19 @@ export function AdminView() {
     title: string
     isMobile?: boolean
   } | null>(null)
+  const [lightboxZoom, setLightboxZoom] = useState(1)
+  const [lightboxFit, setLightboxFit] = useState<"contain" | "cover">("contain")
   const [bannerPreviewFit, setBannerPreviewFit] = useState<"cover" | "contain">("cover")
+  const [bannerViewMode, setBannerViewMode] = useState<Record<string, "frame" | "full">>({})
+
+  // ── DYNAMIC DATA API & SKELETON LOADING STATES ──
+  const [isLoadingAll, setIsLoadingAll] = useState(true)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true)
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true)
+  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true)
+  const [isLoadingSeo, setIsLoadingSeo] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // ── BLOG CMS & SEO STUDIO STATES ──
   const [blogList, setBlogList] = useState<BlogPost[]>(initialBlogPosts)
@@ -656,38 +672,90 @@ export function AdminView() {
     })
   }, [blogList, blogSearchQuery, blogCategoryFilter, blogStatusFilter])
 
-  // Initial live data synchronization
+  // ── LIVE API SYNCHRONIZATION WITH SKELETON LOADING ──
+  const fetchAllLiveData = async (isManualRefresh = false) => {
+    if (isManualRefresh) setIsRefreshing(true)
+    setIsLoadingAll(true)
+    setIsLoadingProducts(true)
+    setIsLoadingOrders(true)
+    setIsLoadingBanners(true)
+    setIsLoadingBlogs(true)
+    setIsLoadingSeo(true)
+
+    try {
+      // 1. Fetch Live Products
+      const fetchProducts = fetch("/api/products")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.products) && data.products.length > 0) {
+            setProductList(data.products)
+          }
+        })
+        .catch((e) => console.warn("Could not load products from API:", e))
+        .finally(() => setIsLoadingProducts(false))
+
+      // 2. Fetch Live Orders
+      const fetchOrders = fetch("/api/orders")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+            setOrderList(data.orders)
+          }
+        })
+        .catch((e) => console.warn("Could not load orders from API:", e))
+        .finally(() => setIsLoadingOrders(false))
+
+      // 3. Fetch Live Hero Banners
+      const fetchBanners = fetch("/api/banners")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setBannerList(data)
+          }
+        })
+        .catch((e) => console.warn("Could not load banners from API:", e))
+        .finally(() => setIsLoadingBanners(false))
+
+      // 4. Fetch Live Atelier Blogs
+      const fetchBlogs = fetch("/api/blogs?all=true")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setBlogList(data)
+          }
+        })
+        .catch((e) => console.warn("Could not load blogs from API:", e))
+        .finally(() => setIsLoadingBlogs(false))
+
+      // 5. Fetch Live Global SEO Settings
+      const fetchSeo = fetch("/api/seo")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.home) {
+            setSiteSeoSettings(data)
+          }
+        })
+        .catch((e) => console.warn("Could not load SEO settings from API:", e))
+        .finally(() => setIsLoadingSeo(false))
+
+      await Promise.allSettled([fetchProducts, fetchOrders, fetchBanners, fetchBlogs, fetchSeo])
+    } finally {
+      setIsLoadingAll(false)
+      setIsRefreshing(false)
+    }
+  }
+
+  // Initial mount live synchronization
   useEffect(() => {
-    // Live blogs
-    fetch("/api/blogs?all=true")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setBlogList(data)
-        }
-      })
-      .catch((e) => console.warn("Could not load blogs:", e))
-
-    // Live banners
-    fetch("/api/banners")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setBannerList(data)
-        }
-      })
-      .catch((e) => console.warn("Could not load banners:", e))
-
-    // Live SEO settings
-    fetch("/api/seo")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.home) {
-          setSiteSeoSettings(data)
-        }
-      })
-      .catch((e) => console.warn("Could not load SEO settings:", e))
+    fetchAllLiveData()
   }, [])
+
+  // Manual live refresh handler with toast feedback
+  const handleRefreshAllData = async () => {
+    showToast("Syncing with live database...")
+    await fetchAllLiveData(true)
+    showToast("Live database synchronized! All dynamic data updated.")
+  }
 
   // Low stock inventory calculation
   const lowStockCount = useMemo(() => {
@@ -1774,6 +1842,166 @@ export function AdminView() {
     { name: "Settings", icon: Settings, badge: null },
   ]
 
+  // ── SKELETON PLACEHOLDER RENDERING HELPERS ──
+  const renderSkeletonMetrics = () => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="rounded-2xl border border-white/10 bg-[#16191f] p-5 shadow-lg space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-3 w-24 rounded bg-white/10" />
+            <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-7 w-32 rounded bg-[#d4af37]/20" />
+            <div className="h-3 w-28 rounded bg-white/5" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderSkeletonProducts = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-pulse">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="rounded-2xl border border-white/10 bg-[#14171d] p-4 shadow-xl space-y-3.5">
+          <div className="relative aspect-[4/3] w-full rounded-xl bg-gradient-to-br from-white/5 via-white/10 to-white/5 border border-white/5 flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-white/10" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="h-3 w-24 rounded bg-white/10" />
+              <div className="h-3 w-12 rounded bg-emerald-500/20" />
+            </div>
+            <div className="h-4 w-3/4 rounded bg-white/20" />
+            <div className="h-3 w-full rounded bg-white/5" />
+          </div>
+          <div className="pt-2 border-t border-white/5 flex gap-1.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="h-5 w-8 rounded bg-white/5" />
+            ))}
+          </div>
+          <div className="pt-3 border-t border-white/5 flex justify-between items-center">
+            <div className="h-5 w-24 rounded bg-[#d4af37]/20" />
+            <div className="flex gap-2">
+              <div className="h-8 w-8 rounded-lg bg-white/5" />
+              <div className="h-8 w-14 rounded-lg bg-[#d4af37]/20" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderSkeletonOrdersTable = () => (
+    <tbody className="divide-y divide-white/5">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <tr key={i} className="animate-pulse">
+          <td className="py-4 px-3"><div className="h-4 w-4 rounded bg-white/10" /></td>
+          <td className="py-4 px-3 space-y-1.5">
+            <div className="h-4 w-24 rounded bg-[#d4af37]/20 font-mono" />
+            <div className="h-3 w-16 rounded bg-white/10" />
+          </td>
+          <td className="py-4 px-3 space-y-1.5">
+            <div className="h-4 w-28 rounded bg-white/15" />
+            <div className="h-3 w-20 rounded bg-white/10" />
+          </td>
+          <td className="py-4 px-3 space-y-1.5">
+            <div className="h-4 w-40 rounded bg-white/10" />
+            <div className="h-3 w-24 rounded bg-white/5" />
+          </td>
+          <td className="py-4 px-3 space-y-1.5">
+            <div className="h-4 w-16 rounded bg-white/15 font-mono" />
+            <div className="h-3 w-20 rounded bg-emerald-500/20" />
+          </td>
+          <td className="py-4 px-3">
+            <div className="h-6 w-28 rounded-full bg-white/10" />
+          </td>
+          <td className="py-4 px-3 text-right">
+            <div className="h-8 w-24 rounded-xl bg-white/10 ml-auto" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  )
+
+  const renderSkeletonBanners = () => (
+    <div className="space-y-4 animate-pulse">
+      {[1, 2].map((i) => (
+        <div key={i} className="rounded-2xl border border-white/10 bg-[#14171d] p-5 shadow-xl space-y-4">
+          <div className="flex justify-between items-center pb-4 border-b border-white/10">
+            <div className="space-y-2">
+              <div className="h-3 w-28 rounded bg-[#d4af37]/30" />
+              <div className="h-5 w-52 rounded bg-white/20" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 w-20 rounded-xl bg-white/10" />
+              <div className="h-8 w-20 rounded-xl bg-white/10" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
+            <div className="lg:col-span-7 space-y-2">
+              <div className="h-3 w-40 rounded bg-white/10" />
+              <div className="aspect-[16/9] w-full rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+                <Monitor className="h-10 w-10 text-white/10" />
+              </div>
+            </div>
+            <div className="lg:col-span-5 space-y-2 flex flex-col items-center">
+              <div className="h-3 w-32 rounded bg-white/10" />
+              <div className="w-[240px] aspect-[9/16] rounded-[36px] bg-white/5 border-[5px] border-white/10 flex items-center justify-center">
+                <Smartphone className="h-10 w-10 text-white/10" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderSkeletonBlogs = () => (
+    <div className="space-y-4 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="rounded-2xl border border-white/10 bg-[#14171d] p-5 shadow-xl space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-32 rounded-xl bg-white/5 border border-white/5 shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="flex gap-2">
+                <div className="h-4 w-24 rounded-full bg-[#d4af37]/20" />
+                <div className="h-4 w-16 rounded-full bg-emerald-500/20" />
+              </div>
+              <div className="h-5 w-2/3 rounded bg-white/20" />
+              <div className="h-3 w-1/2 rounded bg-white/10" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderSkeletonInventory = () => (
+    <tbody className="divide-y divide-white/5">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <tr key={i} className="animate-pulse">
+          <td className="py-3.5 px-3">
+            <div className="flex items-center gap-3">
+              <div className="h-14 w-14 rounded-xl bg-white/5 border border-white/5 shrink-0" />
+              <div className="space-y-1.5">
+                <div className="h-4 w-32 rounded bg-white/20" />
+                <div className="h-3 w-20 rounded bg-white/10" />
+              </div>
+            </div>
+          </td>
+          <td className="py-3.5 px-3"><div className="h-4 w-16 rounded bg-[#d4af37]/20" /></td>
+          {[1, 2, 3, 4, 5, 6].map((s) => (
+            <td key={s} className="py-3.5 px-2 text-center"><div className="h-6 w-8 rounded-lg bg-white/5 mx-auto" /></td>
+          ))}
+          <td className="py-3.5 px-3 text-center"><div className="h-5 w-16 rounded-full bg-white/10 mx-auto" /></td>
+          <td className="py-3.5 px-3 text-right"><div className="h-4 w-20 rounded bg-white/15 ml-auto" /></td>
+          <td className="py-3.5 px-3 text-right"><div className="h-7 w-12 rounded-lg bg-white/10 ml-auto" /></td>
+        </tr>
+      ))}
+    </tbody>
+  )
+
   return (
     <div className="h-screen w-full bg-[#0d0f12] text-zinc-100 flex overflow-hidden antialiased selection:bg-[#d4af37] selection:text-black">
       {/* Toast Notification */}
@@ -1922,16 +2150,27 @@ export function AdminView() {
 
           {/* Quick Actions & Live Status Bar */}
           <div className="flex items-center gap-3">
+            {/* Sync Live DB Button */}
+            <button
+              onClick={handleRefreshAllData}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/10 px-3.5 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black active:scale-95 transition disabled:opacity-50 shadow-sm"
+              title="Reload live dynamic data from database"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-black" : ""}`} />
+              <span className="hidden sm:inline">{isRefreshing ? "Syncing..." : "Sync Live DB"}</span>
+            </button>
+
             {/* Live Status Indicators */}
-            <div className="hidden md:flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[11px] font-semibold text-zinc-300">
+            <div className="hidden lg:flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[11px] font-semibold text-zinc-300">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Razorpay Live</span>
+                <span>DB Live Synced</span>
               </span>
               <span className="text-zinc-600">•</span>
               <span className="flex items-center gap-1 text-[#d4af37]">
                 <Truck className="h-3 w-3" />
-                <span>Shiprocket AWB</span>
+                <span>Shiprocket</span>
               </span>
             </div>
 
@@ -1986,71 +2225,75 @@ export function AdminView() {
           {activeTab === "Dashboard" && (
             <div className="space-y-8">
               {/* 4 Hero KPI Cards */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Total Revenue</span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/15 text-[#d4af37]">
-                      <IndianRupee className="h-5 w-5" />
+              {isLoadingAll ? (
+                renderSkeletonMetrics()
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Total Revenue</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/15 text-[#d4af37]">
+                        <IndianRupee className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">₹8,42,590</h3>
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>+18.2% vs last month</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">₹8,42,590</h3>
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                      <span>+18.2% vs last month</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Total Orders</span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
-                      <ShoppingBag className="h-5 w-5" />
+                  <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Total Orders</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
+                        <ShoppingBag className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{orderList.length + 1243}</h3>
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>+12.5% fulfillment rate</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{orderList.length + 1243}</h3>
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                      <span>+12.5% fulfillment rate</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Artisanal Shirts Sold</span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
-                      <Package className="h-5 w-5" />
+                  <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Artisanal Shirts Sold</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                        <Package className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">1,614 Units</h3>
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>+16.8% volume</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">1,614 Units</h3>
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                      <span>+16.8% volume</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Registered Patrons</span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
-                      <Users className="h-5 w-5" />
+                  <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#16191f] to-[#121418] p-5 shadow-lg relative overflow-hidden group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold tracking-wider uppercase text-zinc-400">Registered Patrons</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
+                        <Users className="h-5 w-5" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{customerList.length + 407}</h3>
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-purple-400 font-semibold">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      <span>94% Repeat Loyalty</span>
+                    <div className="mt-4">
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{customerList.length + 407}</h3>
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-purple-400 font-semibold">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>94% Repeat Loyalty</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Performance Chart & Fulfillment Watch */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2267,49 +2510,67 @@ export function AdminView() {
 
               {/* Product Catalog Grid (INDEPENDENTLY SCROLLABLE) */}
               <div className="flex-1 overflow-y-auto admin-scroll pr-1 pb-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {filteredProducts.map((p) => {
-                    const totalUnits = Object.values(p.stock).reduce((a, b) => a + b, 0)
-                    const isHidden = p.is_visible === false
-                    return (
-                      <div
-                        key={p.id}
-                        className={`rounded-2xl border bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group transition duration-200 ${isHidden
-                            ? "border-amber-500/30 opacity-90"
-                            : "border-white/10 hover:border-[#d4af37]/40"
-                          }`}
-                      >
-                        <div>
-                          <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3">
-                            <Image
-                              src={p.images[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
-                              alt={p.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <span className="absolute top-2.5 left-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#d4af37] border border-white/10">
-                              {p.category}
-                            </span>
-                            <span className="absolute top-2.5 right-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/10">
-                              {totalUnits} Units in Stock
-                            </span>
-
-                            {/* Photo Count Pill */}
-                            <span className="absolute bottom-2.5 left-2.5 rounded-full bg-black/80 backdrop-blur-md px-2 py-0.5 text-[9px] font-mono text-zinc-300 border border-white/10 flex items-center gap-1">
-                              <ImageIcon className="h-3 w-3 text-[#d4af37]" />
-                              {p.images?.length || 1} Photos
-                            </span>
-
-                            {/* Hidden from Store Overlay */}
-                            {isHidden && (
-                              <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center">
-                                <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 text-[11px] font-bold flex items-center gap-1.5 shadow">
-                                  <EyeOff className="h-3.5 w-3.5" /> Hidden from Store (Draft)
+                {isLoadingProducts ? (
+                  renderSkeletonProducts()
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredProducts.map((p) => {
+                      const totalUnits = Object.values(p.stock).reduce((a, b) => a + b, 0)
+                      const isHidden = p.is_visible === false
+                      return (
+                        <div
+                          key={p.id}
+                          className={`rounded-2xl border bg-[#14171d] p-4 shadow-xl flex flex-col justify-between group transition duration-200 ${isHidden
+                              ? "border-amber-500/30 opacity-90"
+                              : "border-white/10 hover:border-[#d4af37]/40"
+                            }`}
+                        >
+                          <div>
+                            <div
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: p.images[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+                                  title: `${p.name} • SKU: ${p.sku}`,
+                                  isMobile: false,
+                                })
+                              }
+                              className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black mb-3 cursor-pointer group/img"
+                              title="Click to view full uncropped photo (HD Zoom)"
+                            >
+                              <Image
+                                src={p.images[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                                alt={p.name}
+                                fill
+                                className="object-cover group-hover/img:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="rounded-full bg-black/85 backdrop-blur-md border border-[#d4af37]/60 px-3 py-1.5 text-[11px] font-bold text-[#d4af37] flex items-center gap-1.5 shadow-2xl">
+                                  <Maximize2 className="h-3.5 w-3.5" /> Pura Dekho (HD Zoom)
                                 </span>
-                                <p className="text-[10px] text-zinc-400 mt-1">Patrons cannot see or purchase this item</p>
                               </div>
-                            )}
-                          </div>
+                              <span className="absolute top-2.5 left-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#d4af37] border border-white/10">
+                                {p.category}
+                              </span>
+                              <span className="absolute top-2.5 right-2.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/10">
+                                {totalUnits} Units in Stock
+                              </span>
+
+                              {/* Photo Count Pill */}
+                              <span className="absolute bottom-2.5 left-2.5 rounded-full bg-black/80 backdrop-blur-md px-2 py-0.5 text-[9px] font-mono text-zinc-300 border border-white/10 flex items-center gap-1">
+                                <ImageIcon className="h-3 w-3 text-[#d4af37]" />
+                                {p.images?.length || 1} Photos
+                              </span>
+
+                              {/* Hidden from Store Overlay */}
+                              {isHidden && (
+                                <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center">
+                                  <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 text-[11px] font-bold flex items-center gap-1.5 shadow">
+                                    <EyeOff className="h-3.5 w-3.5" /> Hidden from Store (Draft)
+                                  </span>
+                                  <p className="text-[10px] text-zinc-400 mt-1">Patrons cannot see or purchase this item</p>
+                                </div>
+                              )}
+                            </div>
 
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
@@ -2392,9 +2653,10 @@ export function AdminView() {
                     )
                   })}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
           {/* ══════════════ TAB 3: ORDERS ══════════════ */}
           {activeTab === "Orders" && (
@@ -2516,62 +2778,75 @@ export function AdminView() {
                         <th className="py-3.5 px-3 text-right">Fulfillment Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {filteredOrders.map((ord) => {
-                        const isSelected = selectedOrderIds.includes(ord.id)
-                        return (
-                          <tr
-                            key={ord.id}
-                            className={`transition ${isSelected ? "bg-[#d4af37]/5" : "hover:bg-white/[0.02]"
-                              }`}
-                          >
-                            {/* Checkbox */}
-                            <td className="py-3.5 px-3">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSelectOrder(ord.id)}
-                                className="h-4 w-4 rounded accent-[#d4af37] cursor-pointer"
-                              />
-                            </td>
+                    {isLoadingOrders ? (
+                      renderSkeletonOrdersTable()
+                    ) : (
+                      <tbody className="divide-y divide-white/5">
+                        {filteredOrders.map((ord) => {
+                          const isSelected = selectedOrderIds.includes(ord.id)
+                          return (
+                            <tr
+                              key={ord.id}
+                              className={`transition ${isSelected ? "bg-[#d4af37]/5" : "hover:bg-white/[0.02]"
+                                }`}
+                            >
+                              {/* Checkbox */}
+                              <td className="py-3.5 px-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleSelectOrder(ord.id)}
+                                  className="h-4 w-4 rounded accent-[#d4af37] cursor-pointer"
+                                />
+                              </td>
 
-                            {/* Order & Date */}
-                            <td className="py-3.5 px-3">
-                              <button
-                                onClick={() => setInspectOrderModal(ord)}
-                                className="font-mono text-sm font-bold text-[#d4af37] hover:underline flex items-center gap-1"
-                              >
-                                {ord.id}
-                              </button>
-                              <p className="text-[11px] text-zinc-400 mt-0.5">{ord.date}</p>
-                              <p className="font-mono text-xs font-semibold text-white mt-1.5">{formatINR(ord.total)}</p>
-                            </td>
+                              {/* Order & Date */}
+                              <td className="py-3.5 px-3">
+                                <button
+                                  onClick={() => setInspectOrderModal(ord)}
+                                  className="font-mono text-sm font-bold text-[#d4af37] hover:underline flex items-center gap-1"
+                                >
+                                  {ord.id}
+                                </button>
+                                <p className="text-[11px] text-zinc-400 mt-0.5">{ord.date}</p>
+                                <p className="font-mono text-xs font-semibold text-white mt-1.5">{formatINR(ord.total)}</p>
+                              </td>
 
-                            {/* Customer & Address */}
-                            <td className="py-3.5 px-3 max-w-[220px]">
-                              <p className="font-semibold text-white text-xs">{ord.customer}</p>
-                              <p className="text-zinc-400 text-[11px]">{ord.phone}</p>
-                              <p className="text-zinc-300 text-[11px] mt-1 line-clamp-1" title={ord.address}>
-                                {ord.address}
-                              </p>
-                              <p className="text-zinc-400 text-[10px] flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3 text-[#d4af37] shrink-0" />
-                                <span>{ord.city} (PIN {ord.pincode})</span>
-                              </p>
-                            </td>
+                              {/* Customer & Address */}
+                              <td className="py-3.5 px-3 max-w-[220px]">
+                                <p className="font-semibold text-white text-xs">{ord.customer}</p>
+                                <p className="text-zinc-400 text-[11px]">{ord.phone}</p>
+                                <p className="text-zinc-300 text-[11px] mt-1 line-clamp-1" title={ord.address}>
+                                  {ord.address}
+                                </p>
+                                <p className="text-zinc-400 text-[10px] flex items-center gap-1 mt-0.5">
+                                  <MapPin className="h-3 w-3 text-[#d4af37] shrink-0" />
+                                  <span>{ord.city} (PIN {ord.pincode})</span>
+                                </p>
+                              </td>
 
-                            {/* Product Item with Thumbnail */}
-                            <td className="py-3.5 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
-                                  <Image
-                                    src={ord.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
-                                    alt={ord.shirtName}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                                <div className="min-w-0">
+                              {/* Product Item with Thumbnail */}
+                              <td className="py-3.5 px-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div
+                                    onClick={() =>
+                                      setZoomImageModal({
+                                        url: ord.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+                                        title: `${ord.shirtName} • Order ${ord.id}`,
+                                        isMobile: false,
+                                      })
+                                    }
+                                    className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10 cursor-pointer group/ordimg hover:border-[#d4af37]/60 transition"
+                                    title="Click to view full photo (HD Zoom)"
+                                  >
+                                    <Image
+                                      src={ord.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                                      alt={ord.shirtName}
+                                      fill
+                                      className="object-cover group-hover/ordimg:scale-110 transition-transform"
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
                                   <p className="text-white font-semibold text-xs truncate max-w-[170px]" title={ord.shirtName}>
                                     {ord.shirtName}
                                   </p>
@@ -2697,6 +2972,7 @@ export function AdminView() {
                         )
                       })}
                     </tbody>
+                  )}
                   </table>
                 </div>
               </div>
@@ -2913,45 +3189,58 @@ export function AdminView() {
                         <th className="py-3 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {inventoryFilteredList.length === 0 ? (
-                        <tr>
-                          <td colSpan={11} className="py-12 text-center text-zinc-500">
-                            No shirts found matching your search or filter.
-                          </td>
-                        </tr>
-                      ) : (
-                        inventoryFilteredList.map((p) => {
-                          const totalUnits = Object.values(p.stock || {}).reduce(
-                            (a, b) => a + (Number(b) || 0),
-                            0
-                          )
-                          const itemValuation = totalUnits * p.price
-                          const isHidden = p.is_visible === false
+                    {isLoadingProducts ? (
+                      renderSkeletonInventory()
+                    ) : (
+                      <tbody className="divide-y divide-white/5">
+                        {inventoryFilteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={11} className="py-12 text-center text-zinc-500">
+                              No shirts found matching your search or filter.
+                            </td>
+                          </tr>
+                        ) : (
+                          inventoryFilteredList.map((p) => {
+                            const totalUnits = Object.values(p.stock || {}).reduce(
+                              (a, b) => a + (Number(b) || 0),
+                              0
+                            )
+                            const itemValuation = totalUnits * p.price
+                            const isHidden = p.is_visible === false
 
-                          return (
-                            <tr
-                              key={p.id}
-                              className={`hover:bg-white/[0.02] transition group ${isHidden ? "opacity-75 bg-amber-500/[0.02]" : ""
-                                }`}
-                            >
-                              {/* Product Photo & Details */}
-                              <td className="py-3.5 px-3">
-                                <div className="flex items-center gap-3">
-                                  {/* Shirt Image Thumbnail */}
-                                  <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-black border border-white/10 shrink-0 group-hover:border-[#d4af37]/60 transition shadow">
-                                    <Image
-                                      src={p.images?.[0] || "/placeholder.jpg"}
-                                      alt={p.name}
-                                      fill
-                                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                    {isHidden && (
-                                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                                        <EyeOff className="h-4 w-4 text-amber-400" />
-                                      </div>
-                                    )}
-                                  </div>
+                            return (
+                              <tr
+                                key={p.id}
+                                className={`hover:bg-white/[0.02] transition group ${isHidden ? "opacity-75 bg-amber-500/[0.02]" : ""
+                                  }`}
+                              >
+                                {/* Product Photo & Details */}
+                                <td className="py-3.5 px-3">
+                                  <div className="flex items-center gap-3">
+                                    {/* Shirt Image Thumbnail */}
+                                    <div
+                                      onClick={() =>
+                                        setZoomImageModal({
+                                          url: p.images?.[0] || "/placeholder.jpg",
+                                          title: `${p.name} • SKU: ${p.sku}`,
+                                          isMobile: false,
+                                        })
+                                      }
+                                      className="relative h-14 w-14 rounded-xl overflow-hidden bg-black border border-white/10 shrink-0 group-hover:border-[#d4af37]/60 transition shadow cursor-pointer"
+                                      title="Click to view full photo (HD Zoom)"
+                                    >
+                                      <Image
+                                        src={p.images?.[0] || "/placeholder.jpg"}
+                                        alt={p.name}
+                                        fill
+                                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                      />
+                                      {isHidden && (
+                                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                                          <EyeOff className="h-4 w-4 text-amber-400" />
+                                        </div>
+                                      )}
+                                    </div>
 
                                   {/* Name & Metadata */}
                                   <div className="min-w-0 max-w-[240px]">
@@ -3106,6 +3395,7 @@ export function AdminView() {
                         })
                       )}
                     </tbody>
+                  )}
                   </table>
                 </div>
               </div>
@@ -3323,8 +3613,11 @@ export function AdminView() {
               </div>
 
               {/* Banners List */}
-              <div className="space-y-4">
-                {bannerList.map((banner, index) => {
+              {isLoadingBanners ? (
+                renderSkeletonBanners()
+              ) : (
+                <div className="space-y-4">
+                  {bannerList.map((banner, index) => {
                   const isActive = banner.is_active !== false
                   return (
                     <div
@@ -3464,12 +3757,22 @@ export function AdminView() {
                               </div>
                               <div className="w-8" />
                             </div>
-                            <div className="relative aspect-[16/9] w-full bg-black group">
+                            <div
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg",
+                                  title: `Desktop PC Widescreen: ${banner.kicker || "Hero Slide"}`,
+                                  isMobile: false,
+                                })
+                              }
+                              className="relative aspect-[16/9] w-full bg-black group cursor-pointer"
+                              title="Click for Full High-Resolution PC View"
+                            >
                               <Image
                                 src={banner.desktop || banner.image_desktop || "/assets/site_banners/slide1_desktop.jpg"}
                                 alt={banner.kicker || "Desktop Slide"}
                                 fill
-                                className="object-cover"
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent flex items-end p-4">
                                 <div className="text-white">
@@ -3484,17 +3787,51 @@ export function AdminView() {
                                   </span>
                                 </div>
                               </div>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <span className="rounded-full bg-black/85 backdrop-blur-md border border-[#d4af37]/60 px-3.5 py-1.5 text-xs font-bold text-[#d4af37] flex items-center gap-1.5 shadow-2xl">
+                                  <Maximize2 className="h-3.5 w-3.5" /> Pura Dekho (1920 × 1080 HD Zoom)
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         {/* Mobile Phone Mockup (9:16 portrait ratio) */}
-                        <div className="lg:col-span-5 space-y-2 flex flex-col items-center">
-                          <div className="flex items-center justify-between text-xs text-zinc-400 w-full max-w-[210px]">
-                            <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <div className="lg:col-span-5 space-y-2.5 flex flex-col items-center">
+                          <div className="flex flex-wrap items-center justify-between text-xs text-zinc-400 w-full max-w-[260px] gap-1">
+                            <span className="flex items-center gap-1 font-semibold text-white text-[11px]">
                               <Smartphone className="h-3.5 w-3.5 text-[#d4af37]" />
-                              Mobile Phone (9:16)
+                              Mobile (9:16)
                             </span>
+
+                            {/* View Switcher: Phone Mockup Frame vs 100% Uncropped Full Photo */}
+                            <div className="flex items-center rounded-lg bg-black/60 p-0.5 border border-white/10">
+                              <button
+                                type="button"
+                                onClick={() => setBannerViewMode((prev) => ({ ...prev, [banner.id]: "frame" }))}
+                                className={`rounded px-2 py-0.5 text-[10px] font-semibold transition flex items-center gap-1 ${
+                                  (bannerViewMode[banner.id] || "frame") === "frame"
+                                    ? "bg-[#d4af37] text-black font-bold shadow"
+                                    : "text-zinc-400 hover:text-white"
+                                }`}
+                                title="Device Frame View"
+                              >
+                                <Smartphone className="h-2.5 w-2.5" /> Frame
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setBannerViewMode((prev) => ({ ...prev, [banner.id]: "full" }))}
+                                className={`rounded px-2 py-0.5 text-[10px] font-semibold transition flex items-center gap-1 ${
+                                  bannerViewMode[banner.id] === "full"
+                                    ? "bg-[#d4af37] text-black font-bold shadow"
+                                    : "text-zinc-400 hover:text-white"
+                                }`}
+                                title="100% Uncropped Full View"
+                              >
+                                <Maximize2 className="h-2.5 w-2.5" /> Pura Dekho
+                              </button>
+                            </div>
+
                             <button
                               type="button"
                               onClick={() =>
@@ -3504,56 +3841,16 @@ export function AdminView() {
                                   isMobile: true,
                                 })
                               }
-                              className="text-[11px] text-[#d4af37] hover:underline flex items-center gap-1"
+                              className="text-[10px] text-[#d4af37] hover:underline flex items-center gap-0.5 ml-auto"
                               title="Inspect full uncropped mobile image"
                             >
-                              <ExternalLink className="h-3 w-3" /> Pura Dikhe
+                              <ExternalLink className="h-2.5 w-2.5" /> Zoom
                             </button>
                           </div>
 
-                          {/* Authentic Luxury Smartphone Mockup */}
-                          <div className="relative w-[170px] sm:w-[180px] aspect-[9/16] rounded-[34px] border-[5px] border-[#252831] bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group">
-                            {/* Dynamic Island Pill Notch */}
-                            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 h-3.5 w-16 rounded-full bg-black/95 flex items-center justify-between px-2 pointer-events-none ring-1 ring-white/10">
-                              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
-                            </div>
-
-                            {/* Phone Top Status Bar */}
-                            <div className="absolute top-1 inset-x-3 z-20 flex justify-between items-center text-[7.5px] text-white/80 font-mono pointer-events-none">
-                              <span>9:41</span>
-                              <span>●● 100%</span>
-                            </div>
-
-                            {/* Mobile Image */}
-                            <Image
-                              src={banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg"}
-                              alt={banner.kicker || "Mobile Slide"}
-                              fill
-                              className="object-cover transition duration-300 group-hover:scale-105"
-                            />
-
-                            {/* Storefront Mobile Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex items-end p-3 pointer-events-none">
-                              <div className="text-white space-y-0.5">
-                                <p className="text-[8px] uppercase tracking-wider font-bold text-[#d4af37]">
-                                  {banner.kicker}
-                                </p>
-                                <p className="font-serif text-[11px] font-bold leading-tight line-clamp-2">
-                                  {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
-                                </p>
-                                <span className="inline-block rounded-full bg-white text-black px-2.5 py-0.5 text-[8px] font-bold mt-1 shadow">
-                                  {banner.cta || "Shop"} →
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Bottom Home Indicator Bar */}
-                            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-30 h-1 w-12 rounded-full bg-white/50 pointer-events-none" />
-
-                            {/* Hover Overlay: Zoom / Pura Dikhe */}
-                            <button
-                              type="button"
+                          {(bannerViewMode[banner.id] || "frame") === "frame" ? (
+                            /* Authentic Luxury Flagship Smartphone Mockup (Larger w-[220px]-w-[250px]) */
+                            <div
                               onClick={() =>
                                 setZoomImageModal({
                                   url: banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg",
@@ -3561,15 +3858,97 @@ export function AdminView() {
                                   isMobile: true,
                                 })
                               }
-                              className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-semibold backdrop-blur-xs cursor-pointer z-40"
+                              className="relative w-[220px] sm:w-[235px] md:w-[250px] aspect-[9/16] rounded-[38px] border-[6px] border-[#252834] bg-black shadow-2xl overflow-hidden ring-1 ring-[#d4af37]/30 group cursor-pointer transition hover:border-[#d4af37]/60"
+                              title="Click for HD Zoom Full View"
                             >
-                              <Eye className="h-5 w-5 text-[#d4af37]" />
-                              <span>Pura Dikhe (Zoom)</span>
-                              <span className="text-[9px] text-zinc-300 font-normal">Click for Full Photo</span>
-                            </button>
-                          </div>
+                              {/* Dynamic Island Pill Notch */}
+                              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 h-4 w-20 rounded-full bg-black/95 flex items-center justify-between px-2 pointer-events-none ring-1 ring-white/10 shadow-lg">
+                                <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
+                                <div className="w-2 h-2 rounded-full bg-blue-500/80 ring-1 ring-white/10" />
+                              </div>
 
-                          <span className="font-mono text-[9px] text-zinc-400">768 × 1376 Vertical Full-Bleed</span>
+                              {/* Phone Top Status Bar */}
+                              <div className="absolute top-1.5 inset-x-4 z-20 flex justify-between items-center text-[8px] text-white/90 font-mono pointer-events-none">
+                                <span className="font-bold">9:41</span>
+                                <span className="flex items-center gap-1 font-sans">
+                                  <span>5G</span>
+                                  <span>100%</span>
+                                </span>
+                              </div>
+
+                              {/* Mobile Image */}
+                              <Image
+                                src={banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg"}
+                                alt={banner.kicker || "Mobile Slide"}
+                                fill
+                                className="object-cover transition duration-500 group-hover:scale-105"
+                              />
+
+                              {/* Storefront Mobile Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex items-end p-4 pointer-events-none">
+                                <div className="text-white space-y-1">
+                                  <p className="text-[9px] uppercase tracking-wider font-bold text-[#d4af37]">
+                                    {banner.kicker}
+                                  </p>
+                                  <p className="font-serif text-[13px] font-bold leading-snug line-clamp-2">
+                                    {Array.isArray(banner.lines) ? banner.lines.join(" ") : banner.lines}
+                                  </p>
+                                  <span className="inline-block rounded-full bg-white text-black px-3 py-1 text-[9px] font-bold mt-1 shadow-md">
+                                    {banner.cta || "Shop"} →
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Bottom Home Indicator Bar */}
+                              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 h-1 w-16 rounded-full bg-white/60 pointer-events-none" />
+
+                              {/* Hover Overlay: Zoom */}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-semibold backdrop-blur-[2px] z-40 pointer-events-none">
+                                <Maximize2 className="h-6 w-6 text-[#d4af37]" />
+                                <span className="text-[11px] font-bold text-white">Pura Dekho (HD Zoom)</span>
+                                <span className="text-[9px] text-[#d4af37]">Click for Uncropped View</span>
+                              </div>
+                            </div>
+                          ) : (
+                            /* 100% Uncropped Raw Mobile Photo View ("Pura Dikhe") */
+                            <div
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg",
+                                  title: `Mobile Uncropped Asset: ${banner.kicker || "Hero Slide"}`,
+                                  isMobile: true,
+                                })
+                              }
+                              className="relative w-[220px] sm:w-[235px] md:w-[250px] aspect-[9/16] rounded-2xl border-2 border-[#d4af37]/50 bg-zinc-950 p-1.5 shadow-2xl overflow-hidden group cursor-pointer transition hover:border-[#d4af37]"
+                              title="100% Uncropped Raw Photo — Zero Device Cropping"
+                            >
+                              <div className="relative w-full h-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                                <Image
+                                  src={banner.mobile || banner.image_mobile || "/assets/site_banners/slide1_mobile.jpg"}
+                                  alt={banner.kicker || "Mobile Uncropped"}
+                                  fill
+                                  className="object-contain"
+                                />
+                                <div className="absolute top-2 inset-x-2 z-20 flex justify-between items-center pointer-events-none">
+                                  <span className="rounded-full bg-black/80 backdrop-blur-md px-2 py-0.5 text-[8px] font-mono font-bold text-[#d4af37] border border-white/10">
+                                    PURA DIKHE (100%)
+                                  </span>
+                                  <span className="rounded-full bg-black/80 backdrop-blur-md px-2 py-0.5 text-[8px] font-mono text-zinc-300 border border-white/10">
+                                    768 × 1376
+                                  </span>
+                                </div>
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-semibold backdrop-blur-[2px] z-30 pointer-events-none">
+                                  <Maximize2 className="h-6 w-6 text-[#d4af37]" />
+                                  <span className="text-[11px] font-bold text-white">Full HD Lightbox</span>
+                                  <span className="text-[9px] text-[#d4af37]">100% Zero Crop</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <span className="font-mono text-[9px] text-zinc-400">
+                            768 × 1376 Vertical Full-Bleed • {bannerViewMode[banner.id] === "full" ? "Uncropped View" : "Phone Frame Mockup"}
+                          </span>
                         </div>
                       </div>
 
@@ -3602,6 +3981,7 @@ export function AdminView() {
                   )
                 })}
               </div>
+            )}
             </div>
           )}
 
@@ -3746,7 +4126,9 @@ export function AdminView() {
               </div>
 
               {/* Articles List */}
-              {filteredBlogs.length === 0 ? (
+              {isLoadingBlogs ? (
+                renderSkeletonBlogs()
+              ) : filteredBlogs.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-[#14171d] p-12 text-center space-y-4">
                   <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-zinc-400">
                     <BookOpen className="h-6 w-6" />
@@ -3781,18 +4163,31 @@ export function AdminView() {
                         {/* Top Row: Meta & Actions */}
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
                           <div className="flex items-start sm:items-center gap-3">
-                            <div className="relative h-16 w-24 sm:h-20 sm:w-32 rounded-xl overflow-hidden border border-white/10 bg-black shrink-0">
+                            <div
+                              onClick={() =>
+                                setZoomImageModal({
+                                  url: blog.coverImage || "/assets/site_banners/slide1_desktop.jpg",
+                                  title: `${blog.title} • Atelier Journal`,
+                                  isMobile: false,
+                                })
+                              }
+                              className="relative h-16 w-24 sm:h-20 sm:w-32 rounded-xl overflow-hidden border border-white/10 bg-black shrink-0 cursor-pointer group/blogimg hover:border-[#d4af37]/60 transition"
+                              title="Click to view full cover photo (HD Zoom)"
+                            >
                               <Image
                                 src={blog.coverImage || "/assets/site_banners/slide1_desktop.jpg"}
                                 alt={blog.title}
                                 fill
-                                className="object-cover"
+                                className="object-cover group-hover/blogimg:scale-105 transition-transform duration-300"
                               />
                               {blog.featured && (
                                 <span className="absolute top-1.5 left-1.5 rounded-full bg-[#d4af37] text-black px-1.5 py-0.5 text-[8px] font-extrabold uppercase">
                                   Featured
                                 </span>
                               )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/blogimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <Maximize2 className="h-4 w-4 text-[#d4af37]" />
+                              </div>
                             </div>
 
                             <div className="min-w-0">
@@ -5298,12 +5693,22 @@ export function AdminView() {
                         className={`relative rounded-xl overflow-hidden border ${isCover ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 shadow-lg" : "border-white/10 bg-black/40"
                           } group flex flex-col justify-between`}
                       >
-                        <div className="relative aspect-square w-full bg-black">
+                        <div
+                          onClick={() =>
+                            setZoomImageModal({
+                              url: imgSrc,
+                              title: `${editProductModal.name} (Photo #${idx + 1})`,
+                              isMobile: false,
+                            })
+                          }
+                          className="relative aspect-square w-full bg-black cursor-pointer group/cardimg"
+                          title="Click to view full photo (HD Zoom)"
+                        >
                           <Image
                             src={imgSrc}
                             alt={`Photo ${idx + 1}`}
                             fill
-                            className="object-cover"
+                            className="object-cover group-hover/cardimg:scale-105 transition-transform duration-300"
                           />
                           {isCover && (
                             <span className="absolute top-2 left-2 rounded-full bg-[#d4af37] text-black px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow">
@@ -5313,6 +5718,9 @@ export function AdminView() {
                           <span className="absolute bottom-2 left-2 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-mono text-zinc-300">
                             #{idx + 1}
                           </span>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/cardimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <Maximize2 className="h-4 w-4 text-[#d4af37]" />
+                          </div>
                         </div>
 
                         {/* Action Toolbar on card */}
@@ -6239,62 +6647,134 @@ export function AdminView() {
         </div>
       )}
 
-      {/* ── MODAL: HIGH-RES BANNER IMAGE FULL PREVIEW (PURA DIKHE) ── */}
+      {/* ── MODAL: HIGH-RES FULL IMAGE LIGHTBOX & ZOOM STUDIO (PURA DIKHE) ── */}
       {zoomImageModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/92 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative max-w-4xl max-h-[95vh] w-full flex flex-col items-center">
-            {/* Header */}
-            <div className="w-full flex items-center justify-between pb-3 text-white">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
-                  {zoomImageModal.isMobile ? <Smartphone className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 backdrop-blur-md p-3 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => {
+            setZoomImageModal(null)
+            setLightboxZoom(1)
+          }}
+        >
+          <div
+            className={`relative w-full flex flex-col items-center bg-[#12141a] border border-[#d4af37]/40 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 ${
+              zoomImageModal.isMobile ? "max-w-md" : "max-w-5xl"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with Title & Zoom Toolbar */}
+            <div className="w-full flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3 text-white">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
+                  {zoomImageModal.isMobile ? <Smartphone className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                 </span>
                 <div>
-                  <h4 className="font-serif text-sm font-bold">{zoomImageModal.title}</h4>
-                  <p className="text-[10px] text-zinc-400 font-mono">
-                    {zoomImageModal.isMobile
-                      ? "Full Mobile Ratio: 768 × 1376 (9:16 portrait)"
-                      : "Full Desktop Ratio: 1920 × 1080 (16:9 widescreen)"}
-                  </p>
+                  <h4 className="font-serif text-sm sm:text-base font-bold text-white line-clamp-1">{zoomImageModal.title}</h4>
+                  <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono mt-0.5">
+                    <span className="text-emerald-400 font-bold">● HD Resolution</span>
+                    <span>•</span>
+                    <span>{zoomImageModal.isMobile ? "768 × 1376 (9:16 Portrait)" : "Full Widescreen High-Res"}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Zoom & Inspection Controls */}
               <div className="flex items-center gap-2">
+                {/* Zoom Out */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 hover:text-white hover:bg-white/10 transition"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+
+                {/* Zoom Level Reset Button */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom(1)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-mono font-bold text-[#d4af37] hover:bg-white/10 transition"
+                  title="Reset Zoom (100%)"
+                >
+                  {Math.round(lightboxZoom * 100)}%
+                </button>
+
+                {/* Zoom In */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom((prev) => Math.min(2.5, Number((prev + 0.25).toFixed(2))))}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 hover:text-white hover:bg-white/10 transition"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+
+                {/* Fit Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxFit((prev) => (prev === "contain" ? "cover" : "contain"))}
+                  className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-zinc-300 hover:text-white hover:bg-white/10 transition hidden sm:inline-flex items-center gap-1"
+                  title="Toggle Full Uncropped View vs Fill Screen"
+                >
+                  {lightboxFit === "contain" ? "Pura Dikhe (100%)" : "Fill Screen"}
+                </button>
+
+                {/* Open in New Tab */}
                 <a
                   href={zoomImageModal.url}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/10 flex items-center gap-1.5 transition"
+                  title="Open original high-res file"
                 >
-                  <ExternalLink className="h-3 w-3" />
-                  <span>Open Full Image</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Open File</span>
                 </a>
+
+                {/* Close Button */}
                 <button
                   type="button"
-                  onClick={() => setZoomImageModal(null)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm"
+                  onClick={() => {
+                    setZoomImageModal(null)
+                    setLightboxZoom(1)
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-rose-500/80 transition text-sm font-bold ml-1"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* Uncropped Image Display (Pura Dikhe) */}
+            {/* Uncropped Image Display (Pura Dikhe) with Smooth Scaling */}
             <div
               className={`relative w-full flex items-center justify-center rounded-2xl overflow-hidden border border-white/15 bg-zinc-950 p-2 shadow-2xl ${
-                zoomImageModal.isMobile ? "max-w-[380px] aspect-[9/16]" : "max-w-4xl aspect-[16/9]"
+                zoomImageModal.isMobile
+                  ? "max-w-[420px] aspect-[9/16] max-h-[75vh]"
+                  : "w-full aspect-[16/9] max-h-[75vh]"
               }`}
             >
-              <Image
-                src={zoomImageModal.url}
-                alt={zoomImageModal.title}
-                fill
-                className="object-contain"
-                unoptimized
-              />
+              <div
+                className="relative w-full h-full transition-transform duration-200 ease-out"
+                style={{ transform: `scale(${lightboxZoom})` }}
+              >
+                <Image
+                  src={zoomImageModal.url}
+                  alt={zoomImageModal.title}
+                  fill
+                  className={lightboxFit === "contain" ? "object-contain" : "object-cover"}
+                  unoptimized
+                />
+              </div>
             </div>
-            <p className="text-[11px] text-zinc-400 mt-2 text-center">
-              100% Uncropped Original View ("Pura Dikhe") • Press ✕ or click outside to close
-            </p>
+
+            <div className="flex flex-wrap items-center justify-between w-full text-[11px] text-zinc-400 px-1 pt-1">
+              <span className="flex items-center gap-1.5 text-[#d4af37] font-semibold">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>100% Uncropped Original View (&ldquo;Pura Dikhe&rdquo;)</span>
+              </span>
+              <span>Zoom buttons or click &ldquo;Open File&rdquo; for full raw resolution • Press ✕ to close</span>
+            </div>
           </div>
         </div>
       )}
