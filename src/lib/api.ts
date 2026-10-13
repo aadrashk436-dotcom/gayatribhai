@@ -137,6 +137,22 @@ export async function apiSubmitContact(formData: {
   return data;
 }
 
+export class AuthError extends Error {
+  alreadyExists?: boolean;
+  notFound?: boolean;
+  incorrectPassword?: boolean;
+  status: number;
+
+  constructor(message: string, status: number, meta?: any) {
+    super(message);
+    this.name = "AuthError";
+    this.status = status;
+    this.alreadyExists = Boolean(meta?.alreadyExists);
+    this.notFound = Boolean(meta?.notFound);
+    this.incorrectPassword = Boolean(meta?.incorrectPassword);
+  }
+}
+
 // ─── Customer Auth ───
 export async function apiLogin(email: string, password: string) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -145,7 +161,9 @@ export async function apiLogin(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Login failed");
+  if (!res.ok) {
+    throw new AuthError(data.error || "Login failed", res.status, data);
+  }
   if (data.token && typeof window !== "undefined") {
     localStorage.setItem("gb_customer_token", data.token);
   }
@@ -159,7 +177,9 @@ export async function apiSignup(formData: { name: string; email: string; phone?:
     body: JSON.stringify(formData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Signup failed");
+  if (!res.ok) {
+    throw new AuthError(data.error || "Signup failed", res.status, data);
+  }
   if (data.token && typeof window !== "undefined") {
     localStorage.setItem("gb_customer_token", data.token);
   }

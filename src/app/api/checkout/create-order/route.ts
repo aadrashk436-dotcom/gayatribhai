@@ -70,7 +70,7 @@ export async function POST(request: Request) {
           id: `ord_${Date.now()}`,
           orderNumber,
           customerName: address?.name || "Customer",
-          customerEmail: address?.email || "customer@gayatribhai.com",
+          customerEmail: address?.email || "care@gayatribhai.com",
           customerPhone: address?.phone || "+91 98765 43210",
           shippingAddress: address || {},
           items,

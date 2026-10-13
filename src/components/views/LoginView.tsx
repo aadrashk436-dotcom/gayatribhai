@@ -3,11 +3,12 @@
 import { useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
 import Icon from "../common/Icon"
-import { apiLogin, apiSignup } from "../../lib/api"
+import { apiLogin, apiSignup, AuthError } from "../../lib/api"
 
 gsap.registerPlugin(useGSAP)
 
@@ -73,6 +74,7 @@ function Field({
 
 export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps) {
   const isSignup = mode === "signup"
+  const router = useRouter()
   const root = useRef<HTMLDivElement>(null)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -81,6 +83,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [globalError, setGlobalError] = useState<string | null>(null)
+  const [switchAction, setSwitchAction] = useState<{ label: string; action: () => void } | null>(null)
   const [loading, setLoading] = useState(false)
 
   useGSAP(
@@ -96,10 +100,13 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
   const validate = () => {
     const next: Record<string, string> = {}
-    if (isSignup && name.trim().length < 2) next.name = "Please enter your full name"
-    if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter a valid email address"
-    if (isSignup && phone && !/^[0-9+\s-]{10,15}$/.test(phone)) next.phone = "Enter a valid phone number"
-    if (password.length < 8) next.password = "Password must be at least 8 characters"
+    setGlobalError(null)
+    setSwitchAction(null)
+
+    if (isSignup && name.trim().length < 2) next.name = "Please enter your full name (minimum 2 characters)"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Please enter a valid email address (e.g. name@domain.com)"
+    if (isSignup && phone && !/^[0-9+\s-]{10,15}$/.test(phone.trim())) next.phone = "Please enter a valid 10-digit mobile number"
+    if (password.length < 6) next.password = "Password must be at least 6 characters"
     if (isSignup && !agree) next.agree = "Please accept the terms to continue"
     setErrors(next)
     return Object.keys(next).length === 0
@@ -109,6 +116,9 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
+    setGlobalError(null)
+    setSwitchAction(null)
+
     try {
       if (isSignup) {
         const res = await apiSignup({
@@ -123,10 +133,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           email: res.customer?.email || email.trim(),
           phone: res.customer?.phone || phone.trim(),
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-          membershipTier: "Silver",
-          points: 250,
+          membershipTier: res.customer?.tier || "Silver",
+          points: res.customer?.points || 250,
         })
-        showToast("Welcome to AVYR. 250 points added.")
+        showToast("Account created successfully. Welcome to Gayatri Bhai!")
       } else {
         const res = await apiLogin(email.trim(), password)
         onLogin({
@@ -135,23 +145,30 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           email: res.customer?.email || email.trim(),
           phone: res.customer?.phone || phone.trim(),
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-          membershipTier: "Silver",
-          points: 1240,
+          membershipTier: res.customer?.tier || "Silver",
+          points: res.customer?.points || 1240,
         })
-        showToast("Welcome back")
+        showToast(res.isAdmin ? "Welcome back, Store Admin!" : `Welcome back, ${res.customer?.name || "Customer"}`)
       }
-    } catch {
-      const displayName = isSignup ? name.trim() : email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-      onLogin({
-        id: `usr_${Date.now()}`,
-        name: displayName,
-        email: email.trim(),
-        phone: phone.trim(),
-        joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-        membershipTier: "Silver",
-        points: isSignup ? 250 : 1240,
-      })
-      showToast(isSignup ? "Welcome to AVYR." : "Welcome back")
+    } catch (err: any) {
+      if (err?.alreadyExists || err?.status === 409 || err?.message?.includes("already registered")) {
+        setGlobalError("An account with this email already exists.")
+        setSwitchAction({
+          label: "Click here to Sign In with this email",
+          action: () => router.push("/login"),
+        })
+      } else if (err?.notFound || err?.status === 404 || err?.message?.includes("No account found")) {
+        setGlobalError("No account found with this email.")
+        setSwitchAction({
+          label: "Click here to Create an Account",
+          action: () => router.push("/signup"),
+        })
+      } else if (err?.incorrectPassword || err?.status === 401 || err?.message?.includes("Incorrect password")) {
+        setErrors({ password: "Incorrect password. Please verify and try again." })
+        setGlobalError("Incorrect password. Please verify and try again.")
+      } else {
+        setGlobalError(err?.message || "Authentication failed. Please verify your details.")
+      }
     } finally {
       setLoading(false)
     }
@@ -210,6 +227,21 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           <p data-auth-item className="mt-2 text-[15px] text-muted-foreground">
             {isSignup ? "Track orders, save favourites and get 10% off." : "Access your orders, wishlist and addresses."}
           </p>
+
+          {globalError && (
+            <div data-auth-item className="mt-6 rounded-sm border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
+              <p className="font-semibold">{globalError}</p>
+              {switchAction && (
+                <button
+                  type="button"
+                  onClick={switchAction.action}
+                  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                >
+                  {switchAction.label} &rarr;
+                </button>
+              )}
+            </div>
+          )}
 
           <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-4">
             {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" error={errors.name} />}

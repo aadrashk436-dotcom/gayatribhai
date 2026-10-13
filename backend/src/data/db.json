@@ -1194,24 +1194,14 @@
   ],
   "customers": [
     {
-      "id": "cust_demo_1",
-      "email": "connoisseur@gayatribhai.com",
-      "name": "Arjun Singhania",
-      "phone": "+91 9820123456",
-      "password_hash": "$2a$10$e1jgJLngi7xSSjLjMGlduu2wbF0nnL5BDZ1NFNyzlDZrGbU46oOEi",
-      "total_spent": 479800,
-      "total_orders": 2,
-      "created_at": "2026-10-08T13:32:53.443Z"
-    },
-    {
-      "id": "cust_1791901218850",
-      "name": "Rohit Verma",
-      "email": "rohit.verma.test@example.com",
-      "phone": "+91 98765 12345",
-      "password": "SecurePassword123!",
+      "id": "cust_1791902311300",
+      "name": "Rohan Sharma",
+      "email": "rohan.sharma.1791902311298@testdomain.com",
+      "phone": "9876543210",
+      "password": "ValidPassword123!",
       "tier": "Silver",
       "points": 250,
-      "createdAt": "2026-10-13T14:20:18.850Z"
+      "createdAt": "2026-10-13T14:38:31.300Z"
     }
   ],
   "addresses": [

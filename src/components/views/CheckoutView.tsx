@@ -15,87 +15,209 @@ export interface CheckoutViewProps {
   user?: User | null
 }
 
+import { useStore } from "@/lib/store"
+
 export function AddressStep({
   onNext,
   addresses = [],
   go,
+  user,
 }: {
   onNext: () => void
   addresses?: Address[]
   go: (v: View) => void
+  user?: User | null
 }) {
+  const saveAddress = useStore((s) => s.saveAddress)
   const [selectedId, setSelectedId] = useState<string>(() => {
     const defaultAddr = addresses.find((a) => a.isDefault)
     return defaultAddr ? defaultAddr.id : addresses[0]?.id || ""
   })
+  const [showAddForm, setShowAddForm] = useState(addresses.length === 0)
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    street: "",
+    city: "Mumbai",
+    state: "Maharashtra",
+    pincode: "400001",
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validateAddress = () => {
+    const errs: Record<string, string> = {}
+    if (!formData.name.trim()) errs.name = "Full name is required"
+    if (!formData.phone.trim() || !/^[0-9+\s-]{10,15}$/.test(formData.phone.trim())) {
+      errs.phone = "Valid 10-digit mobile number is required"
+    }
+    if (!formData.street.trim()) errs.street = "Street address is required"
+    if (!formData.city.trim()) errs.city = "City is required"
+    if (!formData.state.trim()) errs.state = "State is required"
+    if (!/^\d{6}$/.test(formData.pincode.trim())) {
+      errs.pincode = "Valid 6-digit postal pincode is required"
+    }
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleSaveAndContinue = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validateAddress()) return
+    const newAddr: Address = {
+      id: "addr_" + Date.now(),
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      street: formData.street.trim(),
+      city: formData.city.trim(),
+      state: formData.state.trim(),
+      pincode: formData.pincode.trim(),
+      type: "HOME",
+      isDefault: addresses.length === 0,
+    }
+    saveAddress(newAddr)
+    setSelectedId(newAddr.id)
+    setShowAddForm(false)
+    onNext()
+  }
 
   return (
     <>
       <span className="eyebrow">Step 1 of 3</span>
       <h1>Where should we deliver?</h1>
 
-      {addresses.length === 0 ? (
-        <div className="checkout-no-addr">
-          <p>No saved delivery address found in your account.</p>
-          <Button onClick={() => go("account")}>
-            <Icon name="plus" size={15} /> Add Delivery Address in Profile
-          </Button>
-        </div>
-      ) : (
-        <div className="checkout-addresses-list">
-          {addresses.map((addr) => {
-            const isSelected = selectedId === addr.id
-            return (
-              <div
-                key={addr.id}
-                className={`address-card ${isSelected ? "selected" : ""}`}
-                onClick={() => setSelectedId(addr.id)}
-              >
-                <span className="radio" />
-                <div>
-                  <strong>
-                    {addr.name} <small>{addr.type}</small>
-                    {addr.isDefault && (
-                      <b className="addr-default-tag">DEFAULT</b>
-                    )}
-                  </strong>
-                  <p>
-                    {addr.street}
-                    {addr.area ? `, ${addr.area}` : ""}
-                    <br />
-                    {addr.city}, {addr.state} {addr.pincode}
-                  </p>
-                  <p>{addr.phone}</p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      go("account")
-                    }}
-                  >
-                    Edit in Profile
-                  </button>
+      {addresses.length > 0 && !showAddForm ? (
+        <>
+          <div className="checkout-addresses-list">
+            {addresses.map((addr) => {
+              const isSelected = selectedId === addr.id
+              return (
+                <div
+                  key={addr.id}
+                  className={`address-card ${isSelected ? "selected" : ""}`}
+                  onClick={() => setSelectedId(addr.id)}
+                >
+                  <span className="radio" />
+                  <div>
+                    <strong>
+                      {addr.name} <small>{addr.type}</small>
+                      {addr.isDefault && (
+                        <b className="addr-default-tag">DEFAULT</b>
+                      )}
+                    </strong>
+                    <p>
+                      {addr.street}
+                      <br />
+                      {addr.city}, {addr.state} - {addr.pincode}
+                    </p>
+                    <p>{addr.phone}</p>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
 
-      <button
-        className="add-address"
-        type="button"
-        onClick={() => go("account")}
-      >
-        <Icon name="plus" /> Manage or Add New Address in Profile
-      </button>
-      <Button
-        className="continue"
-        onClick={onNext}
-        disabled={addresses.length === 0 || !selectedId}
-      >
-        Deliver to this address <Icon name="arrow" />
-      </Button>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button
+              className="add-address"
+              type="button"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Icon name="plus" /> Add New Address
+            </button>
+          </div>
+
+          <Button
+            className="continue"
+            onClick={onNext}
+            disabled={!selectedId}
+          >
+            Deliver to this address <Icon name="arrow" />
+          </Button>
+        </>
+      ) : (
+        <form onSubmit={handleSaveAndContinue} className="checkout-new-addr-form" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
+          <div>
+            <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Full Name</label>
+            <input
+              style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+              placeholder="e.g. Gayatri Puri"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            {errors.name && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.name}</span>}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Phone (10 digits)</label>
+              <input
+                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+                placeholder="9876543210"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              {errors.phone && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.phone}</span>}
+            </div>
+
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Postal Pincode</label>
+              <input
+                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+                placeholder="400001"
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+              />
+              {errors.pincode && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.pincode}</span>}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>Street Address / Flat / Landmark</label>
+            <input
+              style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+              placeholder="House/Flat No., Building, Street Name"
+              value={formData.street}
+              onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+            />
+            {errors.street && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.street}</span>}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>City</label>
+              <input
+                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+                placeholder="Mumbai"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              />
+              {errors.city && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.city}</span>}
+            </div>
+
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase" }}>State</label>
+              <input
+                style={{ width: "100%", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "4px", marginTop: "4px" }}
+                placeholder="Maharashtra"
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              />
+              {errors.state && <span style={{ color: "#b4321f", fontSize: "12px" }}>{errors.state}</span>}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+            {addresses.length > 0 && (
+              <Button variant="outline" type="button" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" className="continue">
+              Save & Deliver Here <Icon name="arrow" />
+            </Button>
+          </div>
+        </form>
+      )}
     </>
   )
 }
@@ -290,7 +412,7 @@ export function CheckoutView({
         order_id: rzpOrderId || undefined,
         prefill: {
           name: user?.name || activeAddress.name,
-          email: user?.email || "customer@gayatribhai.com",
+          email: user?.email || "care@gayatribhai.com",
           contact: activeAddress.phone,
         },
         theme: {
@@ -393,6 +515,7 @@ export function CheckoutView({
               onNext={() => setStep(2)}
               addresses={addresses}
               go={go}
+              user={user}
             />
           )}
           {step === 2 && (
