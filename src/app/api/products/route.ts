@@ -206,13 +206,46 @@ export async function PATCH(request: Request) {
       data.products = data.products || [];
       const idx = data.products.findIndex((p: any) => p.id === id || p.slug === id);
       if (idx >= 0) {
+        const normalizedUpdates: any = { ...updates };
+
+        // Normalize price to paise in db.json if provided in rupees (< 10000)
+        if (normalizedUpdates.price !== undefined) {
+          const numPrice = Number(normalizedUpdates.price);
+          normalizedUpdates.price = numPrice < 10000 ? numPrice * 100 : numPrice;
+        }
+
+        // Normalize mrp to paise in db.json if provided in rupees (< 10000)
+        if (normalizedUpdates.mrp !== undefined) {
+          const numMrp = Number(normalizedUpdates.mrp);
+          normalizedUpdates.mrp = numMrp < 10000 ? numMrp * 100 : numMrp;
+        }
+
+        // Auto-calculate discount percentage if price and mrp are present
+        if (normalizedUpdates.price && normalizedUpdates.mrp) {
+          const p = Number(normalizedUpdates.price);
+          const m = Number(normalizedUpdates.mrp);
+          if (m > p) {
+            normalizedUpdates.discount = Math.round(((m - p) / m) * 100);
+          } else {
+            normalizedUpdates.discount = 0;
+          }
+        }
+
         data.products[idx] = {
           ...data.products[idx],
-          ...updates,
+          ...normalizedUpdates,
           updated_at: new Date().toISOString(),
         };
+
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-        return NextResponse.json({ success: true, product: data.products[idx] });
+
+        const returnProduct = {
+          ...data.products[idx],
+          price: data.products[idx].price > 10000 ? Math.round(data.products[idx].price / 100) : data.products[idx].price,
+          mrp: data.products[idx].mrp > 10000 ? Math.round(data.products[idx].mrp / 100) : data.products[idx].mrp,
+        };
+
+        return NextResponse.json({ success: true, product: returnProduct });
       }
     }
     return NextResponse.json({ success: true, updated: updates, note: "Updated" });
@@ -220,6 +253,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: err.message || "Failed to update product" }, { status: 500 });
   }
 }
+
+export const PUT = PATCH;
 
 export async function DELETE(request: Request) {
   try {
