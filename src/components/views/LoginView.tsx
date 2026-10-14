@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
@@ -83,6 +83,8 @@ function Field({
 export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps) {
   const isSignup = mode === "signup"
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect")
   const root = useRef<HTMLDivElement>(null)
 
   // Auth Methods: "password" | "otp"
@@ -222,7 +224,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           phone: res.customer?.phone || phone.trim(),
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
           membershipTier: res.customer?.tier || "Silver",
-          points: res.customer?.points || 250,
+          points: res.customer?.points || 0,
         })
         showToast("Account created successfully. Welcome to Gayatri Bhai!")
       } else {
@@ -234,7 +236,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           phone: res.customer?.phone || phone.trim(),
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
           membershipTier: res.customer?.tier || "Silver",
-          points: res.customer?.points || 1240,
+          points: res.customer?.points || 0,
         })
         showToast(res.isAdmin ? "Welcome back, Store Admin!" : `Welcome back, ${res.customer?.name || "Customer"}`)
       }
@@ -243,13 +245,13 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         setGlobalError("An account with this email already exists.")
         setSwitchAction({
           label: "Click here to Sign In with this email",
-          action: () => router.push("/login"),
+          action: () => router.push(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"),
         })
       } else if (err?.notFound || err?.status === 404 || err?.message?.includes("No account found")) {
         setGlobalError("No account found with this email.")
         setSwitchAction({
           label: "Click here to Create an Account",
-          action: () => router.push("/signup"),
+          action: () => router.push(redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"),
         })
       } else if (err?.incorrectPassword || err?.status === 401 || err?.message?.includes("Incorrect password")) {
         setErrors({ password: "Incorrect password. Please verify and try again." })
@@ -291,7 +293,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         avatar: res.customer?.avatar || "",
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 250,
+        points: res.customer?.points || 0,
       })
       showToast(res.message || `Signed in with Google as ${customerName}!`)
     } catch (err: any) {
@@ -359,7 +361,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         phone: res.customer?.phone || (!otpIdentifier.includes("@") ? otpIdentifier.trim() : ""),
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 250,
+        points: res.customer?.points || 0,
       })
       showToast(res.message || `Welcome to Gayatri Bhai, ${res.customer?.name || "Patron"}!`)
     } catch (err: any) {
@@ -383,7 +385,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         avatar: res.customer?.avatar || "",
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 250,
+        points: res.customer?.points || 0,
       })
       showToast(res.message || `Signed in with Google as ${res.customer?.name}!`)
     } catch (err: any) {
@@ -407,7 +409,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         avatar: res.customer?.avatar || "",
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 250,
+        points: res.customer?.points || 0,
       })
       showToast(res.message || `Signed in with Google as ${res.customer?.name}!`)
     } catch (err: any) {
@@ -713,7 +715,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   }`}
                 />
                 <Link
-                  href="/login"
+                  href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
                   replace
                   className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
                   aria-current={!isSignup ? "page" : undefined}
@@ -721,7 +723,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   Sign in
                 </Link>
                 <Link
-                  href="/signup"
+                  href={redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"}
                   replace
                   className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
                   aria-current={isSignup ? "page" : undefined}
@@ -734,7 +736,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 {isSignup ? "Create your account" : "Sign in to your account"}
               </h1>
               <p data-auth-item className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
-                {isSignup ? "Earn 250 welcome points, track bespoke orders, and access limited drops." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
+                {isSignup ? "Track bespoke orders, access exclusive drops, and enjoy patron benefits." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
               </p>
 
               {/* ── Prominent Google 1-Click SSO Button ── */}
@@ -1053,47 +1055,13 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               </p>
             </div>
 
-            {/* Quick 1-Click Store Owner Card */}
-            <div className="mt-6 space-y-2">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => handleGoogleDirectAuth("gayatripuri634@gmail.com", "Gayatri Puri")}
-                className="group flex w-full items-center gap-3.5 rounded-xl border border-border bg-surface/60 p-3.5 text-left transition-all hover:border-[#4285F4] hover:bg-surface active:scale-[0.99]"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/20 text-[#d4af37] font-semibold text-sm">
-                  GP
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground truncate">Gayatri Puri</p>
-                    <span className="rounded bg-[#d4af37]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#d4af37]">Owner / Admin</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">gayatripuri634@gmail.com</p>
-                </div>
-                <div className="text-xs font-semibold text-[#4285F4] group-hover:underline">
-                  Sign in &rarr;
-                </div>
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="relative my-5 text-center">
-              <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                <span className="bg-background px-3 text-muted-foreground">Or connect another Google account</span>
-              </div>
-            </div>
-
             {/* Custom Google Account Input */}
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 handleGoogleDirectAuth(googleDirectEmail, googleDirectName)
               }}
-              className="space-y-4"
+              className="mt-6 space-y-4"
             >
               <div>
                 <label htmlFor="googleDirectEmail" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
@@ -1147,7 +1115,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               </div>
 
               <p className="text-center text-[11px] text-muted-foreground pt-1">
-                Instant authentication &bull; 250 Welcome Points &bull; 100% Encrypted
+                Instant authentication &bull; Fast & Secure Access &bull; 100% Encrypted
               </p>
             </form>
           </div>

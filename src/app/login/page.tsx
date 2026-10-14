@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import LoginClient from "./LoginClient"
 
@@ -11,5 +12,15 @@ export const metadata: Metadata = {
 }
 
 export default function LoginPage() {
-  return <LoginClient />
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[70vh] items-center justify-center bg-background">
+          <div className="size-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginClient />
+    </Suspense>
+  )
 }

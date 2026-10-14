@@ -34,51 +34,110 @@ const TABS: { id: Tab; icon: IconName }[] = [
   { id: "Settings", icon: "settings" },
 ]
 
-const ORDERS = [
-  { id: "AVY260102", date: "21 Apr 2026", status: "In transit", step: 3, product: products[3], size: "M" },
-  { id: "AVY260077", date: "02 Apr 2026", status: "Delivered", step: 4, product: products[7], size: "L" },
-  { id: "AVY260031", date: "14 Mar 2026", status: "Delivered", step: 4, product: products[12], size: "M" },
-]
 const STEPS = ["Placed", "Packed", "Shipped", "On the way", "Delivered"]
 
-function OrderCard({ order }: { order: (typeof ORDERS)[number] }) {
-  const done = order.status === "Delivered"
+function OrderCard({ order }: { order: any }) {
+  const items = Array.isArray(order.items) ? order.items : []
+  const firstItem = items[0]
+  const product =
+    order.product ||
+    (firstItem ? products.find((p) => p.id === firstItem.productId) : null) ||
+    products[0]
+  const size = order.size || firstItem?.size || "M"
+  const quantity = firstItem?.quantity || 1
+  const dateStr =
+    order.date ||
+    (order.createdAt
+      ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "Recently placed")
+
+  const rawStatus = (order.status || "Processing").toLowerCase()
+  const isDelivered = rawStatus === "delivered"
+  const isCancelled = rawStatus === "cancelled"
+  const orderId = order.orderNumber || order.id || "ORD"
+
+  const step =
+    typeof order.step === "number"
+      ? order.step
+      : isDelivered
+      ? 4
+      : rawStatus === "shipped" || rawStatus === "dispatched" || rawStatus === "on the way"
+      ? 2
+      : rawStatus === "processing" || rawStatus === "verified" || rawStatus === "packed"
+      ? 1
+      : 0
+
+  const statusLabel =
+    order.status ||
+    (step === 4 ? "Delivered" : step === 2 ? "Shipped" : "Processing")
+
+  const totalPrice = order.total || (product ? product.price * quantity : 0)
+
   return (
     <article className="rounded-sm border border-border bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{order.id}</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">{order.date}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{orderId}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{dateStr}</p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${done ? "bg-[#1f7a4a]/12 text-[#1f7a4a]" : "bg-accent/15 text-accent"}`}>{order.status}</span>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            isDelivered
+              ? "bg-[#1f7a4a]/12 text-[#1f7a4a]"
+              : isCancelled
+              ? "bg-[#b4321f]/12 text-[#b4321f]"
+              : "bg-accent/15 text-accent"
+          }`}
+        >
+          {statusLabel}
+        </span>
       </div>
       <div className="mt-4 flex gap-4">
         <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-sm bg-surface-2">
-          <Image src={order.product.images[0]} alt={order.product.name} fill sizes="72px" className="object-cover" />
+          {product?.images?.[0] ? (
+            <Image src={product.images[0]} alt={product.name} fill sizes="72px" className="object-cover" />
+          ) : (
+            <div className="flex size-full items-center justify-center bg-surface-2 text-muted-foreground">
+              <Icon name="package" size={24} />
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">{order.product.name}</h4>
-          <p className="mt-1 text-sm text-muted-foreground">{`${order.product.color} · Size ${order.size}`}</p>
-          <p className="mt-2 text-[15px] font-bold text-foreground">{money(order.product.price)}</p>
+          <h4 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+            {product?.name || "Artisanal Garment"}
+          </h4>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {`${product?.color || "Exclusive"} · Size ${size}${quantity > 1 ? ` · Qty ${quantity}` : ""}`}
+          </p>
+          <p className="mt-2 text-[15px] font-bold text-foreground">{money(totalPrice)}</p>
         </div>
       </div>
-      <div className="mt-5">
-        <div className="relative h-1 rounded-full bg-border">
-          <div className="absolute inset-y-0 left-0 rounded-full bg-foreground" style={{ width: `${(order.step / (STEPS.length - 1)) * 100}%` }} />
+      {!isCancelled && (
+        <div className="mt-5">
+          <div className="relative h-1 rounded-full bg-border">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+              style={{ width: `${(Math.min(step, STEPS.length - 1) / (STEPS.length - 1)) * 100}%` }}
+            />
+          </div>
+          <div className="mt-2 flex justify-between text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:text-[11px]">
+            {STEPS.map((s, i) => (
+              <span key={s} className={i <= step ? "text-foreground font-semibold" : ""}>
+                {s}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="mt-2 flex justify-between text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:text-[11px]">
-          {STEPS.map((s, i) => (
-            <span key={s} className={i <= order.step ? "text-foreground" : ""}>
-              {s}
-            </span>
-          ))}
-        </div>
-      </div>
+      )}
     </article>
   )
 }
 
-const emptyAddress: Address = { id: "", name: "", phone: "", street: "", area: "", city: "", state: "Maharashtra", pincode: "", type: "HOME", isDefault: false }
+const emptyAddress: Address = { id: "", name: "", phone: "", street: "", area: "", city: "", state: "", pincode: "", type: "HOME", isDefault: false }
 
 function AddressDialog({ initial, onClose, onSave }: { initial: Address; onClose: () => void; onSave: (a: Address) => void }) {
   const [form, setForm] = useState<Address>(initial)
@@ -115,8 +174,9 @@ function AddressDialog({ initial, onClose, onSave }: { initial: Address; onClose
           className="grid grid-cols-2 gap-3"
           onSubmit={(e) => {
             e.preventDefault()
-            if (!form.name || !form.street || !form.city || !/^\d{6}$/.test(form.pincode) || form.phone.replace(/\D/g, "").length < 10) {
-              setError("Please fill name, phone, street, city and a 6-digit pincode.")
+            const phoneDigits = form.phone.replace(/\D/g, "")
+            if (!form.name.trim() || !form.street.trim() || !form.city.trim() || !/^\d{6}$/.test(form.pincode.trim()) || phoneDigits.length < 10) {
+              setError("Please enter full name, mandatory 10-digit mobile number, street, city and a 6-digit pincode.")
               return
             }
             onSave({ ...form, id: form.id || `addr_${Date.now()}` })
@@ -208,8 +268,49 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   const [dialog, setDialog] = useState<Address | null>(null)
   const [profile, setProfile] = useState({ name: user?.name ?? "", email: user?.email ?? "", phone: user?.phone ?? "" })
   const [prefs, setPrefs] = useState({ drops: true, orders: true, whatsapp: false })
+  const [orders, setOrders] = useState<any[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
   const wishlist = useStore((s) => s.wishlist)
   const saved = products.filter((p) => wishlist.includes(p.id))
+
+  // Fetch real user orders from API
+  useEffect(() => {
+    if (!user) return
+    let isMounted = true
+    const fetchOrders = async () => {
+      setLoadingOrders(true)
+      try {
+        const query = user.email
+          ? `email=${encodeURIComponent(user.email)}`
+          : user.phone
+          ? `phone=${encodeURIComponent(user.phone)}`
+          : ""
+        if (!query) {
+          setOrders([])
+          setLoadingOrders(false)
+          return
+        }
+        const res = await fetch(`/api/orders?${query}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (isMounted) {
+            setOrders(Array.isArray(data.orders) ? data.orders : [])
+          }
+        } else {
+          if (isMounted) setOrders([])
+        }
+      } catch (err) {
+        console.warn("Could not load user orders:", err)
+        if (isMounted) setOrders([])
+      } finally {
+        if (isMounted) setLoadingOrders(false)
+      }
+    }
+    fetchOrders()
+    return () => {
+      isMounted = false
+    }
+  }, [user])
 
   useGSAP(
     () => {
@@ -238,11 +339,11 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
     .join("")
     .slice(0, 2)
     .toUpperCase()
-  const points = user.points ?? 1240
-  const tier = user.membershipTier ?? "Gold"
+  const points = user.points ?? 0
+  const tier = user.membershipTier ?? "Silver"
 
   const stats = [
-    { label: "Orders", value: ORDERS.length },
+    { label: "Orders", value: orders.length },
     { label: "Saved", value: wishlist.length },
     { label: "Points", value: points.toLocaleString("en-IN") },
     { label: "Addresses", value: addresses.length },
@@ -321,22 +422,41 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">AVYR rewards</p>
                   <div className="mt-3 flex items-end justify-between gap-4">
                     <p className="font-display text-5xl leading-none md:text-6xl">{points.toLocaleString("en-IN")}</p>
-                    <p className="text-right text-sm opacity-80">{`= ${money(Math.floor(points / 10))} off`}</p>
+                    <p className="text-right text-sm opacity-80">
+                      {points > 0 ? `= ${money(Math.floor(points / 10))} off` : "Start earning on orders"}
+                    </p>
                   </div>
                   <div className="mt-6 h-1 rounded-full bg-current/20">
                     <div className="h-1 rounded-full bg-current" style={{ width: `${Math.min(100, (points / 2000) * 100)}%` }} />
                   </div>
-                  <p className="mt-2 text-xs opacity-70">{`${Math.max(0, 2000 - points)} points to Artisan VIP`}</p>
+                  <p className="mt-2 text-xs opacity-70">
+                    {points >= 2000 ? "Artisan VIP Tier Unlocked" : `${Math.max(0, 2000 - points).toLocaleString("en-IN")} points to Artisan VIP`}
+                  </p>
                 </div>
 
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="font-display text-2xl">Latest order</h2>
-                    <button type="button" onClick={() => setTab("Orders")} className="text-sm font-semibold underline underline-offset-4">
-                      All orders
-                    </button>
+                    {orders.length > 0 && (
+                      <button type="button" onClick={() => setTab("Orders")} className="text-sm font-semibold underline underline-offset-4">
+                        All orders ({orders.length})
+                      </button>
+                    )}
                   </div>
-                  <OrderCard order={ORDERS[0]} />
+                  {orders.length > 0 ? (
+                    <OrderCard order={orders[0]} />
+                  ) : (
+                    <div className="rounded-sm border border-dashed border-border p-6 text-center">
+                      <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
+                        <Icon name="package" size={20} />
+                      </div>
+                      <p className="font-display text-lg">No orders placed yet</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Your handcrafted bespoke orders will appear here once placed.</p>
+                      <Link href="/shop" className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-background">
+                        Explore collection <Icon name="arrow" size={14} />
+                      </Link>
+                    </div>
+                  )}
                 </section>
 
                 <section>
@@ -370,9 +490,28 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
             {tab === "Orders" && (
               <>
                 <h2 className="font-display text-3xl">Orders</h2>
-                {ORDERS.map((o) => (
-                  <OrderCard key={o.id} order={o} />
-                ))}
+                {loadingOrders ? (
+                  <div className="rounded-sm border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+                    Loading your bespoke orders...
+                  </div>
+                ) : orders.length > 0 ? (
+                  orders.map((o) => (
+                    <OrderCard key={o.id || o.orderNumber} order={o} />
+                  ))
+                ) : (
+                  <div className="rounded-sm border border-dashed border-border p-10 text-center">
+                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
+                      <Icon name="package" size={24} />
+                    </div>
+                    <h3 className="font-display text-2xl">No orders yet</h3>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+                      You have not placed any orders yet. Discover our limited edition French linen shirts and bespoke resortwear.
+                    </p>
+                    <Link href="/shop" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-background">
+                      Discover collection <Icon name="arrow" size={14} />
+                    </Link>
+                  </div>
+                )}
               </>
             )}
 

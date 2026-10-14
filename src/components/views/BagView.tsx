@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { products } from "../../products"
 import type { CartItem, Product, View } from "../../types"
 import { money } from "../../utils/format"
@@ -18,6 +19,7 @@ export interface BagViewProps {
 }
 
 export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go }: BagViewProps) {
+  const router = useRouter()
   const store = useStore()
   // Use store cart if available, fallback to propCart
   const cart = store.cart ?? propCart
@@ -404,7 +406,19 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
             </span>
             <b>{money(finalTotal)}</b>
           </div>
-          <Button className="checkout-btn" onClick={() => go("checkout")}>
+          <Button
+            className="checkout-btn"
+            onClick={() => {
+              if (!store.user) {
+                if (store.setToast) {
+                  store.setToast("Please sign in or create an account to proceed to checkout.")
+                }
+                router.push("/login?redirect=/checkout")
+                return
+              }
+              go("checkout")
+            }}
+          >
             Secure checkout <Icon name="arrow" />
           </Button>
           <p className="secure">

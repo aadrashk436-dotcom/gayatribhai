@@ -40,17 +40,18 @@ export function AddressStep({
     name: user?.name || "",
     phone: user?.phone || "",
     street: "",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400001",
+    city: "",
+    state: "",
+    pincode: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validateAddress = () => {
     const errs: Record<string, string> = {}
+    const phoneDigits = formData.phone.replace(/\D/g, "")
     if (!formData.name.trim()) errs.name = "Full name is required"
-    if (!formData.phone.trim() || !/^[0-9+\s-]{10,15}$/.test(formData.phone.trim())) {
-      errs.phone = "Valid 10-digit mobile number is required"
+    if (!formData.phone.trim() || phoneDigits.length < 10) {
+      errs.phone = "Valid 10-digit mobile number is mandatory"
     }
     if (!formData.street.trim()) errs.street = "Street address is required"
     if (!formData.city.trim()) errs.city = "City is required"
@@ -127,7 +128,11 @@ export function AddressStep({
               className="continue"
               onClick={() => {
                 const chosen = addresses.find((a) => a.id === selectedId) || addresses[0]
-                if (chosen) onSelectAddress?.(chosen)
+                if (!chosen) {
+                  setShowAddForm(true)
+                  return
+                }
+                onSelectAddress?.(chosen)
                 onNext()
               }}
             >
@@ -502,21 +507,8 @@ export function CheckoutView({
     0
   )
 
-  const [selectedAddress, setSelectedAddress] = useState<Address>(() => {
-    return (
-      addresses.find((a) => a.isDefault) ||
-      addresses[0] || {
-        id: "addr_default",
-        name: user?.name || "Customer",
-        phone: user?.phone || "9876543210",
-        street: "Atelier Street",
-        city: "Indore",
-        state: "Madhya Pradesh",
-        pincode: "452001",
-        type: "HOME",
-        isDefault: true,
-      }
-    )
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(() => {
+    return addresses.find((a) => a.isDefault) || addresses[0] || null
   })
 
   const [selectedCourier, setSelectedCourier] = useState<any>(null)
@@ -526,6 +518,13 @@ export function CheckoutView({
   const finalTotal = subtotal + shippingFee
 
   const handlePay = async () => {
+    if (!selectedAddress) {
+      alert("Please provide and select a delivery address before proceeding to payment.")
+      setStep(1)
+      setIsPaying(false)
+      return
+    }
+
     setIsPaying(true)
     try {
       const loaded = await loadRazorpayScript()
@@ -575,9 +574,9 @@ export function CheckoutView({
         description: "Artisanal Luxury Shirts",
         order_id: rzpOrderId || undefined,
         prefill: {
-          name: user?.name || selectedAddress.name,
+          name: user?.name || selectedAddress.name || "",
           email: user?.email || "care@gayatribhai.com",
-          contact: selectedAddress.phone,
+          contact: selectedAddress.phone || user?.phone || "",
         },
         theme: {
           color: "#d4af37",
@@ -693,7 +692,7 @@ export function CheckoutView({
           {step === 2 && (
             <DeliveryStep
               cart={cart}
-              pincode={selectedAddress?.pincode || "400001"}
+              pincode={selectedAddress?.pincode || ""}
               subtotal={subtotal}
               selectedCourier={selectedCourier}
               onSelectCourier={(courier, rate) => {

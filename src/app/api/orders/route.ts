@@ -43,6 +43,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
+    const phone = searchParams.get("phone");
     const id = searchParams.get("id");
 
     const orders = readStoredOrders();
@@ -53,8 +54,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ order });
     }
 
-    if (email) {
-      const userOrders = orders.filter((o: any) => o.customerEmail?.toLowerCase() === email.toLowerCase());
+    if (email || phone) {
+      const cleanEmail = email ? email.trim().toLowerCase() : null;
+      const cleanPhoneDigits = phone ? phone.replace(/\D/g, "") : null;
+
+      const userOrders = orders.filter((o: any) => {
+        const emailMatch = cleanEmail && o.customerEmail?.toLowerCase() === cleanEmail;
+        const phoneMatch = cleanPhoneDigits && o.customerPhone?.replace(/\D/g, "") === cleanPhoneDigits;
+        return Boolean(emailMatch || phoneMatch);
+      });
       return NextResponse.json({ orders: userOrders, total: userOrders.length });
     }
 
