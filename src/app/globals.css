@@ -6740,15 +6740,10 @@ footer.legacy-footer>div>button {
     display: none;
   }
 
-  .detail-actions .add-bag,
-  .detail-actions .pdp-qty-stepper-wrap {
-    display: none !important;
-  }
-
   .detail-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .detail-actions .btn-outline {
@@ -6845,12 +6840,40 @@ footer.legacy-footer>div>button {
 
   .mobile-sticky-submit-btn {
     flex: 1;
-    max-width: 175px;
-    min-height: 46px;
-    font-size: 12px;
-    letter-spacing: .1em;
+    min-width: 90px;
+    max-width: 140px;
+    min-height: 44px;
+    font-size: 11px;
+    letter-spacing: .05em;
     text-transform: uppercase;
     font-weight: 600;
+    border-radius: 8px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-sticky-buy-btn {
+    flex: 1;
+    min-width: 90px;
+    max-width: 140px;
+    min-height: 44px;
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    font-weight: 700;
+    background: #d4af37 !important;
+    color: #0a0a0a !important;
+    border: none !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.25);
+    padding: 0 8px;
   }
 
   .mobile-sticky-submit-btn.need-size {

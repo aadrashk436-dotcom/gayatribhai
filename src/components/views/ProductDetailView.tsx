@@ -35,13 +35,7 @@ export function ProductDetailView({
   goBack,
 }: ProductDetailViewProps) {
   const [image, setImage] = useState(0)
-  const [size, setSize] = useState(() => {
-    try {
-      return localStorage.getItem("avyr-size") || ""
-    } catch {
-      return ""
-    }
-  })
+  const [size, setSize] = useState<string>("")
   const [sizeError, setSizeError] = useState(false)
   const [sizeGuide, setSizeGuide] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
@@ -194,11 +188,7 @@ export function ProductDetailView({
 
   const selectSize = (s: string) => {
     setSize(s)
-    try {
-      localStorage.setItem("avyr-size", s)
-    } catch {
-      // storage unavailable
-    }
+    setSizeError(false)
   }
 
   const handleAddToCart = () => {
@@ -208,10 +198,28 @@ export function ProductDetailView({
         el.scrollIntoView({ behavior: "smooth", block: "center" })
       }
       setSizeError(true)
-      setTimeout(() => setSizeError(false), 2400)
+      setTimeout(() => setSizeError(false), 3000)
       return
     }
     addToCart(product, size)
+  }
+
+  const handleBuyNow = () => {
+    if (!size) {
+      const el = document.getElementById("product-size-section")
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" })
+      }
+      setSizeError(true)
+      setTimeout(() => setSizeError(false), 3000)
+      return
+    }
+    addToCart(product, size)
+    if (go) {
+      go("checkout")
+    } else if (typeof window !== "undefined") {
+      window.location.href = "/checkout"
+    }
   }
 
   return (
@@ -484,13 +492,20 @@ export function ProductDetailView({
             <div>
               <strong>Select size</strong>
               {size ? (
-                <span className="selected-size-label">· Size {size}</span>
+                <span className="selected-size-label" style={{ color: "#10b981", fontWeight: 700, marginLeft: "6px" }}>
+                  · Size {size} (Selected)
+                </span>
               ) : (
-                sizeError && (
-                  <span className="size-required-badge">
-                    Please choose a size
-                  </span>
-                )
+                <span
+                  style={{
+                    color: sizeError ? "#ef4444" : "var(--muted-foreground)",
+                    fontWeight: sizeError ? 700 : 500,
+                    marginLeft: "8px",
+                    fontSize: "12px",
+                  }}
+                >
+                  {sizeError ? "⚠️ Please choose a size first" : "(Required)"}
+                </span>
               )}
             </div>
             <button type="button" onClick={() => setSizeGuide(true)}>
@@ -598,9 +613,28 @@ export function ProductDetailView({
                 </div>
               </div>
             ) : (
-              <Button className="add-bag" onClick={handleAddToCart}>
-                {size ? "Add to bag" : "Select size"} <Icon name="bag" />
-              </Button>
+              <div style={{ display: "flex", gap: "10px", flex: 1, flexWrap: "wrap", minWidth: "260px" }}>
+                <Button className="add-bag" onClick={handleAddToCart} style={{ flex: 1 }}>
+                  {size ? `Add to bag (${size})` : "Add to bag"} <Icon name="bag" />
+                </Button>
+                <Button
+                  style={{
+                    flex: 1,
+                    background: "#d4af37",
+                    color: "#0a0a0a",
+                    fontWeight: 700,
+                    border: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    cursor: "pointer",
+                  }}
+                  onClick={handleBuyNow}
+                >
+                  Buy Now <Icon name="arrow" />
+                </Button>
+              </div>
             )}
             <Button
               variant="outline"
@@ -696,54 +730,70 @@ export function ProductDetailView({
           </span>
         </div>
         <div className="mobile-sticky-buttons">
-          {/* Wishlist Button: only shown if product is not in bag */}
-          {pdpCartQty === 0 && (
-            <button
-              type="button"
-              className={`mobile-sticky-wish-btn ${wishlisted ? "active" : ""}`}
-              onClick={toggleWish}
-              aria-label="Wishlist item"
-            >
-              <Icon name="heart" size={17} filled={wishlisted} />
-            </button>
-          )}
+          {/* Wishlist Button */}
           <button
             type="button"
-            className="mobile-sticky-share-btn"
-            onClick={handleShare}
-            aria-label="Share product"
+            className={`mobile-sticky-wish-btn ${wishlisted ? "active" : ""}`}
+            onClick={toggleWish}
+            aria-label="Wishlist item"
           >
-            <Icon name="share" size={17} />
+            <Icon name="heart" size={17} filled={wishlisted} />
           </button>
           {pdpCartQty > 0 ? (
-            <div className="mobile-sticky-qty-stepper">
-              <button
-                type="button"
-                className={`sticky-qty-btn sticky-qty-minus ${pdpCartQty === 1 ? "trash" : ""}`}
-                onClick={() =>
-                  updateQuantity(product.id, -1, currentCartItem?.size)
-                }
-                aria-label="Decrease quantity"
-              >
-                {pdpCartQty === 1 ? (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                ) : (
+            <>
+              <div className="mobile-sticky-qty-stepper">
+                <button
+                  type="button"
+                  className={`sticky-qty-btn sticky-qty-minus ${pdpCartQty === 1 ? "trash" : ""}`}
+                  onClick={() =>
+                    updateQuantity(product.id, -1, currentCartItem?.size)
+                  }
+                  aria-label="Decrease quantity"
+                >
+                  {pdpCartQty === 1 ? (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  )}
+                </button>
+                <span className="sticky-qty-count">
+                  <strong>{pdpCartQty}</strong> in bag
+                </span>
+                <button
+                  type="button"
+                  className="sticky-qty-btn sticky-qty-plus"
+                  onClick={() =>
+                    updateQuantity(product.id, 1, currentCartItem?.size)
+                  }
+                  aria-label="Increase quantity"
+                >
                   <svg
                     width="14"
                     height="14"
@@ -754,42 +804,35 @@ export function ProductDetailView({
                     strokeLinecap="round"
                     aria-hidden="true"
                   >
-                    <path d="M5 12h14" />
+                    <path d="M12 5v14m-7-7h14" />
                   </svg>
-                )}
-              </button>
-              <span className="sticky-qty-count">
-                <strong>{pdpCartQty}</strong> in bag
-              </span>
+                </button>
+              </div>
               <button
                 type="button"
-                className="sticky-qty-btn sticky-qty-plus"
-                onClick={() =>
-                  updateQuantity(product.id, 1, currentCartItem?.size)
-                }
-                aria-label="Increase quantity"
+                className="mobile-sticky-buy-btn"
+                onClick={handleBuyNow}
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 5v14m-7-7h14" />
-                </svg>
+                Checkout
               </button>
-            </div>
+            </>
           ) : (
-            <Button
-              className={`mobile-sticky-submit-btn ${!size ? "need-size" : ""}`}
-              onClick={handleAddToCart}
-            >
-              {size ? "Add" : "Select size"}
-            </Button>
+            <>
+              <button
+                type="button"
+                className="mobile-sticky-submit-btn btn btn-dark"
+                onClick={handleAddToCart}
+              >
+                {size ? `Add (${size})` : "Add to Bag"}
+              </button>
+              <button
+                type="button"
+                className="mobile-sticky-buy-btn"
+                onClick={handleBuyNow}
+              >
+                Buy Now
+              </button>
+            </>
           )}
         </div>
       </div>

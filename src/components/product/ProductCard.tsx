@@ -416,118 +416,50 @@ export function ProductCard({
         <p className="product-fabric">{product.color} · Cotton linen</p>
 
         {/* Dedicated Modern Add To Bag / Amazon Quantity Controller Action */}
+        {/* Dedicated Modern Buy Now & Wishlist Actions */}
         <div
-          className={`product-card-action ${cartQty > 0 ? "has-cart-qty" : ""}`}
+          className="product-card-action"
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {cartQty > 0 ? (
-            <div
-              className="card-qty-controller"
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            className="card-add-to-bag-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpen()
+            }}
+            aria-label={`Buy ${product.name} now`}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
             >
-              <button
-                type="button"
-                className={`card-qty-btn card-qty-btn-minus ${cartQty === 1 ? "is-remove" : ""}`}
-                onClick={handleDecrement}
-                aria-label={
-                  cartQty === 1
-                    ? `Remove ${product.name} from bag`
-                    : `Decrease ${product.name} quantity`
-                }
-                title={cartQty === 1 ? "Remove from bag" : "Decrease quantity"}
-              >
-                {cartQty === 1 ? (
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                ) : (
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 12h14" />
-                  </svg>
-                )}
-              </button>
-              <span className="card-qty-display" aria-live="polite">
-                <span className="card-qty-number">{cartQty}</span>
-                <span className="card-qty-label">in bag</span>
-              </span>
-              <button
-                type="button"
-                className="card-qty-btn card-qty-btn-plus"
-                onClick={handleIncrement}
-                aria-label={`Increase ${product.name} quantity`}
-                title="Add another piece"
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 5v14m-7-7h14" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className={`card-add-to-bag-btn ${isAdded ? "added" : ""}`}
-              onClick={handleAddToCart}
-              aria-label={`Add ${product.name} to bag`}
-            >
-              <Icon name={isAdded ? "check" : "bag"} size={13} />
-              <span className="card-btn-text-desktop">
-                {isAdded ? "Added to Bag" : "Add to Bag"}
-              </span>
-              <span className="card-btn-text-mobile">
-                {isAdded ? "Added" : "Add"}
-              </span>
-            </button>
-          )}
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span className="card-btn-text-desktop">Buy Now</span>
+            <span className="card-btn-text-mobile">Buy Now</span>
+          </button>
 
-          {/* Wishlist button: Only shown when product is NOT in bag, hides once added so qty stepper has 100% full width */}
-          {cartQty === 0 && (
-            <button
-              type="button"
-              className={`card-wish-action-btn ${wishlisted ? "active" : ""}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onWish()
-              }}
-              aria-label="Toggle wishlist"
-              title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            >
-              <Icon name="heart" size={15} filled={wishlisted} />
-            </button>
-          )}
+          <button
+            type="button"
+            className={`card-wish-action-btn ${wishlisted ? "active" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onWish()
+            }}
+            aria-label="Toggle wishlist"
+            title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <Icon name="heart" size={15} filled={wishlisted} />
+          </button>
         </div>
       </div>
     </article>

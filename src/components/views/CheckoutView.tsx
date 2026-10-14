@@ -32,12 +32,18 @@ export function AddressStep({
   onSelectAddress?: (addr: Address) => void
 }) {
   const saveAddress = useStore((s) => s.saveAddress)
-  const cleanAddresses = addresses.filter((a) => !isDummyAddress(a))
+  const deleteAddress = useStore((s) => s.deleteAddress)
+  const storeAddresses = useStore((s) => s.addresses)
+  const allAddresses = addresses && addresses.length > 0 ? addresses : storeAddresses
+  const cleanAddresses = allAddresses.filter((a) => !isDummyAddress(a))
+
   const [selectedId, setSelectedId] = useState<string>(() => {
     const defaultAddr = cleanAddresses.find((a) => a.isDefault)
     return defaultAddr ? defaultAddr.id : cleanAddresses[0]?.id || ""
   })
   const [showAddForm, setShowAddForm] = useState(cleanAddresses.length === 0)
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
@@ -61,6 +67,45 @@ export function AddressStep({
     }
   }, [cleanAddresses.length])
 
+  // Auto-restore previous address from user orders if no addresses currently saved
+  useEffect(() => {
+    async function restorePreviousOrderAddress() {
+      if (cleanAddresses.length === 0 && (user?.email || user?.phone)) {
+        try {
+          const q = user.email ? `email=${encodeURIComponent(user.email)}` : `phone=${encodeURIComponent(user.phone || "")}`
+          const res = await fetch(`/api/orders?${q}`)
+          const data = await res.json()
+          if (Array.isArray(data?.orders) && data.orders.length > 0) {
+            const found = data.orders.find((o: any) => o.shippingAddress?.street && o.shippingAddress?.pincode)
+            if (found && found.shippingAddress) {
+              const sa = found.shippingAddress
+              const restored: Address = {
+                id: "addr_restored_" + Date.now(),
+                name: sa.name || user.name || "Customer",
+                phone: sa.phone || user.phone || "",
+                street: sa.street || sa.address || "",
+                city: sa.city || "",
+                state: sa.state || "",
+                pincode: sa.pincode || "",
+                type: "HOME",
+                isDefault: true,
+              }
+              if (!isDummyAddress(restored)) {
+                saveAddress(restored)
+                setSelectedId(restored.id)
+                onSelectAddress?.(restored)
+                setShowAddForm(false)
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Could not check previous orders for address:", e)
+        }
+      }
+    }
+    restorePreviousOrderAddress()
+  }, [user?.email, user?.phone, cleanAddresses.length])
+
   // Prefill user details if available
   useEffect(() => {
     if (user) {
@@ -71,6 +116,35 @@ export function AddressStep({
       }))
     }
   }, [user])
+
+  const handleEditAddress = (addr: Address, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingAddressId(addr.id)
+    setFormData({
+      name: addr.name || "",
+      phone: addr.phone || "",
+      street: addr.street || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || "",
+    })
+    setErrors({})
+    setShowAddForm(true)
+  }
+
+  const handleAddNewClick = () => {
+    setEditingAddressId(null)
+    setFormData({
+      name: user?.name || "",
+      phone: user?.phone || "",
+      street: "",
+      city: "",
+      state: "",
+      pincode: "",
+    })
+    setErrors({})
+    setShowAddForm(true)
+  }
 
   const validateAddress = () => {
     const errs: Record<string, string> = {}
@@ -92,8 +166,9 @@ export function AddressStep({
   const handleSaveAndContinue = (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateAddress()) return
+    const targetId = editingAddressId || ("addr_" + Date.now())
     const newAddr: Address = {
-      id: "addr_" + Date.now(),
+      id: targetId,
       name: formData.name.trim(),
       phone: formData.phone.trim(),
       street: formData.street.trim(),
@@ -101,11 +176,12 @@ export function AddressStep({
       state: formData.state.trim(),
       pincode: formData.pincode.trim(),
       type: "HOME",
-      isDefault: cleanAddresses.length === 0,
+      isDefault: cleanAddresses.length === 0 || editingAddressId === selectedId,
     }
     saveAddress(newAddr)
-    setSelectedId(newAddr.id)
+    setSelectedId(targetId)
     onSelectAddress?.(newAddr)
+    setEditingAddressId(null)
     setShowAddForm(false)
     onNext()
   }
@@ -115,64 +191,120 @@ export function AddressStep({
       <span className="eyebrow">Step 1 of 3</span>
       <h1>Where should we deliver?</h1>
 
-      {cleanAddresses.length === 0 && (
-        <div
-          style={{
-            marginBottom: "20px",
-            padding: "14px 18px",
-            background: "rgba(212, 175, 55, 0.08)",
-            border: "1px solid rgba(212, 175, 55, 0.25)",
-            borderRadius: "10px",
-            fontSize: "13px",
-            color: "var(--foreground)",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <span style={{ fontSize: "20px" }}>📍</span>
-          <div>
-            <strong style={{ display: "block", marginBottom: "2px" }}>Please add your delivery address</strong>
-            <p style={{ margin: 0, color: "var(--muted-foreground)", fontSize: "12px" }}>
-              Live courier options and shipping rates will be calculated automatically based on your destination pincode.
-            </p>
-          </div>
-        </div>
-      )}
-
       {cleanAddresses.length > 0 && !showAddForm ? (
         <>
-          <div className="checkout-addresses-list">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--muted-foreground)" }}>
+              Select a saved delivery address or add a new one:
+            </p>
+            <button
+              type="button"
+              onClick={handleAddNewClick}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#d4af37",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              + Add New Address
+            </button>
+          </div>
+
+          <div className="checkout-addresses-list" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {cleanAddresses.map((addr) => {
               const isSelected = selectedId === addr.id
               return (
                 <div
                   key={addr.id}
                   className={`address-card ${isSelected ? "selected" : ""}`}
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "14px",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border: isSelected ? "1.5px solid #d4af37" : "1px solid var(--border)",
+                    background: isSelected ? "rgba(212, 175, 55, 0.08)" : "transparent",
+                    transition: "all 0.2s ease",
+                  }}
                   onClick={() => {
                     setSelectedId(addr.id)
                     onSelectAddress?.(addr)
                   }}
                 >
-                  <span className="radio" />
-                  <div>
-                    <strong>
-                      {addr.name} <small>{addr.type}</small>
-                      {addr.isDefault && (
-                        <b className="addr-default-tag">DEFAULT</b>
-                      )}
-                    </strong>
-                    <p>
-                      {addr.street}, {addr.city}, {addr.state} - {addr.pincode}
+                  <span className="radio" style={{ marginTop: "4px" }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                      <div>
+                        <strong style={{ fontSize: "14px", color: "var(--foreground)" }}>
+                          {addr.name}{" "}
+                          <small style={{ color: "var(--muted-foreground)", fontWeight: 500 }}>
+                            ({addr.type || "HOME"})
+                          </small>
+                        </strong>
+                        {addr.isDefault && (
+                          <b
+                            className="addr-default-tag"
+                            style={{
+                              marginLeft: "8px",
+                              fontSize: "10px",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              background: "rgba(212, 175, 55, 0.2)",
+                              color: "#d4af37",
+                              fontWeight: 700,
+                            }}
+                          >
+                            DEFAULT
+                          </b>
+                        )}
+                      </div>
+
+                      {/* Edit Address Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleEditAddress(addr, e)}
+                        style={{
+                          background: "rgba(255, 255, 255, 0.06)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "6px",
+                          padding: "4px 10px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#d4af37",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          transition: "all 0.2s",
+                        }}
+                        title="Edit / Change this address"
+                      >
+                        ✏️ Edit / Change
+                      </button>
+                    </div>
+
+                    <p style={{ margin: "6px 0 2px", fontSize: "13px", color: "var(--foreground)", lineHeight: 1.4 }}>
+                      {addr.street}, {addr.city}, {addr.state} - <strong style={{ color: "#d4af37" }}>{addr.pincode}</strong>
                     </p>
-                    <p className="phone">Phone: {addr.phone}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                      Phone: <strong style={{ color: "var(--foreground)" }}>{addr.phone}</strong>
+                    </p>
                   </div>
                 </div>
               )
             })}
           </div>
-          <div className="step-actions">
-            <Button variant="outline" onClick={() => setShowAddForm(true)}>
+
+          <div className="step-actions" style={{ marginTop: "24px" }}>
+            <Button variant="outline" onClick={handleAddNewClick}>
               + Add New Address
             </Button>
             <Button
@@ -193,6 +325,51 @@ export function AddressStep({
         </>
       ) : (
         <form onSubmit={handleSaveAndContinue} className="address-form-grid">
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "14px 18px",
+              background: "rgba(212, 175, 55, 0.08)",
+              border: "1px solid rgba(212, 175, 55, 0.25)",
+              borderRadius: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: "14px", color: "var(--foreground)", display: "block" }}>
+                {editingAddressId ? "✏️ Edit Delivery Address" : "📍 Add Delivery Address"}
+              </strong>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                Shipping rates will be automatically calculated based on your 6-digit postal pincode.
+              </p>
+            </div>
+            {cleanAddresses.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false)
+                  setEditingAddressId(null)
+                }}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#d4af37",
+                  cursor: "pointer",
+                }}
+              >
+                ← View Saved Addresses ({cleanAddresses.length})
+              </button>
+            )}
+          </div>
+
           <div className="form-row">
             <div>
               <label>Full Name</label>
@@ -260,12 +437,19 @@ export function AddressStep({
 
           <div className="step-actions">
             {cleanAddresses.length > 0 && (
-              <Button variant="outline" type="button" onClick={() => setShowAddForm(false)}>
-                Cancel
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false)
+                  setEditingAddressId(null)
+                }}
+              >
+                Cancel / View Saved Addresses
               </Button>
             )}
             <Button type="submit" className="continue">
-              Save & Deliver Here <Icon name="arrow" />
+              {editingAddressId ? "Save Changes & Deliver Here" : "Save & Deliver Here"} <Icon name="arrow" />
             </Button>
           </div>
         </form>
@@ -273,6 +457,7 @@ export function AddressStep({
     </>
   )
 }
+
 
 export function DeliveryStep({
   cart,
