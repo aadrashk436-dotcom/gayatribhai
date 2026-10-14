@@ -863,16 +863,20 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     )}
 
                     <button
-                      data-auth-item
+                      id="submit-credentials-btn"
                       type="submit"
                       disabled={loading}
-                      className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                      className="w-full mt-4 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
                     >
-                      {loading ? "Checking credentials & sending code..." : isSignup ? "Continue & Send Code" : "Sign In & Send Code"}
-                      {!loading && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                          <path d="M5 12h14m-5-5 5 5-5 5" />
-                        </svg>
+                      {loading ? (
+                        <span>Submitting, please wait...</span>
+                      ) : (
+                        <>
+                          <span>{isSignup ? "Submit & Create Account" : "Submit & Sign In"}</span>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                            <path d="M5 12h14m-5-5 5 5-5 5" />
+                          </svg>
+                        </>
                       )}
                     </button>
                   </form>
@@ -945,13 +949,19 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     </div>
 
                     <button
-                      data-auth-item
+                      id="submit-otp-btn"
                       type="submit"
                       disabled={loading}
-                      className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                      className="w-full mt-4 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
                     >
-                      {loading ? "Verifying code..." : isSignup ? "Verify & Create Account" : "Verify & Sign In"}
-                      {!loading && <Icon name="check" size={16} />}
+                      {loading ? (
+                        <span>Verifying code...</span>
+                      ) : (
+                        <>
+                          <span>{isSignup ? "Submit Code & Create Account" : "Submit Code & Sign In"}</span>
+                          <Icon name="check" size={18} />
+                        </>
+                      )}
                     </button>
                   </form>
                 </div>
