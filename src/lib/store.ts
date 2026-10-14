@@ -5,6 +5,25 @@ import { persist } from "zustand/middleware"
 import type { Address, CartItem, User } from "@/types"
 import type { Product } from "@/lib/products"
 
+export function isDummyAddress(addr: Address | null | undefined): boolean {
+  if (!addr) return true
+  const name = (addr.name || "").toLowerCase().trim()
+  const street = (addr.street || "").toLowerCase().trim()
+  const phone = (addr.phone || "").replace(/\D/g, "")
+  const id = addr.id || ""
+
+  // Purge legacy demo/mock addresses
+  if (name.includes("arjun mehta") || name.includes("arjun singhania")) return true
+  if (street.includes("sea view apartments") || street.includes("altamount road")) return true
+  if (phone === "9876543210" || phone === "9820123456" || phone === "9820144210") return true
+  if (id === "addr_1" || id === "addr_2") {
+    if (street.includes("bandra") || street.includes("lower parel") || addr.pincode === "400050" || addr.pincode === "400013") {
+      return true
+    }
+  }
+  return false
+}
+
 interface AppState {
   // Cart
   cart: CartItem[]
@@ -27,6 +46,7 @@ interface AppState {
   saveAddress: (addr: Address) => void
   deleteAddress: (id: string) => void
   setDefaultAddress: (id: string) => void
+  clearAddresses: () => void
 
   // Toast
   toast: string
@@ -125,15 +145,24 @@ export const useStore = create<AppState>()(
 
       // ── User ──────────────────────────────────────────────
       user: null,
-      setUser: (user) => set({ user }),
+      setUser: (user) =>
+        set((state) => {
+          const cleanAddresses = state.addresses.filter((a) => !isDummyAddress(a))
+          return {
+            user,
+            addresses: cleanAddresses,
+          }
+        }),
 
       // ── Addresses ─────────────────────────────────────────
       addresses: [],
       saveAddress: (addr) =>
         set((state) => {
-          let next = [...state.addresses]
-          if (addr.isDefault) {
+          if (isDummyAddress(addr)) return state
+          let next = state.addresses.filter((a) => !isDummyAddress(a))
+          if (addr.isDefault || next.length === 0) {
             next = next.map((a) => ({ ...a, isDefault: false }))
+            addr = { ...addr, isDefault: true }
           }
           const existingIdx = next.findIndex((a) => a.id === addr.id)
           if (existingIdx >= 0) {
@@ -145,7 +174,7 @@ export const useStore = create<AppState>()(
         }),
       deleteAddress: (id) =>
         set((state) => {
-          const remaining = state.addresses.filter((a) => a.id !== id)
+          const remaining = state.addresses.filter((a) => a.id !== id && !isDummyAddress(a))
           if (remaining.length > 0 && !remaining.some((a) => a.isDefault)) {
             remaining[0].isDefault = true
           }
@@ -153,11 +182,14 @@ export const useStore = create<AppState>()(
         }),
       setDefaultAddress: (id) =>
         set((state) => ({
-          addresses: state.addresses.map((a) => ({
-            ...a,
-            isDefault: a.id === id,
-          })),
+          addresses: state.addresses
+            .filter((a) => !isDummyAddress(a))
+            .map((a) => ({
+              ...a,
+              isDefault: a.id === id,
+            })),
         })),
+      clearAddresses: () => set({ addresses: [] }),
 
       // ── Toast ─────────────────────────────────────────────
       toast: "",
@@ -173,11 +205,27 @@ export const useStore = create<AppState>()(
     }),
     {
       name: "avyr-store",
+      version: 2,
+      migrate: (persistedState: any) => {
+        if (!persistedState) return persistedState
+        if (Array.isArray(persistedState.addresses)) {
+          persistedState.addresses = persistedState.addresses.filter((a: any) => !isDummyAddress(a))
+        }
+        return persistedState
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state && Array.isArray(state.addresses)) {
+          const cleaned = state.addresses.filter((a) => !isDummyAddress(a))
+          if (cleaned.length !== state.addresses.length) {
+            state.addresses = cleaned
+          }
+        }
+      },
       partialize: (state) => ({
         cart: state.cart,
         wishlist: state.wishlist,
         user: state.user,
-        addresses: state.addresses,
+        addresses: state.addresses.filter((a) => !isDummyAddress(a)),
       }),
     },
   ),

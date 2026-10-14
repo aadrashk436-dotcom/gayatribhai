@@ -8,7 +8,7 @@ import { useGSAP } from "@gsap/react"
 import { products } from "../../products"
 import type { Address, IconName, User, View } from "../../types"
 import { money } from "../../utils/format"
-import { useStore } from "../../lib/store"
+import { useStore, isDummyAddress } from "../../lib/store"
 import Icon from "../common/Icon"
 import ThemeToggle from "../providers/ThemeToggle"
 import { downloadOrderInvoice } from "../../utils/invoice"
@@ -360,11 +360,12 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   const points = user.points ?? 0
   const tier = user.membershipTier ?? "Silver"
 
+  const validAddresses = addresses.filter((a) => !isDummyAddress(a))
   const stats = [
     { label: "Orders", value: orders.length },
     { label: "Saved", value: wishlist.length },
     { label: "Points", value: points.toLocaleString("en-IN") },
-    { label: "Addresses", value: addresses.length },
+    { label: "Addresses", value: validAddresses.length },
   ]
 
   return (
@@ -537,52 +538,97 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
               <>
                 <div className="flex items-center justify-between">
                   <h2 className="font-display text-3xl">Addresses</h2>
-                  <button type="button" onClick={() => setDialog(emptyAddress)} className="flex h-11 items-center gap-2 rounded-full bg-foreground px-5 text-xs font-semibold uppercase tracking-[0.12em] text-background">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDialog({
+                        ...emptyAddress,
+                        name: user?.name || "",
+                        phone: user?.phone || "",
+                        isDefault: validAddresses.length === 0,
+                      })
+                    }
+                    className="flex h-11 items-center gap-2 rounded-full bg-foreground px-5 text-xs font-semibold uppercase tracking-[0.12em] text-background cursor-pointer hover:opacity-90 transition-opacity"
+                  >
                     <Icon name="plus" size={15} /> Add
                   </button>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {addresses.map((a) => (
-                    <article key={a.id} className={`rounded-sm border bg-surface p-5 ${a.isDefault ? "border-foreground" : "border-border"}`}>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-bold tracking-wider">{a.type}</span>
-                        {a.isDefault && <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">Default</span>}
-                      </div>
-                      <p className="mt-3 font-semibold">{a.name}</p>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        {[a.street, a.area, `${a.city}, ${a.state} ${a.pincode}`].filter(Boolean).join(", ")}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">{a.phone}</p>
-                      <div className="mt-4 flex flex-wrap gap-4 border-t border-border pt-4 text-sm font-semibold">
-                        <button type="button" onClick={() => setDialog(a)} className="underline underline-offset-4">
-                          Edit
-                        </button>
-                        {!a.isDefault && (
-                          <button type="button" onClick={() => onSetDefaultAddress(a.id)} className="underline underline-offset-4">
-                            Make default
+
+                {validAddresses.length === 0 ? (
+                  <div className="rounded-sm border border-dashed border-border p-8 sm:p-12 text-center">
+                    <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
+                      <Icon name="map-pin" size={22} />
+                    </div>
+                    <p className="font-display text-xl sm:text-2xl">No saved addresses yet</p>
+                    <p className="mt-1.5 text-sm text-muted-foreground max-w-sm mx-auto">
+                      Add your primary home or office delivery address for fast and effortless checkout.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDialog({
+                          ...emptyAddress,
+                          name: user?.name || "",
+                          phone: user?.phone || "",
+                          isDefault: true,
+                        })
+                      }
+                      className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-background hover:opacity-90 transition-opacity cursor-pointer shadow-md"
+                    >
+                      <Icon name="plus" size={15} /> Add Delivery Address
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {validAddresses.map((a) => (
+                      <article key={a.id} className={`rounded-sm border bg-surface p-5 ${a.isDefault ? "border-foreground" : "border-border"}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-bold tracking-wider">{a.type}</span>
+                          {a.isDefault && <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">Default</span>}
+                        </div>
+                        <p className="mt-3 font-semibold">{a.name}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {[a.street, a.area, `${a.city}, ${a.state} ${a.pincode}`].filter(Boolean).join(", ")}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">{a.phone}</p>
+                        <div className="mt-4 flex flex-wrap gap-4 border-t border-border pt-4 text-sm font-semibold">
+                          <button type="button" onClick={() => setDialog(a)} className="underline underline-offset-4 cursor-pointer">
+                            Edit
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onDeleteAddress(a.id)
-                            showToast("Address removed")
-                          }}
-                          className="text-[#b4321f] underline underline-offset-4"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setDialog(emptyAddress)}
-                    className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-border text-sm font-semibold text-muted-foreground hover:text-foreground"
-                  >
-                    <Icon name="plus" size={20} /> Add new address
-                  </button>
-                </div>
+                          {!a.isDefault && (
+                            <button type="button" onClick={() => onSetDefaultAddress(a.id)} className="underline underline-offset-4 cursor-pointer">
+                              Make default
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onDeleteAddress(a.id)
+                              showToast("Address removed")
+                            }}
+                            className="text-[#b4321f] underline underline-offset-4 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDialog({
+                          ...emptyAddress,
+                          name: user?.name || "",
+                          phone: user?.phone || "",
+                          isDefault: false,
+                        })
+                      }
+                      className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-border text-sm font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      <Icon name="plus" size={20} /> Add new address
+                    </button>
+                  </div>
+                )}
               </>
             )}
 

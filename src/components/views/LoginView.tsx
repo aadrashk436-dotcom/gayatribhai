@@ -52,8 +52,8 @@ function Field({
       </label>
       <div
         className={`group relative flex items-center rounded-xl border bg-surface/80 px-4 transition-all duration-200 focus-within:bg-surface focus-within:ring-2 ${error
-            ? "border-[#b4321f] focus-within:border-[#b4321f] focus-within:ring-[#b4321f]/20"
-            : "border-border/80 hover:border-border focus-within:border-foreground focus-within:ring-foreground/10"
+          ? "border-[#b4321f] focus-within:border-[#b4321f] focus-within:ring-[#b4321f]/20"
+          : "border-border/80 hover:border-border focus-within:border-foreground focus-within:ring-foreground/10"
           }`}
       >
         <input
@@ -1044,11 +1044,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         }}
                         placeholder="• • • • • •"
                         aria-invalid={Boolean(errors.otpCode)}
-                        className={`h-13 sm:h-16 w-full rounded-xl border bg-surface/80 px-2 sm:px-4 text-center font-mono text-xl sm:text-3xl font-bold tracking-[0.25em] sm:tracking-[0.45em] text-foreground placeholder:tracking-normal placeholder:font-normal placeholder:text-muted-foreground/35 outline-none transition-all ${
-                          errors.otpCode
+                        className={`h-13 sm:h-16 w-full rounded-xl border bg-surface/80 px-2 sm:px-4 text-center font-mono text-xl sm:text-3xl font-bold tracking-[0.25em] sm:tracking-[0.45em] text-foreground placeholder:tracking-normal placeholder:font-normal placeholder:text-muted-foreground/35 outline-none transition-all ${errors.otpCode
                             ? "border-[#b4321f] focus:ring-2 focus:ring-[#b4321f]/20"
                             : "border-border hover:border-foreground/40 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
-                        }`}
+                          }`}
                       />
                       {errors.otpCode && (
                         <p className="mt-1.5 text-center text-xs font-medium text-[#b4321f]">

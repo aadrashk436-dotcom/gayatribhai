@@ -1237,22 +1237,7 @@
       "createdAt": "2026-10-14T10:07:59.935Z"
     }
   ],
-  "addresses": [
-    {
-      "id": "addr_1",
-      "customer_id": "cust_demo_1",
-      "name": "Arjun Singhania",
-      "phone": "+91 9820123456",
-      "street": "B-42, Altamount Road, Cumballa Hill",
-      "area": "South Mumbai",
-      "city": "Mumbai",
-      "state": "Maharashtra",
-      "pincode": "400026",
-      "type": "HOME",
-      "is_default": true,
-      "created_at": "2026-10-13T13:32:53.444Z"
-    }
-  ],
+  "addresses": [],
   "orders": [
     {
       "id": "ord_1791901219701",

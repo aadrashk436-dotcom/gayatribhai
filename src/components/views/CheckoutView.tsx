@@ -6,7 +6,7 @@ import type { Address, CartItem, User, View } from "../../types"
 import { money } from "../../utils/format"
 import Button from "../common/Button"
 import Icon from "../common/Icon"
-import { useStore } from "@/lib/store"
+import { useStore, isDummyAddress } from "@/lib/store"
 import { loadRazorpayScript, apiCreateOrder, apiVerifyPayment } from "../../lib/api"
 import { downloadOrderInvoice } from "../../utils/invoice"
 
@@ -32,11 +32,12 @@ export function AddressStep({
   onSelectAddress?: (addr: Address) => void
 }) {
   const saveAddress = useStore((s) => s.saveAddress)
+  const cleanAddresses = addresses.filter((a) => !isDummyAddress(a))
   const [selectedId, setSelectedId] = useState<string>(() => {
-    const defaultAddr = addresses.find((a) => a.isDefault)
-    return defaultAddr ? defaultAddr.id : addresses[0]?.id || ""
+    const defaultAddr = cleanAddresses.find((a) => a.isDefault)
+    return defaultAddr ? defaultAddr.id : cleanAddresses[0]?.id || ""
   })
-  const [showAddForm, setShowAddForm] = useState(addresses.length === 0)
+  const [showAddForm, setShowAddForm] = useState(cleanAddresses.length === 0)
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
@@ -76,7 +77,7 @@ export function AddressStep({
       state: formData.state.trim(),
       pincode: formData.pincode.trim(),
       type: "HOME",
-      isDefault: addresses.length === 0,
+      isDefault: cleanAddresses.length === 0,
     }
     saveAddress(newAddr)
     setSelectedId(newAddr.id)
@@ -90,10 +91,10 @@ export function AddressStep({
       <span className="eyebrow">Step 1 of 3</span>
       <h1>Where should we deliver?</h1>
 
-      {addresses.length > 0 && !showAddForm ? (
+      {cleanAddresses.length > 0 && !showAddForm ? (
         <>
           <div className="checkout-addresses-list">
-            {addresses.map((addr) => {
+            {cleanAddresses.map((addr) => {
               const isSelected = selectedId === addr.id
               return (
                 <div
@@ -128,7 +129,7 @@ export function AddressStep({
             <Button
               className="continue"
               onClick={() => {
-                const chosen = addresses.find((a) => a.id === selectedId) || addresses[0]
+                const chosen = cleanAddresses.find((a) => a.id === selectedId) || cleanAddresses[0]
                 if (!chosen) {
                   setShowAddForm(true)
                   return
@@ -508,8 +509,9 @@ export function CheckoutView({
     0
   )
 
+  const cleanAddresses = addresses.filter((a) => !isDummyAddress(a))
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(() => {
-    return addresses.find((a) => a.isDefault) || addresses[0] || null
+    return cleanAddresses.find((a) => a.isDefault) || cleanAddresses[0] || null
   })
 
   const [selectedCourier, setSelectedCourier] = useState<any>(null)
