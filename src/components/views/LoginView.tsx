@@ -55,11 +55,11 @@ function Field({
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="peer h-14 w-full bg-transparent px-4 pb-1.5 pt-5 text-[15px] text-foreground outline-none"
+          className="peer h-13 sm:h-14 w-full bg-transparent px-3.5 sm:px-4 pb-1.5 pt-5 text-base sm:text-[15px] text-foreground outline-none"
         />
         <label
           htmlFor={id}
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-muted-foreground transition-all duration-200 peer-focus:top-4 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.12em] peer-[:not(:placeholder-shown)]:top-4 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:font-semibold peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-[0.12em]"
+          className="pointer-events-none absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-sm sm:text-[15px] text-muted-foreground transition-all duration-200 peer-focus:top-3.5 sm:peer-focus:top-4 peer-focus:text-[10px] sm:peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.12em] peer-[:not(:placeholder-shown)]:top-3.5 sm:peer-[:not(:placeholder-shown)]:top-4 peer-[:not(:placeholder-shown)]:text-[10px] sm:peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:font-semibold peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-[0.12em]"
         >
           {label}
         </label>
@@ -172,19 +172,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         auto_select: false,
         cancel_on_tap_outside: true,
       })
-
-      if (googleBtnContainerRef.current) {
-        googleBtnContainerRef.current.innerHTML = ""
-        ;(window as any).google.accounts.id.renderButton(googleBtnContainerRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: isSignup ? "signup_with" : "signin_with",
-          shape: "pill",
-          logo_alignment: "left",
-          width: 380,
-        })
-      }
 
       ;(window as any).google.accounts.id.prompt()
     } catch (gErr) {
@@ -545,32 +532,32 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   }
 
   return (
-    <div ref={root} className="grid min-h-[calc(100svh-100px)] bg-background text-foreground md:min-h-[calc(100svh-112px)] lg:grid-cols-2">
+    <div ref={root} className="grid min-h-[calc(100svh-80px)] bg-background text-foreground md:min-h-[calc(100svh-100px)] lg:grid-cols-2">
       {/* Left Visual Column */}
-      <div className="auth-visual relative h-56 overflow-hidden sm:h-72 lg:h-auto">
+      <div className="auth-visual relative h-32 sm:h-48 overflow-hidden lg:h-auto lg:min-h-full">
         <Image
           src="/assets/banners/auth-portrait.jpg"
           alt="Artisanal Hand-Embroidered Luxury Shirt"
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover object-[center_25%]"
+          className="object-cover object-[center_20%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute bottom-6 left-5 right-5 text-white md:bottom-10 md:left-10 lg:bottom-14 lg:left-14">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#d4af37]">GAYATRI BHAI ATELIER</p>
-          <p className="mt-2 font-display text-3xl leading-tight md:text-5xl">
-            {isSignup ? "Artistry Woven into Every Thread." : "Welcome back to Haute Luxury."}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+        <div className="absolute bottom-3 left-4 right-4 text-white sm:bottom-6 sm:left-6 sm:right-6 lg:bottom-14 lg:left-14 lg:right-14">
+          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-[#d4af37]">GAYATRI BHAI ATELIER</p>
+          <p className="mt-0.5 font-display text-xl sm:text-2xl md:text-3xl lg:text-5xl leading-tight">
+            {isSignup ? "Artistry in Every Thread." : "Welcome to Haute Luxury."}
           </p>
-          <p className="mt-2 text-xs uppercase tracking-widest text-zinc-300">
-            Heritage Craft • Pure Silk & Linen • Direct From Craftsmen
+          <p className="hidden sm:block mt-1 text-[11px] uppercase tracking-widest text-zinc-300">
+            Heritage Craft • Pure Silk & Linen • Surat Atelier
           </p>
         </div>
       </div>
 
       {/* Right Form Column */}
-      <div className="flex items-start justify-center px-5 pb-28 pt-8 md:px-10 md:pb-16 md:pt-14 lg:items-center lg:px-16">
-        <div className="w-full max-w-md">
+      <div className="flex items-center justify-center px-4 py-6 sm:px-8 sm:py-10 md:px-12 md:py-14 lg:px-16 w-full">
+        <div className="w-full max-w-md mx-auto">
           {isForgotPassword ? (
             <div data-auth-item className="mt-2">
               <button
@@ -737,29 +724,22 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </Link>
               </div>
 
-              <h1 data-auth-item className="font-display text-3xl leading-tight md:text-4xl">
+              <h1 data-auth-item className="font-display text-2xl sm:text-3xl md:text-4xl leading-tight">
                 {isSignup ? "Create your account" : "Sign in to your account"}
               </h1>
-              <p data-auth-item className="mt-2 text-[14px] text-muted-foreground">
+              <p data-auth-item className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
                 {isSignup ? "Earn 250 welcome points, track bespoke orders, and access limited drops." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
               </p>
 
               {/* ── Prominent Google 1-Click SSO Button ── */}
-              <div data-auth-item className="mt-6">
-                {googleClientId && (
-                  <div
-                    ref={googleBtnContainerRef}
-                    className="flex w-full justify-center overflow-hidden rounded-full [&>iframe]:!mx-auto mb-3"
-                  />
-                )}
-
+              <div data-auth-item className="mt-5 sm:mt-6">
                 <button
                   type="button"
                   disabled={loading}
                   onClick={handleGoogleBtnClick}
-                  className="flex w-full h-13 items-center justify-center gap-3 rounded-full border border-border bg-surface px-6 text-sm font-semibold tracking-wide text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/50"
+                  className="flex w-full h-12 sm:h-13 items-center justify-center gap-2.5 sm:gap-3 rounded-full border border-border bg-surface px-4 sm:px-6 text-xs sm:text-sm font-semibold tracking-wide text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/50"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
                     <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
                     <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
                     <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
@@ -1013,15 +993,15 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
             </p>
           </div>
 
-          <ul data-auth-item className="mt-8 grid grid-cols-3 gap-3 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+          <ul data-auth-item className="mt-8 grid grid-cols-3 gap-2 border-t border-border pt-6 text-center text-[11px] sm:text-xs text-muted-foreground">
             {[
-              ["truck", "Free Express Delivery"],
-              ["refresh", "7-Day Easy Returns"],
-              ["shield", "100% Authentic Handloom"],
+              ["truck", "Express Delivery"],
+              ["refresh", "7-Day Returns"],
+              ["shield", "Pure Handloom"],
             ].map(([icon, label]) => (
-              <li key={label} className="flex flex-col items-center gap-2">
-                <Icon name={icon as "truck"} size={18} />
-                {label}
+              <li key={label} className="flex flex-col items-center gap-1.5 sm:gap-2">
+                <Icon name={icon as "truck"} size={16} />
+                <span className="leading-tight">{label}</span>
               </li>
             ))}
           </ul>
@@ -1030,8 +1010,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
       {/* ── Google Direct Authentication Modal ── */}
       {showGoogleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl sm:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background p-5 sm:p-8 shadow-2xl">
             {/* Close Button */}
             <button
               type="button"
