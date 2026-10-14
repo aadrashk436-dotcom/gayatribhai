@@ -68,27 +68,41 @@ export async function POST(request: Request) {
       db.customers.push(customer);
     }
 
+    const isAdmin = clean === "gayatripuri634@gmail.com";
+    if (isAdmin) {
+      customer.tier = "Platinum";
+      customer.points = Math.max(customer.points || 0, 10000);
+      customer.role = "super_admin";
+    }
+
     try {
       fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
     } catch (saveErr) {
       console.warn("Could not save to db.json:", saveErr);
     }
 
-    const token = `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const token = isAdmin ? `gb_admin_token_${Date.now()}` : `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     return NextResponse.json({
       success: true,
       token,
+      isAdmin,
       isNewUser,
       customer: {
         id: customer.id,
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
+        avatar: customer.avatar || "",
         tier: customer.tier || "Silver",
         points: customer.points || 250,
+        role: customer.role || (isAdmin ? "super_admin" : "customer"),
       },
-      message: isNewUser ? "Account created successfully via OTP. Welcome to Gayatri Bhai!" : "Welcome back!",
+      message: isAdmin
+        ? "Welcome back, Store Admin Gayatri Puri!"
+        : isNewUser
+        ? "Account created successfully via OTP. Welcome to Gayatri Bhai!"
+        : "Welcome back!",
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to verify OTP" }, { status: 500 });

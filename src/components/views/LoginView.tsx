@@ -8,7 +8,7 @@ import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
 import Icon from "../common/Icon"
-import { apiLogin, apiSignup, apiSendOtp, apiVerifyOtp, apiGoogleLogin, apiDirectGmailLogin, AuthError } from "../../lib/api"
+import { apiLogin, apiSignup, apiSendOtp, apiVerifyOtp, apiGoogleLogin, apiDirectGmailLogin, apiForgotPassword, apiResetPassword, AuthError } from "../../lib/api"
 
 gsap.registerPlugin(useGSAP)
 
@@ -101,12 +101,18 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const [otpStep, setOtpStep] = useState<1 | 2>(1)
   const [otpSentMessage, setOtpSentMessage] = useState("")
 
-  // Google GIS & Fast-Connect state
+  // Google GIS state
   const googleBtnContainerRef = useRef<HTMLDivElement>(null)
   const [gisLoaded, setGisLoaded] = useState(false)
-  const [showGoogleConnectModal, setShowGoogleConnectModal] = useState(false)
-  const [directGmail, setDirectGmail] = useState("")
-  const [directGmailName, setDirectGmailName] = useState("")
+
+  // Forgot / Reset Password state
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
+  const [resetOtp, setResetOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [resetStep, setResetStep] = useState<1 | 2>(1)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
@@ -121,7 +127,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         .fromTo(".auth-visual img", { scale: 1.25 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
         .from("[data-auth-item]", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0.3)
     },
-    { scope: root, dependencies: [mode, authMethod, otpStep], revertOnUpdate: true },
+    { scope: root, dependencies: [mode, authMethod, otpStep, isForgotPassword, resetStep], revertOnUpdate: true },
   )
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -421,12 +427,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     }
   }
 
-  const openGoogleConnectModal = () => {
-    setDirectGmail(email || "")
-    setDirectGmailName(name || "")
-    setShowGoogleConnectModal(true)
-  }
-
   // Trigger Google Sign-in on button click
   const handleGoogleBtnClick = () => {
     setGlobalError(null)
@@ -457,58 +457,89 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     // Option 2: GIS One-Tap prompt if available
     if (gisLoaded && (window as any).google?.accounts?.id && googleClientId) {
       try {
-        ;(window as any).google.accounts.id.prompt((notification: any) => {
-          if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-            openGoogleConnectModal()
-          }
-        })
+        ;(window as any).google.accounts.id.prompt()
         return
       } catch (err) {
         console.warn("Google ID prompt error:", err)
       }
     }
 
-    // Option 3: Direct Google Account Connect modal
-    openGoogleConnectModal()
+    // Option 3: Switch to Direct Gmail (No OTP) tab smoothly
+    setAuthMethod("gmail")
+    setIsForgotPassword(false)
+    showToast("Enter your Gmail address above for instant 1-click login.")
   }
 
-  // Handle Direct Google / Gmail Authentication
-  const handleDirectGoogleSubmit = async (e: React.FormEvent) => {
+  // Handle Send Password Reset Code
+  const handleSendResetCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!directGmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(directGmail.trim())) {
-      showToast("Please enter a valid Google / Gmail address")
+    setGlobalError(null)
+    setErrors({})
+
+    const clean = resetEmail.trim().toLowerCase()
+    if (!clean) {
+      setErrors({ resetEmail: "Please enter your account email address" })
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setErrors({ resetEmail: "Please enter a valid email address (e.g. name@domain.com)" })
       return
     }
 
     setLoading(true)
-    setGlobalError(null)
     try {
-      const cleanEmail = directGmail.trim().toLowerCase()
-      const cleanName =
-        directGmailName.trim() ||
-        cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-      const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=0a0a0a,d4af37,18181b`
+      const res = await apiForgotPassword(clean)
+      setResetStep(2)
+      showToast(res.message || "Reset code sent to your email!")
+      if (res.devOtp) {
+        console.log(`[Gayatri Bhai Reset Code] ${res.devOtp}`)
+      }
+    } catch (err: any) {
+      setGlobalError(err.message || "Failed to send reset code. Please check your email and try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      const res = await apiGoogleLogin({
-        email: cleanEmail,
-        name: cleanName,
-        avatar,
-      })
+  // Handle Confirm Password Reset & Auto Sign-In
+  const handleConfirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setGlobalError(null)
+    setErrors({})
 
-      setShowGoogleConnectModal(false)
+    const cleanOtp = resetOtp.trim()
+    if (!cleanOtp || cleanOtp.length < 4) {
+      setErrors({ resetOtp: "Please enter the 6-digit verification code" })
+      return
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      setErrors({ newPassword: "Password must be at least 6 characters" })
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrors({ confirmPassword: "Passwords do not match. Please verify." })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await apiResetPassword(resetEmail.trim().toLowerCase(), cleanOtp, newPassword)
+      setIsForgotPassword(false)
       onLogin({
         id: res.customer?.id || `usr_${Date.now()}`,
-        name: res.customer?.name || cleanName,
-        email: res.customer?.email || cleanEmail,
+        name: res.customer?.name || "Patron",
+        email: res.customer?.email || resetEmail.trim().toLowerCase(),
         phone: res.customer?.phone || "",
-        avatar: res.customer?.avatar || avatar,
+        avatar: res.customer?.avatar || "",
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
         points: res.customer?.points || 250,
       })
-      showToast(res.message || `Welcome to Gayatri Bhai, ${res.customer?.name || cleanName}!`)
+      showToast(res.message || "Password updated successfully! Welcome back.")
     } catch (err: any) {
-      showToast(err.message || "Google authentication failed")
+      setGlobalError(err.message || "Failed to reset password. Please check your verification code.")
     } finally {
       setLoading(false)
     }
@@ -541,385 +572,558 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       {/* Right Form Column */}
       <div className="flex items-start justify-center px-5 pb-28 pt-8 md:px-10 md:pb-16 md:pt-14 lg:items-center lg:px-16">
         <div className="w-full max-w-md">
-          {/* Sign In / Sign Up Top Switcher */}
-          <div data-auth-item className="relative mb-6 grid grid-cols-2 rounded-full border border-border p-1">
-            <span
-              aria-hidden="true"
-              className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${
-                isSignup ? "translate-x-full" : "translate-x-0"
-              }`}
-            />
-            <Link
-              href="/login"
-              replace
-              className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
-              aria-current={!isSignup ? "page" : undefined}
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              replace
-              className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
-              aria-current={isSignup ? "page" : undefined}
-            >
-              Create account
-            </Link>
-          </div>
-
-          <h1 data-auth-item className="font-display text-3xl leading-tight md:text-4xl">
-            {isSignup ? "Create your account" : "Sign in to your account"}
-          </h1>
-          <p data-auth-item className="mt-2 text-[14px] text-muted-foreground">
-            {isSignup ? "Earn 250 welcome points, track bespoke orders, and access limited drops." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
-          </p>
-
-          {/* Mode Switcher: Direct Gmail vs Password vs OTP */}
-          <div data-auth-item className="mt-6 flex rounded-lg border border-border bg-surface p-1 gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMethod("gmail")
-                setGlobalError(null)
-              }}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
-                authMethod === "gmail"
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
-              </svg>
-              <span>Gmail (No OTP)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMethod("password")
-                setGlobalError(null)
-              }}
-              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
-                authMethod === "password"
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Password
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMethod("otp")
-                setGlobalError(null)
-                setOtpStep(1)
-              }}
-              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
-                authMethod === "otp"
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Phone OTP
-            </button>
-          </div>
-
-          {/* Global Error Notice */}
-          {globalError && (
-            <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
-              <p className="font-semibold">{globalError}</p>
-              {switchAction && (
-                <button
-                  type="button"
-                  onClick={switchAction.action}
-                  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
-                >
-                  {switchAction.label} &rarr;
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── METHOD 0: DIRECT GMAIL LOGIN (NO OTP) ── */}
-          {authMethod === "gmail" && (
-            <form onSubmit={submitDirectGmail} noValidate className="mt-6 flex flex-col gap-4">
-              <div className="rounded-xl border border-[#4285F4]/30 bg-[#4285F4]/5 p-3.5 text-xs text-foreground flex items-center gap-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
-                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
-                </svg>
-                <div className="leading-tight">
-                  <strong className="font-semibold block text-foreground">Direct 1-Click Gmail Login</strong>
-                  <span className="text-muted-foreground text-[11px]">No OTP or password required. Instant access & 250 welcome points.</span>
-                </div>
-              </div>
-
-              {isSignup && (
-                <Field
-                  id="gmailName"
-                  label="Your full name (optional)"
-                  value={gmailName}
-                  onChange={setGmailName}
-                  autoComplete="name"
-                  placeholder="e.g. Rahul Sharma"
-                />
-              )}
-
-              <Field
-                id="gmailInput"
-                label="Your Gmail address"
-                type="email"
-                value={gmailInput}
-                onChange={setGmailInput}
-                autoComplete="email"
-                inputMode="email"
-                placeholder="e.g. yourname@gmail.com"
-                error={errors.gmailInput}
-              />
-
-              {/* Quick Preset for Store Owner */}
-              <div className="flex flex-wrap items-center justify-between text-xs pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGmailInput("gayatripuri634@gmail.com")
-                    setGmailName("Gayatri Puri")
-                    showToast("Owner Gmail loaded. Click Sign In.")
-                  }}
-                  className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-[11px]"
-                >
-                  Fill Owner Gmail: gayatripuri634@gmail.com
-                </button>
-                <span className="text-[11px] text-[#34A853] font-semibold flex items-center gap-1">
-                  ✓ Instant / No OTP
-                </span>
-              </div>
-
+          {isForgotPassword ? (
+            <div data-auth-item className="mt-2">
               <button
-                data-auth-item
-                type="submit"
-                disabled={loading}
-                className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false)
+                  setResetStep(1)
+                  setGlobalError(null)
+                  setErrors({})
+                }}
+                className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
               >
-                {loading ? "Signing in..." : isSignup ? "Create Account with Gmail (No OTP)" : "Sign In with Gmail (Instant / No OTP)"}
-                {!loading && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                    <path d="M5 12h14m-5-5 5 5-5 5" />
-                  </svg>
-                )}
+                &larr; Back to Sign In
               </button>
-            </form>
-          )}
 
-          {/* ── METHOD 1: PASSWORD AUTH ── */}
-          {authMethod === "password" && (
-            <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
-              {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" error={errors.name} />}
-              <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" error={errors.email} />
-              {isSignup && (
-                <Field id="phone" label="Mobile number (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" error={errors.phone} />
-              )}
-              <Field
-                id="password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={setPassword}
-                autoComplete={isSignup ? "new-password" : "current-password"}
-                error={errors.password}
-                trailing={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
-                  </button>
-                }
-              />
+              <h1 className="font-display text-3xl leading-tight md:text-4xl">
+                Reset Password
+              </h1>
+              <p className="mt-2 text-[14px] text-muted-foreground">
+                {resetStep === 1
+                  ? "Enter your account email to receive a secure 6-digit verification code."
+                  : `Enter the 6-digit code sent to ${resetEmail} and your new password.`}
+              </p>
 
-              {isSignup ? (
-                <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
-                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
-                  <span>
-                    I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
-                    <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
-                    {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
-                  </span>
-                </label>
-              ) : (
-                <div data-auth-item className="flex justify-between items-center text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail("gayatripuri634@gmail.com")
-                      setPassword("AdminPassword123!")
-                      showToast("Admin credentials loaded. Click Sign In.")
-                    }}
-                    className="text-muted-foreground hover:text-foreground underline underline-offset-2"
-                  >
-                    Fill Admin Login
-                  </button>
-                  <button type="button" onClick={() => showToast("Password reset link sent to your registered email")} className="font-medium text-foreground underline underline-offset-4">
-                    Forgot password?
-                  </button>
+              {globalError && (
+                <div className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
+                  <p className="font-semibold">{globalError}</p>
                 </div>
               )}
 
-              <button
-                data-auth-item
-                type="submit"
-                disabled={loading}
-                className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
-              >
-                {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
-                {!loading && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                    <path d="M5 12h14m-5-5 5 5-5 5" />
-                  </svg>
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* ── METHOD 2: OTP AUTHENTICATION ── */}
-          {authMethod === "otp" && (
-            <div className="mt-6">
-              {otpStep === 1 ? (
-                <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-                  {isSignup && (
-                    <Field
-                      id="otpName"
-                      label="Your full name"
-                      value={otpName}
-                      onChange={setOtpName}
-                      autoComplete="name"
-                      error={errors.otpName}
-                    />
-                  )}
+              {resetStep === 1 ? (
+                <form onSubmit={handleSendResetCode} noValidate className="mt-6 flex flex-col gap-4">
                   <Field
-                    id="otpIdentifier"
-                    label="Mobile Number or Email"
-                    value={otpIdentifier}
-                    onChange={setOtpIdentifier}
-                    placeholder="e.g. 9876543210 or name@gmail.com"
-                    error={errors.otpIdentifier}
+                    id="resetEmail"
+                    label="Account Email address"
+                    type="email"
+                    value={resetEmail}
+                    onChange={setResetEmail}
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="e.g. name@domain.com"
+                    error={errors.resetEmail}
                   />
 
-                  <p className="text-xs text-muted-foreground">
-                    We will send a 6-digit one-time verification code to this mobile number or email address.
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between text-xs pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setResetEmail("gayatripuri634@gmail.com")}
+                      className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-[11px]"
+                    >
+                      Fill Admin: gayatripuri634@gmail.com
+                    </button>
+                    <span className="text-[11px] text-muted-foreground">
+                      Delivered via Gmail SMTP
+                    </span>
+                  </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
                   >
-                    {loading ? "Sending code..." : "Send Verification Code"}
+                    {loading ? "Sending reset code..." : "Send Reset Code"}
                     {!loading && <Icon name="arrow" size={16} />}
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+                <form onSubmit={handleConfirmResetPassword} noValidate className="mt-6 flex flex-col gap-4">
                   <div className="rounded-lg border border-border bg-surface p-4 text-sm">
                     <p className="text-muted-foreground text-xs uppercase tracking-wider">Verification Code Sent</p>
-                    <p className="font-semibold text-foreground mt-1">{otpIdentifier}</p>
+                    <p className="font-semibold text-foreground mt-1">{resetEmail}</p>
                     <button
                       type="button"
                       onClick={() => {
-                        setOtpStep(1)
-                        setOtpCode("")
+                        setResetStep(1)
+                        setResetOtp("")
                       }}
                       className="mt-2 text-xs font-bold text-[#d4af37] underline underline-offset-2"
                     >
-                      Change mobile / email
+                      Change email
                     </button>
                   </div>
 
                   <Field
-                    id="otpCode"
-                    label="Enter 6-digit code"
-                    value={otpCode}
-                    onChange={setOtpCode}
+                    id="resetOtp"
+                    label="Enter 6-digit verification code"
+                    value={resetOtp}
+                    onChange={setResetOtp}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     placeholder="123456"
-                    error={errors.otpCode}
+                    error={errors.resetOtp}
                   />
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Test master code: <strong className="text-foreground font-mono">123456</strong></span>
+                    <span>Master test code: <strong className="text-foreground font-mono">123456</strong></span>
                     <button
                       type="button"
                       disabled={loading}
-                      onClick={handleSendOtp}
+                      onClick={handleSendResetCode}
                       className="font-semibold text-foreground underline underline-offset-2 hover:opacity-80"
                     >
                       Resend code
                     </button>
                   </div>
 
+                  <Field
+                    id="newPassword"
+                    label="New Password (min 6 characters)"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    autoComplete="new-password"
+                    error={errors.newPassword}
+                    trailing={
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((v) => !v)}
+                        className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label={showNewPassword ? "Hide password" : "Show password"}
+                      >
+                        <Icon name={showNewPassword ? "eye-off" : "eye"} size={18} />
+                      </button>
+                    }
+                  />
+
+                  <Field
+                    id="confirmPassword"
+                    label="Confirm New Password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    autoComplete="new-password"
+                    error={errors.confirmPassword}
+                  />
+
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
                   >
-                    {loading ? "Verifying..." : isSignup ? "Verify & Create Account" : "Verify & Sign In"}
+                    {loading ? "Updating password..." : "Set New Password & Sign In"}
                     {!loading && <Icon name="check" size={16} />}
                   </button>
                 </form>
               )}
             </div>
+          ) : (
+            <>
+              {/* Sign In / Sign Up Top Switcher */}
+              <div data-auth-item className="relative mb-6 grid grid-cols-2 rounded-full border border-border p-1">
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${
+                    isSignup ? "translate-x-full" : "translate-x-0"
+                  }`}
+                />
+                <Link
+                  href="/login"
+                  replace
+                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
+                  aria-current={!isSignup ? "page" : undefined}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  replace
+                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
+                  aria-current={isSignup ? "page" : undefined}
+                >
+                  Create account
+                </Link>
+              </div>
+
+              <h1 data-auth-item className="font-display text-3xl leading-tight md:text-4xl">
+                {isSignup ? "Create your account" : "Sign in to your account"}
+              </h1>
+              <p data-auth-item className="mt-2 text-[14px] text-muted-foreground">
+                {isSignup ? "Earn 250 welcome points, track bespoke orders, and access limited drops." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
+              </p>
+
+              {/* Mode Switcher: Direct Gmail vs Password vs OTP */}
+              <div data-auth-item className="mt-6 flex rounded-lg border border-border bg-surface p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod("gmail")
+                    setGlobalError(null)
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
+                    authMethod === "gmail"
+                      ? "bg-foreground text-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                  </svg>
+                  <span>Gmail (No OTP)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod("password")
+                    setGlobalError(null)
+                  }}
+                  className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
+                    authMethod === "password"
+                      ? "bg-foreground text-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod("otp")
+                    setGlobalError(null)
+                    setOtpStep(1)
+                  }}
+                  className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
+                    authMethod === "otp"
+                      ? "bg-foreground text-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  OTP Login
+                </button>
+              </div>
+
+              {/* Global Error Notice */}
+              {globalError && (
+                <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
+                  <p className="font-semibold">{globalError}</p>
+                  {switchAction && (
+                    <button
+                      type="button"
+                      onClick={switchAction.action}
+                      className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                    >
+                      {switchAction.label} &rarr;
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ── METHOD 0: DIRECT GMAIL LOGIN (NO OTP) ── */}
+              {authMethod === "gmail" && (
+                <form onSubmit={submitDirectGmail} noValidate className="mt-6 flex flex-col gap-4">
+                  <div className="rounded-xl border border-[#4285F4]/30 bg-[#4285F4]/5 p-3.5 text-xs text-foreground flex items-center gap-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+                      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                      <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                    </svg>
+                    <div className="leading-tight">
+                      <strong className="font-semibold block text-foreground">Direct 1-Click Gmail Login</strong>
+                      <span className="text-muted-foreground text-[11px]">No OTP or password required. Instant access & 250 welcome points.</span>
+                    </div>
+                  </div>
+
+                  {isSignup && (
+                    <Field
+                      id="gmailName"
+                      label="Your full name (optional)"
+                      value={gmailName}
+                      onChange={setGmailName}
+                      autoComplete="name"
+                      placeholder="e.g. Rahul Sharma"
+                    />
+                  )}
+
+                  <Field
+                    id="gmailInput"
+                    label="Your Gmail address"
+                    type="email"
+                    value={gmailInput}
+                    onChange={setGmailInput}
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="e.g. yourname@gmail.com"
+                    error={errors.gmailInput}
+                  />
+
+                  {/* Quick Preset for Store Owner */}
+                  <div className="flex flex-wrap items-center justify-between text-xs pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGmailInput("gayatripuri634@gmail.com")
+                        setGmailName("Gayatri Puri")
+                        showToast("Owner Gmail loaded. Click Sign In.")
+                      }}
+                      className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-[11px]"
+                    >
+                      Fill Owner Gmail: gayatripuri634@gmail.com
+                    </button>
+                    <span className="text-[11px] text-[#34A853] font-semibold flex items-center gap-1">
+                      ✓ Instant / No OTP
+                    </span>
+                  </div>
+
+                  <button
+                    data-auth-item
+                    type="submit"
+                    disabled={loading}
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                  >
+                    {loading ? "Signing in..." : isSignup ? "Create Account with Gmail (No OTP)" : "Sign In with Gmail (Instant / No OTP)"}
+                    {!loading && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                        <path d="M5 12h14m-5-5 5 5-5 5" />
+                      </svg>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* ── METHOD 1: PASSWORD AUTH ── */}
+              {authMethod === "password" && (
+                <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
+                  {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" error={errors.name} />}
+                  <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" error={errors.email} />
+                  {isSignup && (
+                    <Field id="phone" label="Mobile number (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" error={errors.phone} />
+                  )}
+                  <Field
+                    id="password"
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={setPassword}
+                    autoComplete={isSignup ? "new-password" : "current-password"}
+                    error={errors.password}
+                    trailing={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                      </button>
+                    }
+                  />
+
+                  {isSignup ? (
+                    <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+                      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+                      <span>
+                        I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
+                        <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
+                        {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
+                      </span>
+                    </label>
+                  ) : (
+                    <div data-auth-item className="flex justify-between items-center text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail("gayatripuri634@gmail.com")
+                          setPassword("AdminPassword123!")
+                          showToast("Admin credentials loaded. Click Sign In.")
+                        }}
+                        className="text-muted-foreground hover:text-foreground underline underline-offset-2"
+                      >
+                        Fill Admin Login
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(true)
+                          setResetEmail(email || "")
+                          setResetStep(1)
+                          setGlobalError(null)
+                          setErrors({})
+                        }}
+                        className="font-medium text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    data-auth-item
+                    type="submit"
+                    disabled={loading}
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
+                    {!loading && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                        <path d="M5 12h14m-5-5 5 5-5 5" />
+                      </svg>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* ── METHOD 2: OTP AUTHENTICATION ── */}
+              {authMethod === "otp" && (
+                <div className="mt-6">
+                  {otpStep === 1 ? (
+                    <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+                      {isSignup && (
+                        <Field
+                          id="otpName"
+                          label="Your full name"
+                          value={otpName}
+                          onChange={setOtpName}
+                          autoComplete="name"
+                          error={errors.otpName}
+                        />
+                      )}
+                      <Field
+                        id="otpIdentifier"
+                        label="Mobile Number or Email"
+                        value={otpIdentifier}
+                        onChange={setOtpIdentifier}
+                        placeholder="e.g. 9876543210 or name@gmail.com"
+                        error={errors.otpIdentifier}
+                      />
+
+                      <div className="flex flex-wrap items-center justify-between text-xs pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpIdentifier("gayatripuri634@gmail.com")
+                            showToast("Owner email loaded.")
+                          }}
+                          className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-[11px]"
+                        >
+                          Fill Owner: gayatripuri634@gmail.com
+                        </button>
+                        <span className="text-[11px] text-muted-foreground">
+                          Email OTP via Gmail SMTP
+                        </span>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                      >
+                        {loading ? "Sending code..." : "Send Verification Code"}
+                        {!loading && <Icon name="arrow" size={16} />}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+                      <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wider">Verification Code Sent</p>
+                        <p className="font-semibold text-foreground mt-1">{otpIdentifier}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpStep(1)
+                            setOtpCode("")
+                          }}
+                          className="mt-2 text-xs font-bold text-[#d4af37] underline underline-offset-2"
+                        >
+                          Change mobile / email
+                        </button>
+                      </div>
+
+                      <Field
+                        id="otpCode"
+                        label="Enter 6-digit code"
+                        value={otpCode}
+                        onChange={setOtpCode}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="123456"
+                        error={errors.otpCode}
+                      />
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Test master code: <strong className="text-foreground font-mono">123456</strong></span>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={handleSendOtp}
+                          className="font-semibold text-foreground underline underline-offset-2 hover:opacity-80"
+                        >
+                          Resend code
+                        </button>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                      >
+                        {loading ? "Verifying..." : isSignup ? "Verify & Create Account" : "Verify & Sign In"}
+                        {!loading && <Icon name="check" size={16} />}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {/* Social / Direct Google Login Section */}
+              <div data-auth-item className="relative my-6 text-center">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                  <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Direct Google Sign In Button */}
+              <div data-auth-item className="space-y-3">
+                {googleClientId && (
+                  <div
+                    ref={googleBtnContainerRef}
+                    className="flex w-full justify-center overflow-hidden rounded-full [&>iframe]:!mx-auto"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleGoogleBtnClick}
+                  className="flex w-full h-13 items-center justify-center gap-3 rounded-full border border-border bg-surface px-6 text-xs font-semibold uppercase tracking-[0.12em] text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/40"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                  </svg>
+                  <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
+                </button>
+              </div>
+
+              {/* Switch to Login / Signup Bottom Link */}
+              <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">
+                {isSignup ? "Already have an account? " : "New to Gayatri Bhai? "}
+                <Link href={isSignup ? "/login" : "/signup"} replace className="font-semibold text-foreground underline underline-offset-4">
+                  {isSignup ? "Sign in" : "Create account"}
+                </Link>
+              </p>
+            </>
           )}
-
-          {/* Social / Direct Google Login Section */}
-          <div data-auth-item className="relative my-6 text-center">
-            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-widest">
-              <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Direct Google Sign In Button */}
-          <div data-auth-item className="space-y-3">
-            {googleClientId && (
-              <div
-                ref={googleBtnContainerRef}
-                className="flex w-full justify-center overflow-hidden rounded-full [&>iframe]:!mx-auto"
-              />
-            )}
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleGoogleBtnClick}
-              className="flex w-full h-13 items-center justify-center gap-3 rounded-full border border-border bg-surface px-6 text-xs font-semibold uppercase tracking-[0.12em] text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/40"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
-              </svg>
-              <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
-            </button>
-          </div>
-
-          {/* Switch to Login / Signup Bottom Link */}
-          <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">
-            {isSignup ? "Already have an account? " : "New to Gayatri Bhai? "}
-            <Link href={isSignup ? "/login" : "/signup"} replace className="font-semibold text-foreground underline underline-offset-4">
-              {isSignup ? "Sign in" : "Create account"}
-            </Link>
-          </p>
 
           {/* Store Admin Portal Access Info */}
           <div data-auth-item className="mt-6 rounded-lg border border-border/80 bg-surface/50 p-3.5 text-center">
@@ -945,105 +1149,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           </ul>
         </div>
       </div>
-
-      {/* ── GOOGLE FAST-CONNECT MODAL ── */}
-      {showGoogleConnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
-                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
-                </svg>
-                <div>
-                  <h3 className="text-base font-semibold leading-none">Sign in with Google</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Gayatri Bhai Secure Atelier</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleConnectModal(false)}
-                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1 rounded-full hover:bg-surface-2 transition-colors"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleDirectGoogleSubmit} className="mt-4 space-y-4">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Connect your real Google account. Your profile and patron rewards will be linked directly to your atelier account.
-              </p>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Google / Gmail Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  autoFocus
-                  value={directGmail}
-                  onChange={(e) => setDirectGmail(e.target.value)}
-                  placeholder="e.g. yourname@gmail.com"
-                  className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-foreground focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Display Name (optional)
-                </label>
-                <input
-                  type="text"
-                  value={directGmailName}
-                  onChange={(e) => setDirectGmailName(e.target.value)}
-                  placeholder="e.g. Rahul Sharma"
-                  className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-foreground focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Quick Preset Buttons for Store Owner / Admin */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDirectGmail("gayatripuri634@gmail.com")
-                    setDirectGmailName("Gayatri Puri")
-                  }}
-                  className="rounded-full border border-border/80 bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
-                >
-                  Store Owner: gayatripuri634@gmail.com
-                </button>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowGoogleConnectModal(false)}
-                  className="flex-1 rounded-full border border-border py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 rounded-full bg-foreground py-2.5 text-xs font-semibold uppercase tracking-wider text-background hover:opacity-90 disabled:opacity-60 transition-opacity"
-                >
-                  {loading ? "Signing in..." : "Continue"}
-                </button>
-              </div>
-
-              <p className="text-[10px] text-center text-muted-foreground/80 pt-1">
-                Instant real account creation • 250 Welcome Points • 100% Encrypted
-              </p>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

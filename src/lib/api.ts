@@ -236,6 +236,32 @@ export async function apiVerifyOtp(identifier: string, otp: string, name?: strin
   return data;
 }
 
+// ─── Password Reset ───
+export async function apiForgotPassword(email: string) {
+  const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new AuthError(data.error || "Failed to request password reset", res.status, data);
+  return data;
+}
+
+export async function apiResetPassword(email: string, otp: string, newPassword: string) {
+  const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new AuthError(data.error || "Failed to reset password", res.status, data);
+  if (data.token && typeof window !== "undefined") {
+    localStorage.setItem("gb_customer_token", data.token);
+  }
+  return data;
+}
+
 // ─── Google Authentication ───
 export async function apiGoogleLogin(payload: {
   credential?: string;

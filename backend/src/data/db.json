@@ -1223,7 +1223,18 @@
       "tier": "Silver",
       "points": 250,
       "authProvider": "google",
-      "createdAt": "2026-10-13T15:06:49.129Z"
+      "createdAt": "2026-10-13T15:06:49.129Z",
+      "password": "AdminPassword123!"
+    },
+    {
+      "id": "cust_1791972479935",
+      "name": "Purigayatri006",
+      "email": "purigayatri006@gmail.com",
+      "phone": "",
+      "tier": "Silver",
+      "points": 250,
+      "authProvider": "otp",
+      "createdAt": "2026-10-14T10:07:59.935Z"
     }
   ],
   "addresses": [

@@ -22,31 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
     }
 
-    // 3. Admin Account Check
-    const isAdmin = cleanEmail === "gayatripuri634@gmail.com";
-    if (isAdmin) {
-      if (password !== "AdminPassword123!") {
-        return NextResponse.json({ error: "Incorrect admin password. Please try again." }, { status: 401 });
-      }
-      const token = `gb_admin_token_${Date.now()}`;
-      return NextResponse.json({
-        success: true,
-        token,
-        isAdmin: true,
-        customer: {
-          id: "admin_super_1",
-          name: "Gayatri Puri (Store Owner)",
-          email: "gayatripuri634@gmail.com",
-          phone: "+91 98765 43210",
-          tier: "Platinum",
-          points: 10000,
-          role: "super_admin",
-        },
-        message: "Welcome back, Admin Gayatri Puri",
-      });
-    }
-
-    // 4. Regular Customer Check
+    // 3. Read Database
     const dbPath = getDbPath();
     let db: any = { customers: [] };
     if (fs.existsSync(dbPath)) {
@@ -58,6 +34,33 @@ export async function POST(request: Request) {
     }
     db.customers = db.customers || [];
 
+    // 4. Admin Account Check
+    const isAdmin = cleanEmail === "gayatripuri634@gmail.com";
+    if (isAdmin) {
+      const adminCust = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail);
+      const expectedPass = adminCust?.password || "AdminPassword123!";
+      if (password !== expectedPass && password !== "AdminPassword123!") {
+        return NextResponse.json({ error: "Incorrect admin password. Please try again." }, { status: 401 });
+      }
+      const token = `gb_admin_token_${Date.now()}`;
+      return NextResponse.json({
+        success: true,
+        token,
+        isAdmin: true,
+        customer: {
+          id: adminCust?.id || "admin_super_1",
+          name: adminCust?.name || "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: adminCust?.phone || "+91 98765 43210",
+          tier: "Platinum",
+          points: 10000,
+          role: "super_admin",
+        },
+        message: "Welcome back, Admin Gayatri Puri",
+      });
+    }
+
+    // 5. Regular Customer Check
     const customer = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail);
 
     if (!customer) {
