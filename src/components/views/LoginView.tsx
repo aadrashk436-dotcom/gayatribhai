@@ -129,7 +129,9 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     { scope: root, dependencies: [mode, authMethod, otpStep, isForgotPassword, resetStep], revertOnUpdate: true },
   )
 
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+  const googleClientId =
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+    "766014429369-udhugg1ba4nmig8j16622loo6ou88dnm.apps.googleusercontent.com"
 
   // Load Google Identity Services (GIS) client script
   useEffect(() => {
