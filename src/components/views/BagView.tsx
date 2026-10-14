@@ -72,7 +72,7 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
   }
 
   const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0
-  const finalTotal = Math.max(0, subtotal - couponDiscount + (subtotal >= 1999 ? 0 : 99))
+  const finalTotal = Math.max(0, subtotal - couponDiscount)
 
 
   const handleUpdate = (item: CartItem, amount: number) => {
@@ -153,16 +153,27 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
       </div>
       <div className="bag-layout">
         <div className="bag-items">
-          <div className="shipping-progress">
-            <div>
-              <Icon name="truck" />
-              <span>
-                {subtotal >= 1999
-                  ? "You unlocked complimentary shipping"
-                  : `${money(1999 - subtotal)} away from free shipping`}
+          <div
+            className="shipping-progress"
+            style={{
+              background: "rgba(212, 175, 55, 0.06)",
+              borderColor: "rgba(212, 175, 55, 0.2)",
+              padding: "12px 16px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Icon name="truck" size={18} />
+              <span style={{ fontSize: "12px", color: "var(--foreground)", fontWeight: 500 }}>
+                Live courier partner rates calculated at checkout based on package weight & dimensions
               </span>
             </div>
-            <i style={{ width: `${Math.min(100, subtotal / 19.99)}%` }} />
+            <span style={{ fontSize: "11px", color: "#d4af37", fontWeight: 700, letterSpacing: "0.5px" }}>
+              Pan-India Delivery
+            </span>
           </div>
           {detailed.map((item) => (
             <article className="bag-item" key={`${item.id}-${item.size || "M"}`}>
@@ -284,8 +295,8 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
             )}
             <div>
               <dt>Shipping</dt>
-              <dd className="saving">
-                {subtotal >= 1999 ? "FREE" : money(99)}
+              <dd style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+                Calculated at checkout
               </dd>
             </div>
             <div>
@@ -296,7 +307,7 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
           <div className="summary-total">
             <span>
               <strong>Total</strong>
-              <small>Inclusive of all taxes</small>
+              <small>+ Courier shipping added at checkout</small>
             </span>
             <b>{money(finalTotal)}</b>
           </div>

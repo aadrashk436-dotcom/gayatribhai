@@ -82,7 +82,7 @@ export function DuoBanners() {
 
 const PERKS = [
   { title: "10% off", sub: "First order · AVYR10", image: "/assets/site_media/instagram_lookbook_ing1.jpg" },
-  { title: "Free shipping", sub: "On orders ₹1,999+", image: "/assets/banners/folded-shirts.jpg" },
+  { title: "Express shipping", sub: "Fast live courier delivery", image: "/assets/banners/folded-shirts.jpg" },
   { title: "Hand finished", sub: "18 hours per shirt", image: "/assets/banners/craft-detail.jpg" },
 ]
 

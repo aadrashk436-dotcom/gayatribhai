@@ -116,7 +116,7 @@ export function generateInvoicePdf(order: InvoiceOrder): Uint8Array {
   let rawDiscount = order.discount ?? 0
   if (rawDiscount > 10000) rawDiscount = Math.round(rawDiscount / 100)
 
-  let rawShipping = order.shipping ?? (rawSubtotal >= 1999 ? 0 : 99)
+  let rawShipping = order.shipping ?? 0
   if (rawShipping > 10000) rawShipping = Math.round(rawShipping / 100)
 
   let rawTotal = order.total ?? (rawSubtotal - rawDiscount + rawShipping)

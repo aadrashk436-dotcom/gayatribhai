@@ -6,6 +6,13 @@ import path from "path";
 // Helper to get catalog products including locally saved products
 function getAllCatalogProducts() {
   try {
+    const productsPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+    if (fs.existsSync(productsPath)) {
+      const pData = JSON.parse(fs.readFileSync(productsPath, "utf8"));
+      if (Array.isArray(pData) && pData.length > 0) {
+        return pData;
+      }
+    }
     const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
     if (fs.existsSync(dbPath)) {
       const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
@@ -14,7 +21,7 @@ function getAllCatalogProducts() {
       }
     }
   } catch (err) {
-    console.warn("Could not read db products for shipping:", err);
+    console.warn("Could not read products for shipping:", err);
   }
   return localProducts;
 }
@@ -113,6 +120,14 @@ export async function POST(request: Request) {
             etd: c.etd || "2-3 business days",
             mode: c.courier_name?.toLowerCase().includes("air") ? "AIR" : "SURFACE",
           }));
+
+          // Sort by rate ascending so lowest real rate is first
+          couriersList.sort((a: any, b: any) => a.rate - b.rate);
+          if (couriersList.length > 0) {
+            couriersList[0].tag = "Best Value";
+            const fastestAir = couriersList.find((c: any) => c.mode === "AIR" && c.id !== couriersList[0].id);
+            if (fastestAir) fastestAir.tag = "Fastest Air";
+          }
         }
       }
     } catch (e) {

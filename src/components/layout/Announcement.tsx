@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-const MESSAGES = ["Free shipping on orders above ₹1,999", "Use AVYR10 for 10% off your first order", "Easy 7-day returns & exchanges"]
+const MESSAGES = ["Pan-India Express Doorstep Delivery", "Use AVYR10 for 10% off your first order", "Easy 7-day returns & exchanges"]
 
 export default function Announcement() {
   const [index, setIndex] = useState(0)

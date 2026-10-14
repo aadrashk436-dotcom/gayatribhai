@@ -7,7 +7,7 @@ import { useGSAP } from "@gsap/react"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const ITEMS = ["Hand embroidered", "Pure linen", "Made in Surat", "Limited batches", "Free shipping ₹1,999+", "7-day returns"]
+const ITEMS = ["Hand embroidered", "Pure linen", "Made in Surat", "Limited batches", "Pan-India Express Delivery", "7-day returns"]
 
 export default function Marquee() {
   const root = useRef<HTMLDivElement>(null)

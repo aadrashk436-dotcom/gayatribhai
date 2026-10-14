@@ -48,12 +48,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // Dynamic courier rate or free if subtotal >= 1999
+    // Real courier shipping rate calculated based on package weight and dimensions
     let shippingPaise = 0;
-    if (typeof shippingFee === "number") {
+    if (typeof shippingFee === "number" && shippingFee > 0) {
       shippingPaise = Math.round(shippingFee * 100);
+    } else if (selectedCourier && typeof selectedCourier.rate === "number" && selectedCourier.rate > 0) {
+      shippingPaise = Math.round(selectedCourier.rate * 100);
     } else {
-      shippingPaise = subtotalPaise >= 199900 ? 0 : 9900;
+      shippingPaise = 9900; // standard fallback
     }
 
     const totalPaise = Math.max(100, subtotalPaise - discountPaise + shippingPaise);

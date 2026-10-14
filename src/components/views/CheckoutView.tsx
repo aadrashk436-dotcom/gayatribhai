@@ -505,11 +505,11 @@ export function DeliveryStep({
             onPackageCalculated(data.packageSummary)
           }
 
-          // Set default courier if none selected
-          if (!selectedCourier && data.couriers && data.couriers.length > 0) {
-            const first = data.couriers[0]
-            const initialRate = subtotal >= 1999 ? 0 : first.rate
-            onSelectCourier(first, initialRate)
+          // Set default courier or keep current selection with real rate
+          if (data.couriers && data.couriers.length > 0) {
+            const existing = selectedCourier ? data.couriers.find((c: any) => c.id === selectedCourier.id || c.name === selectedCourier.name) : null
+            const chosen = existing || data.couriers[0]
+            onSelectCourier(chosen, chosen.rate)
           }
         }
       } catch (e) {
@@ -542,28 +542,61 @@ export function DeliveryStep({
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "12px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Icon name="truck" size={18} />
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Icon name="truck" size={20} />
           <div>
             <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--foreground)" }}>
               Shipping to PIN: <strong style={{ color: "#d4af37", letterSpacing: "1px" }}>{pincode}</strong>
             </span>
             <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--muted-foreground)" }}>
-              {cart.reduce((a, b) => a + b.quantity, 0)} {cart.reduce((a, b) => a + b.quantity, 0) === 1 ? "item" : "items"} in package · Live rates calculated
+              {cart.reduce((a, b) => a + b.quantity, 0)} {cart.reduce((a, b) => a + b.quantity, 0) === 1 ? "item" : "items"} in package · Real live courier rates
             </p>
           </div>
         </div>
 
-        {subtotal >= 1999 ? (
-          <span style={{ fontSize: "12px", color: "#10b981", fontWeight: 600 }}>
-            🎉 Complimentary Free Atelier Shipping Unlocked!
-          </span>
+        {packageSummary ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+              fontSize: "12px",
+            }}
+          >
+            <span
+              style={{
+                background: "rgba(212, 175, 55, 0.12)",
+                border: "1px solid rgba(212, 175, 55, 0.3)",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                fontWeight: 600,
+                color: "#d4af37",
+              }}
+            >
+              ⚖️ {packageSummary.billableWeightKg || 0.5} kg (Billable)
+            </span>
+            {packageSummary.dimensions && (
+              <span
+                style={{
+                  background: "var(--muted-bg, rgba(255,255,255,0.05))",
+                  border: "1px solid var(--border)",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  color: "var(--muted-foreground)",
+                  fontSize: "11px",
+                }}
+              >
+                📐 {packageSummary.dimensions.length}×{packageSummary.dimensions.breadth}×{packageSummary.dimensions.height} cm
+              </span>
+            )}
+          </div>
         ) : (
           <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
-            Standard flat rate or express courier available below
+            Rates calculated based on dead weight & volumetric dimensions
           </span>
         )}
       </div>
@@ -576,9 +609,6 @@ export function DeliveryStep({
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {couriers.map((courier: any) => {
             const isSelected = selectedCourier?.id === courier.id || selectedCourier?.name === courier.name
-            // Standard delivery is free if subtotal >= 1999
-            const isFreeEligible = subtotal >= 1999 && (courier.mode === "SURFACE" || courier.rate <= 99)
-            const effectiveRate = isFreeEligible ? 0 : courier.rate
 
             return (
               <div
@@ -595,7 +625,7 @@ export function DeliveryStep({
                   background: isSelected ? "rgba(212, 175, 55, 0.08)" : "transparent",
                   transition: "all 0.2s ease",
                 }}
-                onClick={() => onSelectCourier(courier, effectiveRate)}
+                onClick={() => onSelectCourier(courier, courier.rate)}
               >
                 <span className="radio" style={{ borderColor: isSelected ? "#d4af37" : "inherit" }} />
                 <Icon name="truck" size={20} />
@@ -619,8 +649,8 @@ export function DeliveryStep({
                         </span>
                       )}
                     </strong>
-                    <span style={{ fontSize: "14px", fontWeight: 700, color: effectiveRate === 0 ? "#10b981" : "#d4af37" }}>
-                      {effectiveRate === 0 ? "FREE" : money(effectiveRate)}
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#d4af37" }}>
+                      {money(courier.rate)}
                     </span>
                   </div>
                   <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
@@ -841,10 +871,11 @@ export function CheckoutView({
   }, [cleanAddresses, selectedAddress])
 
   const [selectedCourier, setSelectedCourier] = useState<any>(null)
-  const [shippingFee, setShippingFee] = useState<number>(subtotal >= 1999 ? 0 : 99)
+  const [shippingFee, setShippingFee] = useState<number>(0)
   const [packageSummary, setPackageSummary] = useState<any>(null)
 
-  const finalTotal = subtotal + shippingFee
+  const effectiveShipping = shippingFee > 0 ? shippingFee : (selectedCourier?.rate ? Number(selectedCourier.rate) : 0)
+  const finalTotal = subtotal + effectiveShipping
 
   const handlePay = async (chosenMethod = "UPI") => {
     if (!selectedAddress) {
@@ -871,7 +902,7 @@ export function CheckoutView({
             undefined,
             undefined,
             {
-              shippingFee,
+              shippingFee: effectiveShipping,
               selectedCourier,
               packageSummary,
               paymentMethod: "Cash on Delivery",
@@ -916,7 +947,7 @@ export function CheckoutView({
           undefined,
           undefined,
           {
-            shippingFee,
+            shippingFee: effectiveShipping,
             selectedCourier,
             packageSummary,
             paymentMethod: chosenMethod || "Razorpay (Online)",
@@ -1156,8 +1187,8 @@ export function CheckoutView({
             </div>
             <div>
               <dt>Shipping {selectedCourier ? `(${selectedCourier.name})` : ""}</dt>
-              <dd style={{ color: shippingFee === 0 ? "#10b981" : "inherit" }}>
-                {shippingFee === 0 ? "FREE" : money(shippingFee)}
+              <dd style={{ color: "var(--foreground)", fontWeight: 600 }}>
+                {effectiveShipping > 0 ? money(effectiveShipping) : (selectedCourier ? money(selectedCourier.rate) : "Calculated in Step 2")}
               </dd>
             </div>
           </dl>
