@@ -736,20 +736,29 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </Link>
               </div>
 
-              <h1 data-auth-item className="font-display text-2xl sm:text-3xl md:text-4xl leading-tight">
-                {authStep === "otp"
-                  ? "Enter the 6-digit verification code sent to your email address."
-                  : isSignup
-                  ? "Enter your details to receive your 6-digit verification code."
-                  : "Sign in with your email & password to receive your verification code."}
-              </h1>
-              <p data-auth-item className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
-                {authStep === "otp"
-                  ? `Sent to ${email}. Check your inbox and spam folder.`
-                  : isSignup
-                  ? "Track bespoke orders, access exclusive drops, and enjoy patron benefits."
-                  : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
-              </p>
+              <div data-auth-item className="mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#d4af37]">
+                  {authStep === "otp"
+                    ? "Step 2 of 2 • Email Verification"
+                    : isSignup
+                    ? "New Patron Registration"
+                    : "Patron Access"}
+                </span>
+                <h1 className="mt-1 font-display text-2xl sm:text-3xl md:text-4xl leading-tight">
+                  {authStep === "otp"
+                    ? "Verify Your Email"
+                    : isSignup
+                    ? "Create Account"
+                    : "Sign In"}
+                </h1>
+                <p className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
+                  {authStep === "otp"
+                    ? `Enter the 6-digit verification code sent to ${email}.`
+                    : isSignup
+                    ? "Enter your name, email, and create a password to register."
+                    : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
+                </p>
+              </div>
 
               {authStep === "credentials" ? (
                 <>
@@ -803,12 +812,12 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
                     <Field
                       id="password"
-                      label="Password"
+                      label={isSignup ? "Create a Password (min 6 characters)" : "Password"}
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={setPassword}
                       autoComplete={isSignup ? "new-password" : "current-password"}
-                      placeholder="••••••••"
+                      placeholder={isSignup ? "Choose a strong password (min 6 chars)" : "••••••••"}
                       error={errors.password}
                       trailing={
                         <button
