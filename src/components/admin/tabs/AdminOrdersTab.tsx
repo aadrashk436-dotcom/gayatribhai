@@ -28,6 +28,8 @@ interface AdminOrdersTabProps {
   handleBulkAssignShiprocket: () => void
   handleBulkCancel: () => void
   handleVerifyOrder: (id: string) => void
+  handleMarkDispatched?: (id: string) => void
+  handleMarkDelivered?: (id: string) => void
   setInspectOrderModal: (order: AdminOrder | null) => void
   setAssignCourierModal: (order: AdminOrder | null) => void
   setCancelOrderModal: (order: AdminOrder | null) => void
@@ -52,6 +54,8 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   handleBulkAssignShiprocket,
   handleBulkCancel,
   handleVerifyOrder,
+  handleMarkDispatched,
+  handleMarkDelivered,
   setInspectOrderModal,
   setAssignCourierModal,
   setCancelOrderModal,
@@ -356,6 +360,30 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
+                          {/* Step 3: Mark Dispatched / In Transit */}
+                          {(ord.status === "Assigned to Courier" || (ord.status === "Verified" && ord.awb)) && handleMarkDispatched && (
+                            <button
+                              onClick={() => handleMarkDispatched(ord.id)}
+                              className="rounded-lg bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-500 shadow transition flex items-center gap-1"
+                              title="Mark courier picked up and in transit"
+                            >
+                              <Truck className="h-3 w-3" />
+                              <span>In Transit</span>
+                            </button>
+                          )}
+
+                          {/* Step 4: Mark Delivered */}
+                          {(ord.status === "Dispatched" || ord.status === "Assigned to Courier") && handleMarkDelivered && (
+                            <button
+                              onClick={() => handleMarkDelivered(ord.id)}
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 shadow transition flex items-center gap-1"
+                              title="Mark order as Delivered & collect COD payment"
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Delivered</span>
+                            </button>
+                          )}
+
                           {/* Cancellation button: allowed ONLY until shipping/AWB is assigned */}
                           {!ord.awb &&
                             ord.status !== "Assigned to Courier" &&
@@ -374,7 +402,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {/* Tracking button if assigned */}
                           {ord.awb && (
                             <button
-                              onClick={() => showToast(`Tracking AWB #${ord.awb} via Shiprocket API (In Transit)`)}
+                              onClick={() => showToast(`Tracking AWB #${ord.awb} via Shiprocket API (${ord.status})`)}
                               className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition"
                               title="Track shipment"
                             >

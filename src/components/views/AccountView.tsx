@@ -161,9 +161,9 @@ function OrderCard({
   let statusLabel = order.status || "Pending Verification"
   if (isCancelled) statusLabel = "Cancelled"
   else if (isDelivered) statusLabel = "Delivered"
-  else if (isDispatched) statusLabel = "In Transit"
+  else if (isDispatched) statusLabel = "In Transit (Out for Delivery)"
   else if (isAssigned) statusLabel = "Courier Assigned"
-  else if (isVerified) statusLabel = "Verified & Approved"
+  else if (isVerified) statusLabel = "Order Verified & Packed"
   else statusLabel = "Order Placed"
 
   // Cancellation rule: ONLY allowed while shipping is NOT assigned yet (no AWB and not assigned/dispatched/delivered)
@@ -177,15 +177,19 @@ function OrderCard({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{orderId}</p>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                order.paymentMethod === "Cash on Delivery"
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                  : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-              }`}
-            >
-              {order.paymentMethod === "Cash on Delivery" ? "💵 Cash on Delivery" : "💳 Online (Paid)"}
-            </span>
+            {order.paymentMethod === "Cash on Delivery" ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                💵 Cash on Delivery {isDelivered ? "(Paid)" : "(Pay at Doorstep)"}
+              </span>
+            ) : order.paymentStatus === "Paid" ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                💳 Online (Paid)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+                💳 Online Payment ({order.paymentStatus || "Pending"})
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{dateStr}</p>
         </div>
@@ -209,7 +213,7 @@ function OrderCard({
       <div className="mt-4 flex gap-4">
         <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-sm bg-surface-2">
           {product?.images?.[0] ? (
-            <Image src={product.images[0]} alt={product.name} fill sizes="72px" className="object-cover" />
+            <Image src={product.images[0]} alt="" fill sizes="72px" className="object-cover" />
           ) : (
             <div className="flex size-full items-center justify-center bg-surface-2 text-muted-foreground">
               <Icon name="package" size={24} />
@@ -522,17 +526,17 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
     const fetchOrders = async () => {
       setLoadingOrders(true)
       try {
-        const query = user.email
-          ? `email=${encodeURIComponent(user.email)}`
-          : user.phone
-          ? `phone=${encodeURIComponent(user.phone)}`
-          : ""
-        if (!query) {
+        const params = new URLSearchParams()
+        if (user.email) params.set("email", user.email)
+        if (user.phone) params.set("phone", user.phone)
+        if (user.id) params.set("userId", user.id)
+
+        if (!params.toString()) {
           setOrders([])
           setLoadingOrders(false)
           return
         }
-        const res = await fetch(`/api/orders?${query}`)
+        const res = await fetch(`/api/orders?${params.toString()}`)
         if (res.ok) {
           const data = await res.json()
           if (isMounted) {

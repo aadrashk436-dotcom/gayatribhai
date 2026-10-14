@@ -8,12 +8,30 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "LKDAqXf8Q3zqLQL7ziSnMQw1"
 
 export async function POST(request: Request) {
   try {
-    const { items, address, couponCode, shippingFee, selectedCourier, packageSummary, paymentMethod: rawMethod } = await request.json();
+    const body = await request.json();
+    const {
+      items,
+      address,
+      couponCode,
+      shippingFee,
+      selectedCourier,
+      packageSummary,
+      paymentMethod: rawMethod,
+      userEmail,
+      userPhone,
+      userName,
+      userId,
+    } = body;
+
     if (!items || !items.length) {
       return NextResponse.json({ error: "Cart items are required" }, { status: 400 });
     }
 
     const isCod = rawMethod === "Cash on Delivery" || rawMethod === "COD";
+
+    const customerEmail = userEmail || address?.email || "care@gayatribhai.com";
+    const customerPhone = userPhone || address?.phone || "+91 98765 43210";
+    const customerName = userName || address?.name || "Customer";
 
     // Enrich items with real product info from database / store
     const enrichedItems = items.map((item: any) => {
@@ -83,9 +101,10 @@ export async function POST(request: Request) {
           currency: "INR",
           receipt: orderNumber,
           notes: {
-            customer_name: address?.name || "Customer",
+            customer_name: customerName,
+            customer_email: customerEmail,
             city: address?.city || "",
-            phone: address?.phone || "",
+            phone: customerPhone,
           },
         }),
       });
@@ -101,16 +120,25 @@ export async function POST(request: Request) {
     const newOrder = {
       id: orderNumber,
       orderNumber,
-      customer: address?.name || "Customer",
-      customerName: address?.name || "Customer",
-      email: address?.email || "care@gayatribhai.com",
-      customerEmail: address?.email || "care@gayatribhai.com",
-      phone: address?.phone || "+91 98765 43210",
-      customerPhone: address?.phone || "+91 98765 43210",
+      customer: customerName,
+      customerName,
+      email: customerEmail,
+      customerEmail,
+      phone: customerPhone,
+      customerPhone,
+      userId: userId || null,
       address: streetAddr,
       city: cityStr,
       pincode: address?.pincode || "",
-      shippingAddress: address || {},
+      shippingAddress: {
+        ...(address || {}),
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+        street: streetAddr,
+        city: cityStr,
+        pincode: address?.pincode || "",
+      },
       shirtName: firstItem.name,
       sku: firstItem.sku,
       size: firstItem.size,
@@ -131,7 +159,7 @@ export async function POST(request: Request) {
       paymentId: isCod ? `cod_${orderNumber}` : (rzpOrderId || ""),
       paymentStatus: isCod ? "Pending COD" : "Pending",
       razorpayOrderId: rzpOrderId || null,
-      status: "Pending Verification",
+      status: isCod ? "Pending Verification" : "Pending Verification",
       date: formattedDate,
       createdAt: new Date().toISOString(),
     };

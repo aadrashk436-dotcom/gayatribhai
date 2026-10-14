@@ -685,13 +685,12 @@ export function PaymentStep({
   onBack: () => void
 }) {
   const [paymentType, setPaymentType] = useState<"ONLINE" | "COD">("ONLINE")
-  const [onlineSubMethod, setOnlineSubMethod] = useState("UPI")
 
   const handleProceed = () => {
     if (paymentType === "COD") {
       onPay("Cash on Delivery")
     } else {
-      onPay(onlineSubMethod)
+      onPay("Razorpay (Online)")
     }
   }
 
@@ -756,38 +755,85 @@ export function PaymentStep({
       </div>
 
       {paymentType === "ONLINE" ? (
-        <div>
-          <div className="payment-tabs">
-            {["UPI", "Card", "Net Banking", "Wallet"].map((x) => (
-              <button
-                className={onlineSubMethod === x ? "active" : ""}
-                onClick={() => setOnlineSubMethod(x)}
-                key={x}
-                type="button"
+        <div
+          style={{
+            padding: "20px",
+            background: "rgba(212, 175, 55, 0.05)",
+            border: "1px solid rgba(212, 175, 55, 0.25)",
+            borderRadius: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "10px",
+                  background: "rgba(212, 175, 55, 0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "18px",
+                }}
               >
-                {x}
-              </button>
-            ))}
+                🔒
+              </div>
+              <div>
+                <strong style={{ fontSize: "14px", color: "var(--foreground)", display: "block" }}>
+                  Razorpay Secure Gateway
+                </strong>
+                <span style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
+                  100% Encrypted &amp; RBI Compliant Payment
+                </span>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                padding: "3px 8px",
+                borderRadius: "6px",
+                background: "rgba(16, 185, 129, 0.15)",
+                color: "#10b981",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+              }}
+            >
+              ZERO TRANSACTION FEE
+            </span>
           </div>
-          <div className="payment-panel">
-            {onlineSubMethod === "UPI" ? (
-              <>
-                <label>
-                  UPI ID (Optional)
-                  <input placeholder="yourname@okhdfcbank" />
-                </label>
-                <p>Pay securely using Google Pay, PhonePe, Paytm, BHIM, or any UPI app via Razorpay Secure Gateway.</p>
-              </>
-            ) : onlineSubMethod === "Card" ? (
-              <>
-                <p>Pay securely using Visa, MasterCard, RuPay, Maestro, or Corporate Cards via Razorpay Secure Gateway.</p>
-              </>
-            ) : (
-              <p>
-                Select your preferred {onlineSubMethod.toLowerCase()} option securely on the next Razorpay checkout screen.
-              </p>
-            )}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+              gap: "8px",
+              padding: "12px",
+              background: "var(--muted-bg, rgba(255, 255, 255, 0.03))",
+              borderRadius: "10px",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--foreground)" }}>
+              <span>⚡</span> <span>UPI (GPay, PhonePe, Paytm, QR)</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--foreground)" }}>
+              <span>💳</span> <span>All Credit &amp; Debit Cards</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--foreground)" }}>
+              <span>🏦</span> <span>50+ Net Banking Banks</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--foreground)" }}>
+              <span>📱</span> <span>Paytm &amp; Major Wallets</span>
+            </div>
           </div>
+
+          <p style={{ margin: 0, fontSize: "12px", color: "var(--muted-foreground)", lineHeight: 1.5 }}>
+            Click <strong>&quot;Pay {money(total)} via Razorpay&quot;</strong> below to open the secure Razorpay checkout modal where you can pay instantly via UPI app, QR scan, card, or net banking.
+          </p>
         </div>
       ) : (
         <div
@@ -893,12 +939,19 @@ export function CheckoutView({
         quantity: item.quantity,
       }))
 
+      const orderAddress = {
+        ...selectedAddress,
+        email: selectedAddress.email || user?.email || "care@gayatribhai.com",
+        phone: selectedAddress.phone || user?.phone || "+91 98765 43210",
+        name: selectedAddress.name || user?.name || "Customer",
+      }
+
       // Handle Cash on Delivery directly
       if (chosenMethod === "Cash on Delivery" || chosenMethod === "COD") {
         try {
           const orderRes = await apiCreateOrder(
             orderItems,
-            selectedAddress,
+            orderAddress,
             undefined,
             undefined,
             {
@@ -906,6 +959,10 @@ export function CheckoutView({
               selectedCourier,
               packageSummary,
               paymentMethod: "Cash on Delivery",
+              userEmail: user?.email,
+              userPhone: user?.phone,
+              userName: user?.name,
+              userId: user?.id,
             }
           )
           if (orderRes?.orderNumber) {
@@ -938,12 +995,13 @@ export function CheckoutView({
       }
 
       let rzpOrderId = ""
+      let createdOrderNum = ""
       let finalAmount = finalTotal * 100 // paise
 
       try {
         const orderRes = await apiCreateOrder(
           orderItems,
-          selectedAddress,
+          orderAddress,
           undefined,
           undefined,
           {
@@ -951,12 +1009,17 @@ export function CheckoutView({
             selectedCourier,
             packageSummary,
             paymentMethod: chosenMethod || "Razorpay (Online)",
+            userEmail: user?.email,
+            userPhone: user?.phone,
+            userName: user?.name,
+            userId: user?.id,
           }
         )
         if (orderRes?.razorpayOrderId) {
           rzpOrderId = orderRes.razorpayOrderId
           finalAmount = orderRes.amount
           if (orderRes.orderNumber) {
+            createdOrderNum = orderRes.orderNumber
             setConfirmedOrderId(orderRes.orderNumber)
           }
         }
@@ -978,7 +1041,7 @@ export function CheckoutView({
         order_id: rzpOrderId || undefined,
         prefill: {
           name: user?.name || selectedAddress.name || "",
-          email: user?.email || "care@gayatribhai.com",
+          email: user?.email || selectedAddress.email || "care@gayatribhai.com",
           contact: selectedAddress.phone || user?.phone || "",
         },
         theme: {
@@ -986,9 +1049,11 @@ export function CheckoutView({
         },
         handler: async function (response: any) {
           try {
-            if (rzpOrderId) {
-              await apiVerifyPayment(response)
-            }
+            await apiVerifyPayment({
+              ...response,
+              orderId: rzpOrderId,
+              orderNumber: createdOrderNum,
+            })
           } catch (e) {
             console.error("Payment verify notification:", e)
           }

@@ -11,6 +11,8 @@ interface InspectOrderModalProps {
   onVerify: (orderId: string) => void
   onOpenAssignCourier: (order: AdminOrder) => void
   onOpenCancelOrder: (order: AdminOrder) => void
+  onMarkDispatched?: (orderId: string) => void
+  onMarkDelivered?: (orderId: string) => void
   showToast: (msg: string) => void
 }
 
@@ -20,6 +22,8 @@ export function InspectOrderModal({
   onVerify,
   onOpenAssignCourier,
   onOpenCancelOrder,
+  onMarkDispatched,
+  onMarkDelivered,
   showToast,
 }: InspectOrderModalProps) {
   if (!order) return null
@@ -126,7 +130,13 @@ export function InspectOrderModal({
             <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Payment Information</p>
             <div className="flex items-center justify-between">
               <span className="text-xs text-zinc-300">{order.paymentMethod}</span>
-              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  order.paymentStatus === "Paid"
+                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                }`}
+              >
                 {order.paymentStatus}
               </span>
             </div>
@@ -180,6 +190,26 @@ export function InspectOrderModal({
               >
                 <Truck className="h-3.5 w-3.5" />
                 <span>Assign Shiprocket</span>
+              </button>
+            )}
+
+            {order.status === "Assigned to Courier" && onMarkDispatched && (
+              <button
+                onClick={() => onMarkDispatched(order.id)}
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500 shadow-lg"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                <span>Mark In Transit</span>
+              </button>
+            )}
+
+            {(order.status === "Assigned to Courier" || order.status === "Dispatched") && onMarkDelivered && (
+              <button
+                onClick={() => onMarkDelivered(order.id)}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 shadow-lg"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Mark Delivered</span>
               </button>
             )}
 

@@ -43,11 +43,13 @@ function normalizeOrder(o: any) {
     o.payment_method === "cod" ||
     o.payment_method === "Cash on Delivery";
 
-  let displayPaymentStatus: "Paid" | "Pending COD" = isCodOrder ? "Pending COD" : "Pending COD";
+  let displayPaymentStatus = isCodOrder ? "Pending COD" : "Pending";
   if (o.paymentStatus === "PAID" || o.paymentStatus === "Paid" || o.payment_status === "paid") {
     displayPaymentStatus = "Paid";
+  } else if (displayStatus === "Delivered" && isCodOrder) {
+    displayPaymentStatus = "Paid";
   } else if (!isCodOrder && (o.paymentStatus === "Pending" || o.paymentStatus === "PENDING")) {
-    displayPaymentStatus = "Pending COD"; // display status fallback
+    displayPaymentStatus = "Pending";
   }
 
   let formattedDate = o.date;
@@ -151,6 +153,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
     const phone = searchParams.get("phone");
+    const userId = searchParams.get("userId");
     const id = searchParams.get("id");
 
     const orders = readStoredOrders();
@@ -161,19 +164,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ order });
     }
 
-    if (email || phone) {
+    if (email || phone || userId) {
       const cleanEmail = email ? email.trim().toLowerCase() : null;
-      const cleanPhoneDigits = phone ? phone.replace(/\D/g, "") : null;
+      const cleanPhoneDigits = phone ? phone.replace(/\D/g, "").slice(-10) : null;
 
       const userOrders = orders.filter((o: any) => {
-        const emailMatch =
-          cleanEmail &&
-          (o.customerEmail?.toLowerCase() === cleanEmail || o.email?.toLowerCase() === cleanEmail);
-        const phoneMatch =
-          cleanPhoneDigits &&
-          (o.customerPhone?.replace(/\D/g, "") === cleanPhoneDigits ||
-            o.phone?.replace(/\D/g, "") === cleanPhoneDigits);
-        return Boolean(emailMatch || phoneMatch);
+        const orderEmail = (o.customerEmail || o.email || o.shippingAddress?.email || "").trim().toLowerCase();
+        const emailMatch = cleanEmail && orderEmail === cleanEmail;
+
+        const rawPhone = (o.customerPhone || o.phone || o.shippingAddress?.phone || "").replace(/\D/g, "").slice(-10);
+        const phoneMatch = cleanPhoneDigits && rawPhone.length >= 10 && rawPhone === cleanPhoneDigits;
+
+        const userIdMatch = userId && o.userId === userId;
+
+        return Boolean(emailMatch || phoneMatch || userIdMatch);
       });
       return NextResponse.json({ orders: userOrders, total: userOrders.length });
     }
@@ -221,7 +225,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, orderIds, status, courier, awb, cancelReason, verified } = body;
+    const { orderId, orderIds, status, courier, awb, cancelReason, verified, paymentStatus } = body;
 
     const orders = readStoredOrders();
     const targetIds = orderIds || (orderId ? [orderId] : []);
@@ -255,13 +259,19 @@ export async function PATCH(request: Request) {
 
     const updatedOrders = orders.map((o: any) => {
       if (targetIds.includes(o.id) || targetIds.includes(o.orderNumber)) {
+        const isNowDelivered = status === "Delivered" || status === "delivered";
+        const newPaymentStatus =
+          paymentStatus ||
+          (isNowDelivered && (o.paymentMethod === "Cash on Delivery" || o.paymentMethod === "COD") ? "Paid" : o.paymentStatus);
+
         return {
           ...o,
           ...(status && { status }),
-          ...(courier && { courier }),
+          ...(courier && { courier, courierName: courier }),
           ...(awb && { awb }),
           ...(cancelReason && { cancelReason }),
           ...(verified !== undefined && { verified, verifiedAt: new Date().toISOString() }),
+          ...(newPaymentStatus && { paymentStatus: newPaymentStatus }),
           updatedAt: new Date().toISOString(),
         };
       }

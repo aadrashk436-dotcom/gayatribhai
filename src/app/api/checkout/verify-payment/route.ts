@@ -7,7 +7,8 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "LKDAqXf8Q3zqLQL7ziSnMQw1"
 
 export async function POST(request: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await request.json();
+    const reqBody = await request.json();
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderNumber } = reqBody;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json({ error: "Missing required payment fields" }, { status: 400 });
@@ -29,7 +30,12 @@ export async function POST(request: Request) {
       if (fs.existsSync(dbPath)) {
         const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
         if (db.orders) {
-          const order = db.orders.find((o: any) => o.razorpayOrderId === razorpay_order_id || o.id === razorpay_order_id);
+          const order = db.orders.find(
+            (o: any) =>
+              o.razorpayOrderId === razorpay_order_id ||
+              o.id === razorpay_order_id ||
+              (orderNumber && (o.orderNumber === orderNumber || o.id === orderNumber))
+          );
           if (order) {
             order.paymentStatus = "Paid";
             order.status = "Verified";

@@ -532,6 +532,87 @@ export function AdminView() {
     }
   }
 
+  const handleMarkDispatched = async (orderId: string) => {
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+            ...o,
+            status: "Dispatched" as const,
+          }
+          : o
+      )
+    )
+
+    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+      setInspectOrderModal((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: "Dispatched",
+          }
+          : null
+      )
+    }
+
+    showToast(`Order #${orderId} marked as Dispatched (In Transit)!`)
+
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: "Dispatched",
+        }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleMarkDelivered = async (orderId: string) => {
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+            ...o,
+            status: "Delivered" as const,
+            paymentStatus: "Paid",
+          }
+          : o
+      )
+    )
+
+    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+      setInspectOrderModal((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: "Delivered",
+            paymentStatus: "Paid",
+          }
+          : null
+      )
+    }
+
+    showToast(`Order #${orderId} marked as Delivered! Payment marked as Paid.`)
+
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: "Delivered",
+          paymentStatus: "Paid",
+        }),
+      })
+    } catch (e) {
+      console.warn("Could not sync with API", e)
+    }
+  }
+
   const handleSelectAllOrders = (checked: boolean) => {
     if (checked) {
       setSelectedOrderIds(filteredOrders.map((o) => o.id))
@@ -1104,6 +1185,8 @@ export function AdminView() {
               handleBulkAssignShiprocket={handleBulkAssignShiprocket}
               handleBulkCancel={handleBulkCancel}
               handleVerifyOrder={handleVerifyOrder}
+              handleMarkDispatched={handleMarkDispatched}
+              handleMarkDelivered={handleMarkDelivered}
               setInspectOrderModal={setInspectOrderModal}
               setAssignCourierModal={setAssignCourierModal}
               setCancelOrderModal={setCancelOrderModal}
@@ -1289,6 +1372,8 @@ export function AdminView() {
           onVerify={handleVerifyOrder}
           onOpenAssignCourier={(order) => setAssignCourierModal(order)}
           onOpenCancelOrder={(order) => setCancelOrderModal(order)}
+          onMarkDispatched={handleMarkDispatched}
+          onMarkDelivered={handleMarkDelivered}
           showToast={showToast}
         />
       )}
