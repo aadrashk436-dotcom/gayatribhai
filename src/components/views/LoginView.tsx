@@ -29,7 +29,7 @@ function Field({
   error,
   trailing,
   inputMode,
-  placeholder = " ",
+  placeholder,
 }: {
   id: string
   label: string
@@ -43,8 +43,20 @@ function Field({
   placeholder?: string
 }) {
   return (
-    <div data-auth-item>
-      <div className={`group relative rounded-sm border bg-surface transition-colors focus-within:border-foreground ${error ? "border-[#b4321f]" : "border-border"}`}>
+    <div data-auth-item className="w-full">
+      <label
+        htmlFor={id}
+        className="block text-xs font-semibold uppercase tracking-[0.12em] text-foreground/80 mb-1.5"
+      >
+        {label}
+      </label>
+      <div
+        className={`group relative flex items-center rounded-xl border bg-surface/80 px-4 transition-all duration-200 focus-within:bg-surface focus-within:ring-2 ${
+          error
+            ? "border-[#b4321f] focus-within:border-[#b4321f] focus-within:ring-[#b4321f]/20"
+            : "border-border/80 hover:border-border focus-within:border-foreground focus-within:ring-foreground/10"
+        }`}
+      >
         <input
           id={id}
           type={type}
@@ -55,15 +67,9 @@ function Field({
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="peer h-13 sm:h-14 w-full bg-transparent px-3.5 sm:px-4 pb-1.5 pt-5 text-base sm:text-[15px] text-foreground outline-none"
+          className="h-12 sm:h-13 w-full bg-transparent text-base sm:text-[15px] font-normal text-foreground placeholder:text-muted-foreground/45 outline-none"
         />
-        <label
-          htmlFor={id}
-          className="pointer-events-none absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-sm sm:text-[15px] text-muted-foreground transition-all duration-200 peer-focus:top-3.5 sm:peer-focus:top-4 peer-focus:text-[10px] sm:peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.12em] peer-[:not(:placeholder-shown)]:top-3.5 sm:peer-[:not(:placeholder-shown)]:top-4 peer-[:not(:placeholder-shown)]:text-[10px] sm:peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:font-semibold peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-[0.12em]"
-        >
-          {label}
-        </label>
-        {trailing && <div className="absolute right-2 top-1/2 -translate-y-1/2">{trailing}</div>}
+        {trailing && <div className="ml-2 shrink-0">{trailing}</div>}
       </div>
       {error && (
         <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-[#b4321f]">
@@ -811,10 +817,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               {/* ── METHOD 1: PASSWORD AUTH ── */}
               {authMethod === "password" && (
                 <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
-                  {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" error={errors.name} />}
-                  <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" error={errors.email} />
+                  {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" placeholder="e.g. Rahul Sharma" error={errors.name} />}
+                  <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
                   {isSignup && (
-                    <Field id="phone" label="Mobile number (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" error={errors.phone} />
+                    <Field id="phone" label="Mobile number (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" placeholder="e.g. 98765 43210" error={errors.phone} />
                   )}
                   <Field
                     id="password"
@@ -823,6 +829,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     value={password}
                     onChange={setPassword}
                     autoComplete={isSignup ? "new-password" : "current-password"}
+                    placeholder="••••••••"
                     error={errors.password}
                     trailing={
                       <button
