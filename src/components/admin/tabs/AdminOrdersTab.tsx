@@ -8,6 +8,10 @@ import {
   Ban,
   ShieldCheck,
   Eye,
+  FileText,
+  Receipt,
+  Activity,
+  RotateCw,
 } from "lucide-react"
 import { AdminOrder, ZoomImageModalState } from "../types"
 import { SkeletonOrdersTable } from "../AdminSkeletonLoaders"
@@ -27,9 +31,15 @@ interface AdminOrdersTabProps {
   handleBulkVerify: () => void
   handleBulkAssignShiprocket: () => void
   handleBulkCancel: () => void
+  handleBulkDownloadLabels?: () => void
+  handleBulkDownloadInvoices?: () => void
+  handleBulkSyncTracking?: () => void
   handleVerifyOrder: (id: string) => void
   handleMarkDispatched?: (id: string) => void
   handleMarkDelivered?: (id: string) => void
+  handleDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
+  handleDownloadInvoice?: (orderId: string, shiprocketOrderId?: string | number) => void
+  handleTrackLiveShipment?: (orderId: string) => void
   setInspectOrderModal: (order: AdminOrder | null) => void
   setAssignCourierModal: (order: AdminOrder | null) => void
   setCancelOrderModal: (order: AdminOrder | null) => void
@@ -53,9 +63,15 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   handleBulkVerify,
   handleBulkAssignShiprocket,
   handleBulkCancel,
+  handleBulkDownloadLabels,
+  handleBulkDownloadInvoices,
+  handleBulkSyncTracking,
   handleVerifyOrder,
   handleMarkDispatched,
   handleMarkDelivered,
+  handleDownloadLabel,
+  handleDownloadInvoice,
+  handleTrackLiveShipment,
   setInspectOrderModal,
   setAssignCourierModal,
   setCancelOrderModal,
@@ -63,6 +79,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   showToast,
   formatINR,
 }) => {
+  const selectedWithAwbCount = filteredOrders.filter(
+    (o) => selectedOrderIds.includes(o.id) && Boolean(o.awb)
+  ).length
+
   return (
     <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
       {/* Search & Status Filter Bar (STICKY / FIXED AT TOP) */}
@@ -118,7 +138,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
               {selectedOrderIds.length}
             </span>
             <span className="text-xs font-semibold text-white">
-              {selectedOrderIds.length} {selectedOrderIds.length === 1 ? "order" : "orders"} selected for action
+              {selectedOrderIds.length} {selectedOrderIds.length === 1 ? "order" : "orders"} selected
+              {selectedWithAwbCount > 0 && (
+                <span className="text-[#d4af37] ml-1.5">({selectedWithAwbCount} with Shiprocket AWB)</span>
+              )}
             </span>
           </div>
 
@@ -141,10 +164,46 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
               <span>Assign Shiprocket</span>
             </button>
 
+            {/* Bulk Download Labels: only active for assigned orders with AWBs */}
+            {selectedWithAwbCount > 0 && handleBulkDownloadLabels && (
+              <button
+                onClick={handleBulkDownloadLabels}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-600 hover:text-white transition"
+                title={`Download official Shiprocket shipping labels for ${selectedWithAwbCount} assigned orders`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>Labels ({selectedWithAwbCount})</span>
+              </button>
+            )}
+
+            {/* Bulk Download Invoices: only active for assigned orders with AWBs */}
+            {selectedWithAwbCount > 0 && handleBulkDownloadInvoices && (
+              <button
+                onClick={handleBulkDownloadInvoices}
+                className="flex items-center gap-1.5 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                title={`Download official Shiprocket tax invoices for ${selectedWithAwbCount} assigned orders`}
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                <span>Invoices ({selectedWithAwbCount})</span>
+              </button>
+            )}
+
+            {/* Bulk Sync Tracking */}
+            {selectedWithAwbCount > 0 && handleBulkSyncTracking && (
+              <button
+                onClick={handleBulkSyncTracking}
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition"
+                title="Sync live tracking status with Shiprocket API"
+              >
+                <Activity className="h-3.5 w-3.5" />
+                <span>Sync Live Status</span>
+              </button>
+            )}
+
             <button
               onClick={handleBulkCancel}
               className="flex items-center gap-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-              title="Cancel selected undispatched orders"
+              title="Cancel selected orders"
             >
               <Ban className="h-3.5 w-3.5" />
               <span>Bulk Cancel</span>
@@ -389,29 +448,60 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Cancellation button: allowed ONLY until shipping/AWB is assigned */}
-                          {!ord.awb &&
-                            ord.status !== "Assigned to Courier" &&
-                            ord.status !== "Dispatched" &&
-                            ord.status !== "Delivered" &&
-                            ord.status !== "Cancelled" && (
-                              <button
-                                onClick={() => setCancelOrderModal(ord)}
-                                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-                                title="Cancel order before courier shipping assignment"
-                              >
-                                Cancel
-                              </button>
-                            )}
+                          {/* Shiprocket Shipping Label (PDF): ONLY shown & selectable once assigned with AWB */}
+                          {ord.awb && handleDownloadLabel && (
+                            <button
+                              onClick={() => handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)}
+                              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-black transition flex items-center gap-1"
+                              title="Download official Shiprocket shipping label (PDF)"
+                            >
+                              <FileText className="h-3 w-3" />
+                              <span>Label</span>
+                            </button>
+                          )}
 
-                          {/* Tracking button if assigned */}
+                          {/* Shiprocket Tax Invoice (PDF): ONLY shown & selectable once assigned with AWB */}
+                          {ord.awb && handleDownloadInvoice && (
+                            <button
+                              onClick={() => handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)}
+                              className="rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-[11px] font-semibold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1"
+                              title="Download official Shiprocket tax invoice (PDF)"
+                            >
+                              <Receipt className="h-3 w-3" />
+                              <span>Invoice</span>
+                            </button>
+                          )}
+
+                          {/* Live Shiprocket Tracking & Status Synchronization button */}
                           {ord.awb && (
                             <button
-                              onClick={() => showToast(`Tracking AWB #${ord.awb} via Shiprocket API (${ord.status})`)}
-                              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition"
-                              title="Track shipment"
+                              onClick={() => {
+                                if (handleTrackLiveShipment) {
+                                  handleTrackLiveShipment(ord.id)
+                                } else {
+                                  showToast(`Tracking AWB #${ord.awb} via Shiprocket API (${ord.status})`)
+                                }
+                              }}
+                              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center gap-1"
+                              title="Sync live status instantly from Shiprocket API"
                             >
-                              Track
+                              <Activity className="h-3 w-3" />
+                              <span>Track</span>
+                            </button>
+                          )}
+
+                          {/* Cancellation button: Admin can cancel undispatched orders or cancel active shipments on Shiprocket */}
+                          {ord.status !== "Cancelled" && ord.status !== "Delivered" && (
+                            <button
+                              onClick={() => setCancelOrderModal(ord)}
+                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                              title={
+                                ord.awb
+                                  ? "Cancel shipment on Shiprocket and mark order as Cancelled"
+                                  : "Cancel order before courier shipping assignment"
+                              }
+                            >
+                              Cancel
                             </button>
                           )}
 

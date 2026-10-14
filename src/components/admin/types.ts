@@ -53,6 +53,8 @@ export interface AdminOrder {
   verifiedAt?: string | null
   courier?: string | null
   awb?: string | null
+  shiprocket_order_id?: number | string | null
+  shiprocket_shipment_id?: number | string | null
   date: string
   cancelReason?: string | null
 }

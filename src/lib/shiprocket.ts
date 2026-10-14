@@ -120,7 +120,27 @@ export async function scheduleShiprocketPickup(shipmentId: number | string): Pro
 }
 
 /**
- * Track shipment by AWB
+ * Generate Shipping Label (PDF)
+ */
+export async function generateShiprocketLabel(shipmentId: number | string): Promise<{ label_url?: string; label_created?: number; message?: string }> {
+  return shiprocketFetch("/courier/generate/label", {
+    method: "POST",
+    body: JSON.stringify({ shipment_id: [Number(shipmentId) || shipmentId] }),
+  });
+}
+
+/**
+ * Generate Official Tax Invoice (PDF)
+ */
+export async function generateShiprocketInvoice(orderId: number | string): Promise<{ invoice_url?: string; is_invoice_created?: boolean; message?: string }> {
+  return shiprocketFetch("/orders/print/invoice", {
+    method: "POST",
+    body: JSON.stringify({ ids: [Number(orderId) || orderId] }),
+  });
+}
+
+/**
+ * Track shipment by AWB or Shipment ID
  */
 export async function trackShiprocketAWB(awbCode: string): Promise<any> {
   return shiprocketFetch(`/courier/track/awb/${encodeURIComponent(awbCode)}`, {
@@ -128,12 +148,29 @@ export async function trackShiprocketAWB(awbCode: string): Promise<any> {
   });
 }
 
+export async function trackShiprocketShipment(shipmentId: number | string): Promise<any> {
+  return shiprocketFetch(`/courier/track/shipment/${encodeURIComponent(String(shipmentId))}`, {
+    method: "GET",
+  });
+}
+
 /**
  * Cancel order on Shiprocket
  */
-export async function cancelShiprocketOrder(orderIds: number[] | string[]): Promise<any> {
+export async function cancelShiprocketOrder(orderIds: (number | string)[]): Promise<any> {
   return shiprocketFetch("/orders/cancel", {
     method: "POST",
     body: JSON.stringify({ ids: orderIds }),
   });
 }
+
+/**
+ * Cancel shipment by AWB on Shiprocket
+ */
+export async function cancelShiprocketShipmentAWBs(awbs: string[]): Promise<any> {
+  return shiprocketFetch("/orders/cancel/shipment/awbs", {
+    method: "POST",
+    body: JSON.stringify({ awbs }),
+  });
+}
+

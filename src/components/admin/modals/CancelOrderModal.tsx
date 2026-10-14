@@ -26,15 +26,26 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2 text-rose-400">
             <Ban className="h-5 w-5" />
-            <h3 className="font-serif text-lg font-bold text-white">Cancel Order #{order.id}</h3>
+            <h3 className="font-serif text-lg font-bold text-white">
+              {order.awb ? `Cancel Shipment & Order #${order.id}` : `Cancel Order #${order.id}`}
+            </h3>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-white">✕</button>
         </div>
 
-        <p className="text-xs text-zinc-300">
-          Are you sure you want to cancel order for <strong className="text-white">{order.customer}</strong>?
-          This order has not been dispatched yet and will be safely marked as Cancelled.
-        </p>
+        {order.awb ? (
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 space-y-1 text-xs">
+            <p className="font-bold text-rose-300">Shiprocket Shipment Active (AWB: {order.awb})</p>
+            <p className="text-zinc-300 leading-relaxed">
+              Confirming cancellation will instantly call Shiprocket&apos;s API to cancel the courier pickup/shipment and update this order to <strong className="text-white">Cancelled</strong>.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-300">
+            Are you sure you want to cancel order for <strong className="text-white">{order.customer}</strong>?
+            This undispatched order will be marked as Cancelled.
+          </p>
+        )}
 
         <div>
           <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Reason for Cancellation</label>
@@ -48,6 +59,7 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
             <option value="Patron requested size/color change before dispatch">Patron requested size/color change before dispatch</option>
             <option value="Item failed pre-dispatch quality audit">Item failed pre-dispatch quality audit</option>
             <option value="Suspected fraudulent order / unverified COD">Suspected fraudulent order / unverified COD</option>
+            <option value="Shipment cancelled by Admin via Shiprocket">Shipment cancelled by Admin via Shiprocket</option>
           </select>
         </div>
 
@@ -62,7 +74,7 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
             onClick={handleConfirm}
             className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-500 shadow-lg"
           >
-            Confirm Cancellation
+            {order.awb ? "Cancel Shipment on Shiprocket" : "Confirm Cancellation"}
           </button>
         </div>
       </div>

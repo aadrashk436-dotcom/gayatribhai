@@ -1274,7 +1274,10 @@ export function CheckoutView({
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
           <Button
-            onClick={() => downloadOrderInvoice(confirmedOrderId)}
+            onClick={() => {
+              setCart([])
+              go("account")
+            }}
             style={{
               background: "#d4af37",
               color: "#0a0a0a",
@@ -1284,15 +1287,7 @@ export function CheckoutView({
               gap: "6px",
             }}
           >
-            📄 Download Invoice (PDF)
-          </Button>
-          <Button
-            onClick={() => {
-              setCart([])
-              go("account")
-            }}
-          >
-            Track your order
+            📦 View Order Status in Account
           </Button>
           <Button
             variant="outline"

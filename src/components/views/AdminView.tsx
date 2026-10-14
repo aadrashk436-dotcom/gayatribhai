@@ -532,58 +532,73 @@ export function AdminView() {
   }
 
   const handleConfirmCancelOrder = async (orderId: string, reason: string) => {
-    const order = orderList.find((o) => o.id === orderId)
+    const order = orderList.find((o) => o.id === orderId || o.orderNumber === orderId)
+    const hasAwb = Boolean(order?.awb)
+    const cancelReason = reason || (hasAwb ? "Shipment cancelled by Store Admin via Shiprocket" : "Cancelled by Store Admin")
 
-    if (
-      order?.awb ||
-      order?.status === "Assigned to Courier" ||
-      order?.status === "Dispatched" ||
-      order?.status === "Delivered"
-    ) {
-      showToast("Cannot cancel: Order is already assigned to courier with AWB tracking. Initiate Return/RTO instead.")
-      setCancelOrderModal(null)
-      return
-    }
-
+    // Optimistically update order in state
     setOrderList((prev) =>
       prev.map((o) =>
-        o.id === orderId
+        (o.id === orderId || o.orderNumber === orderId)
           ? {
-            ...o,
-            status: "Cancelled" as const,
-            cancelReason: reason || "Cancelled by Store Admin",
-          }
+              ...o,
+              status: "Cancelled" as const,
+              cancelReason,
+            }
           : o
       )
     )
 
-    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+    if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
       setInspectOrderModal((prev) =>
         prev
           ? {
-            ...prev,
-            status: "Cancelled",
-            cancelReason: reason || "Cancelled by Store Admin",
-          }
+              ...prev,
+              status: "Cancelled",
+              cancelReason,
+            }
           : null
       )
     }
 
     setCancelOrderModal(null)
-    showToast(`Order #${orderId} has been cancelled.`)
 
-    try {
-      await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId,
-          status: "Cancelled",
-          cancelReason: reason,
-        }),
-      })
-    } catch (e) {
-      console.warn("Could not sync with API", e)
+    if (hasAwb) {
+      showToast(`Cancelling Shiprocket shipment & order #${orderId}...`)
+      try {
+        const res = await fetch("/api/shipping/shiprocket/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            reason: cancelReason,
+          }),
+        })
+        const data = await res.json()
+        if (res.ok) {
+          showToast(`Shipment #${order?.awb} cancelled on Shiprocket successfully!`)
+        } else {
+          throw new Error(data.error || "Failed to cancel shipment on Shiprocket")
+        }
+      } catch (e: any) {
+        console.warn("Shiprocket cancellation note:", e)
+        showToast(e.message || "Local order cancelled. Shiprocket cancel failed.")
+      }
+    } else {
+      showToast(`Order #${orderId} has been cancelled.`)
+      try {
+        await fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            status: "Cancelled",
+            cancelReason,
+          }),
+        })
+      } catch (e) {
+        console.warn("Could not sync with API", e)
+      }
     }
   }
 
@@ -807,6 +822,129 @@ export function AdminView() {
       })
     } catch (e) {
       console.warn("Could not sync with API", e)
+    }
+  }
+
+  const handleDownloadLabel = async (orderId: string, shipmentId?: string | number) => {
+    const order = orderList.find((o) => o.id === orderId || o.orderNumber === orderId)
+    if (!order?.awb && !shipmentId) {
+      showToast("Cannot download label: Order must be assigned to Shiprocket with an AWB first.")
+      return
+    }
+    showToast(`Generating official Shiprocket label for Order #${orderId}...`)
+    try {
+      const res = await fetch("/api/shipping/shiprocket/label", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          shipmentId: shipmentId || order?.shiprocket_shipment_id,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.label_url) {
+        window.open(data.label_url, "_blank")
+        showToast("Official Shiprocket Shipping Label PDF opened successfully!")
+      } else {
+        throw new Error(data.error || "Failed to generate Shiprocket label")
+      }
+    } catch (err: any) {
+      console.error("Label download error:", err)
+      showToast(err.message || "Failed to download Shiprocket label")
+    }
+  }
+
+  const handleDownloadInvoice = async (orderId: string, shiprocketOrderId?: string | number) => {
+    const order = orderList.find((o) => o.id === orderId || o.orderNumber === orderId)
+    if (!order?.awb && !shiprocketOrderId) {
+      showToast("Cannot download invoice: Order must be assigned to Shiprocket with an AWB first.")
+      return
+    }
+    showToast(`Generating official Shiprocket invoice for Order #${orderId}...`)
+    try {
+      const res = await fetch("/api/shipping/shiprocket/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          shiprocketOrderId: shiprocketOrderId || order?.shiprocket_order_id,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.invoice_url) {
+        window.open(data.invoice_url, "_blank")
+        showToast("Official Shiprocket Tax Invoice PDF opened successfully!")
+      } else {
+        throw new Error(data.error || "Failed to generate Shiprocket invoice")
+      }
+    } catch (err: any) {
+      console.error("Invoice download error:", err)
+      showToast(err.message || "Failed to download invoice")
+    }
+  }
+
+  const handleTrackLiveShipment = async (orderId: string) => {
+    showToast(`Syncing live status with Shiprocket for Order #${orderId}...`)
+    try {
+      const res = await fetch(`/api/shipping/shiprocket/track?orderId=${encodeURIComponent(orderId)}`)
+      const data = await res.json()
+      if (res.ok) {
+        const liveStatus = data.liveStatus || data.order?.status
+        if (liveStatus) {
+          setOrderList((prev) =>
+            prev.map((o) =>
+              o.id === orderId || o.orderNumber === orderId
+                ? { ...o, status: liveStatus }
+                : o
+            )
+          )
+          if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
+            setInspectOrderModal((prev) => (prev ? { ...prev, status: liveStatus } : null))
+          }
+        }
+        showToast(`Shiprocket Live Status: ${liveStatus || "Active"} (Synced in store)`)
+      } else {
+        throw new Error(data.error || "Live tracking unavailable")
+      }
+    } catch (err: any) {
+      console.error("Live tracking error:", err)
+      showToast(err.message || "Failed to track live shipment with Shiprocket")
+    }
+  }
+
+  const handleBulkDownloadLabels = async () => {
+    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
+    if (!eligible.length) {
+      showToast("Cannot download labels: Selected orders have no Shiprocket AWBs assigned yet.")
+      return
+    }
+    showToast(`Generating official labels for ${eligible.length} assigned orders...`)
+    for (const ord of eligible) {
+      await handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)
+    }
+  }
+
+  const handleBulkDownloadInvoices = async () => {
+    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
+    if (!eligible.length) {
+      showToast("Cannot download invoices: Selected orders have no Shiprocket AWBs assigned yet.")
+      return
+    }
+    showToast(`Generating official invoices for ${eligible.length} assigned orders...`)
+    for (const ord of eligible) {
+      await handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)
+    }
+  }
+
+  const handleBulkSyncTracking = async () => {
+    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
+    if (!eligible.length) {
+      showToast("Please select orders with active Shiprocket AWBs to sync tracking.")
+      return
+    }
+    showToast(`Syncing live status with Shiprocket for ${eligible.length} orders...`)
+    for (const ord of eligible) {
+      await handleTrackLiveShipment(ord.id)
     }
   }
 
@@ -1308,9 +1446,15 @@ export function AdminView() {
               handleBulkVerify={handleBulkVerify}
               handleBulkAssignShiprocket={handleBulkAssignShiprocket}
               handleBulkCancel={handleBulkCancel}
+              handleBulkDownloadLabels={handleBulkDownloadLabels}
+              handleBulkDownloadInvoices={handleBulkDownloadInvoices}
+              handleBulkSyncTracking={handleBulkSyncTracking}
               handleVerifyOrder={handleVerifyOrder}
               handleMarkDispatched={handleMarkDispatched}
               handleMarkDelivered={handleMarkDelivered}
+              handleDownloadLabel={handleDownloadLabel}
+              handleDownloadInvoice={handleDownloadInvoice}
+              handleTrackLiveShipment={handleTrackLiveShipment}
               setInspectOrderModal={setInspectOrderModal}
               setAssignCourierModal={setAssignCourierModal}
               setCancelOrderModal={setCancelOrderModal}
@@ -1498,6 +1642,9 @@ export function AdminView() {
           onOpenCancelOrder={(order) => setCancelOrderModal(order)}
           onMarkDispatched={handleMarkDispatched}
           onMarkDelivered={handleMarkDelivered}
+          onDownloadLabel={handleDownloadLabel}
+          onDownloadInvoice={handleDownloadInvoice}
+          onTrackLive={handleTrackLiveShipment}
           showToast={showToast}
         />
       )}

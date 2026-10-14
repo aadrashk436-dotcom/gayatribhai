@@ -309,17 +309,28 @@ function OrderCard({
             <span className="text-base">🚚</span>
             <div>
               <p className="text-xs font-semibold text-foreground">
-                {order.courier || order.courierName || "Shiprocket / Blue Dart Express"}
+                {order.courier || order.courierName || "Shiprocket Courier Partner"}
               </p>
               <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
                 AWB Tracking: <span className="font-semibold text-foreground">{order.awb}</span>
               </p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 px-3 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 self-start sm:self-auto">
-            <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Courier Dispatched
-          </span>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://shiprocket.co/tracking/${order.awb}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
+            >
+              <span>Track on Shiprocket</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
       )}
 
@@ -359,19 +370,25 @@ function OrderCard({
             </button>
           )}
 
-          {/* Download Invoice (PDF) Button */}
-          <button
-            type="button"
-            onClick={() => downloadOrderInvoice(order.orderNumber || order.id)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download Invoice (PDF)
-          </button>
+          {/* Download Invoice (PDF) Button: STRICTLY available only once assigned with AWB */}
+          {order.awb && !isCancelled ? (
+            <button
+              type="button"
+              onClick={() => downloadOrderInvoice(order.orderNumber || order.id)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download Invoice (PDF)
+            </button>
+          ) : !isCancelled ? (
+            <span className="text-[11px] text-muted-foreground italic px-2 py-1 rounded bg-surface-2/60">
+              Invoice available once dispatched
+            </span>
+          ) : null}
         </div>
       </div>
     </article>

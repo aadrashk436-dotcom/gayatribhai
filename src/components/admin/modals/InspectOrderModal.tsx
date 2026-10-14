@@ -2,7 +2,21 @@
 
 import React from "react"
 import Image from "next/image"
-import { X, Phone, Mail, MapPin, CheckCircle2, ShieldCheck, Truck, Ban, Printer, AlertTriangle } from "lucide-react"
+import {
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  CheckCircle2,
+  ShieldCheck,
+  Truck,
+  Ban,
+  Printer,
+  AlertTriangle,
+  FileText,
+  Receipt,
+  Activity,
+} from "lucide-react"
 import { AdminOrder, formatINR } from "../types"
 
 interface InspectOrderModalProps {
@@ -13,6 +27,9 @@ interface InspectOrderModalProps {
   onOpenCancelOrder: (order: AdminOrder) => void
   onMarkDispatched?: (orderId: string) => void
   onMarkDelivered?: (orderId: string) => void
+  onDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
+  onDownloadInvoice?: (orderId: string, shiprocketOrderId?: string | number) => void
+  onTrackLive?: (orderId: string) => void
   showToast: (msg: string) => void
 }
 
@@ -24,6 +41,9 @@ export function InspectOrderModal({
   onOpenCancelOrder,
   onMarkDispatched,
   onMarkDelivered,
+  onDownloadLabel,
+  onDownloadInvoice,
+  onTrackLive,
   showToast,
 }: InspectOrderModalProps) {
   if (!order) return null
@@ -181,13 +201,56 @@ export function InspectOrderModal({
             <p className="text-[10px] font-mono text-zinc-500 mt-1">ID: {order.paymentId}</p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1.5">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Shiprocket Logistics</p>
             {order.awb ? (
-              <div>
-                <p className="text-xs font-bold text-white">{order.courier}</p>
-                <p className="text-[10px] font-mono text-[#d4af37]">AWB: {order.awb}</p>
-                <p className="text-[10px] text-emerald-400 font-semibold mt-1">Pickup Scheduled & Tracking Active</p>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-white">{order.courier || "Shiprocket Express"}</p>
+                  <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold">
+                    AWB: {order.awb}
+                  </span>
+                </div>
+                <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Pickup Scheduled & Live Tracking Active
+                </p>
+
+                {/* Official Shiprocket Downloads: STRICTLY visible only when AWB is assigned */}
+                <div className="pt-2 border-t border-white/10 flex flex-wrap gap-2">
+                  {onDownloadLabel && (
+                    <button
+                      onClick={() => onDownloadLabel(order.id, order.shiprocket_shipment_id || undefined)}
+                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition shadow"
+                      title="Download official Shiprocket shipping label (PDF)"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>Download Label (PDF)</span>
+                    </button>
+                  )}
+
+                  {onDownloadInvoice && (
+                    <button
+                      onClick={() => onDownloadInvoice(order.id, order.shiprocket_order_id || undefined)}
+                      className="flex items-center gap-1.5 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition shadow"
+                      title="Download official Shiprocket tax invoice (PDF)"
+                    >
+                      <Receipt className="h-3.5 w-3.5" />
+                      <span>Download Invoice (PDF)</span>
+                    </button>
+                  )}
+
+                  {onTrackLive && (
+                    <button
+                      onClick={() => onTrackLive(order.id)}
+                      className="flex items-center gap-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition shadow"
+                      title="Sync live status from Shiprocket API"
+                    >
+                      <Activity className="h-3.5 w-3.5" />
+                      <span>Sync Live Status</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div>
@@ -199,6 +262,9 @@ export function InspectOrderModal({
                   {order.status === "Pending Verification"
                     ? "Requires Admin verification before shipping."
                     : "Verified & ready to assign courier."}
+                </p>
+                <p className="text-[10px] text-zinc-500 italic mt-1.5">
+                  ℹ️ Shipping label & tax invoice become available for download once assigned to Shiprocket with an AWB.
                 </p>
               </div>
             )}
@@ -251,22 +317,24 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {!order.awb &&
-              order.status !== "Assigned to Courier" &&
-              order.status !== "Dispatched" &&
-              order.status !== "Delivered" &&
-              order.status !== "Cancelled" && (
-                <button
-                  onClick={() => {
-                    onClose()
-                    onOpenCancelOrder(order)
-                  }}
-                  className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-                >
-                  <Ban className="h-3.5 w-3.5" />
-                  <span>Cancel Order</span>
-                </button>
-              )}
+            {/* Cancellation button: Available until delivered */}
+            {order.status !== "Delivered" && order.status !== "Cancelled" && (
+              <button
+                onClick={() => {
+                  onClose()
+                  onOpenCancelOrder(order)
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                title={
+                  order.awb
+                    ? "Cancel courier shipment on Shiprocket and mark order as Cancelled"
+                    : "Cancel order"
+                }
+              >
+                <Ban className="h-3.5 w-3.5" />
+                <span>{order.awb ? "Cancel Shipment (Shiprocket)" : "Cancel Order"}</span>
+              </button>
+            )}
           </div>
 
           <button
