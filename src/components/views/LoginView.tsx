@@ -90,10 +90,21 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   // Step in Authentication: "credentials" -> "otp"
   const [authStep, setAuthStep] = useState<"credentials" | "otp">("credentials")
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(() => searchParams.get("email") || "")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(true)
+
+  // Track if user attempted signup with an existing account
+  const [alreadyExistsNotice, setAlreadyExistsNotice] = useState<{ email: string; name?: string } | null>(null)
+
+  // Keep email synced if query param changes
+  useEffect(() => {
+    const urlEmail = searchParams.get("email")
+    if (urlEmail && urlEmail !== email) {
+      setEmail(urlEmail)
+    }
+  }, [searchParams])
 
   // OTP Verification state
   const [otpCode, setOtpCode] = useState("")
@@ -138,7 +149,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         .fromTo(".auth-visual img", { scale: 1.25 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
         .from("[data-auth-item]", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0.3)
     },
-    { scope: root, dependencies: [mode, authStep, isForgotPassword, resetStep], revertOnUpdate: true },
+    { scope: root, dependencies: [mode, authStep, isForgotPassword, resetStep, alreadyExistsNotice], revertOnUpdate: true },
   )
 
   const googleClientId =
@@ -211,6 +222,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     setLoading(true)
     setGlobalError(null)
     setSwitchAction(null)
+    setAlreadyExistsNotice(null)
 
     try {
       if (isSignup) {
@@ -234,21 +246,39 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         showToast("Verification code sent to your email!")
       }
     } catch (err: any) {
-      if (err?.alreadyExists || err?.status === 409 || err?.message?.includes("already registered")) {
-        setGlobalError("An account with this email already exists.")
+      const activeEmail = email.trim()
+      if (
+        err?.alreadyExists ||
+        err?.status === 409 ||
+        err?.message?.includes("already registered") ||
+        err?.message?.includes("already have an account") ||
+        err?.message?.includes("already created")
+      ) {
+        setAlreadyExistsNotice({ email: activeEmail })
+        setGlobalError("You have already created an account with this email. Please sign in below.")
         setSwitchAction({
-          label: "Click here to Sign In with this email",
-          action: () => router.push(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"),
+          label: "Sign in with this email directly",
+          action: () =>
+            router.push(
+              redirect
+                ? `/login?email=${encodeURIComponent(activeEmail)}&redirect=${encodeURIComponent(redirect)}`
+                : `/login?email=${encodeURIComponent(activeEmail)}`
+            ),
         })
       } else if (err?.notFound || err?.status === 404 || err?.message?.includes("No account found")) {
         setGlobalError("No account found with this email.")
         setSwitchAction({
-          label: "Click here to Create an Account",
-          action: () => router.push(redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"),
+          label: "Create a new account with this email",
+          action: () =>
+            router.push(
+              redirect
+                ? `/signup?email=${encodeURIComponent(activeEmail)}&redirect=${encodeURIComponent(redirect)}`
+                : `/signup?email=${encodeURIComponent(activeEmail)}`
+            ),
         })
       } else if (err?.incorrectPassword || err?.status === 401 || err?.message?.includes("Incorrect password")) {
         setErrors({ password: "Incorrect password. Please verify and try again." })
-        setGlobalError("Incorrect password. Please verify and try again.")
+        setGlobalError("Incorrect password. Please verify your password or sign in with Google.")
       } else {
         setGlobalError(err?.message || "Authentication failed. Please verify your details.")
       }
@@ -719,7 +749,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   }`}
                 />
                 <Link
-                  href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
+                  href={redirect ? `/login?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(email || "")}`}
                   replace
                   className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
                   aria-current={!isSignup ? "page" : undefined}
@@ -727,7 +757,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   Sign in
                 </Link>
                 <Link
-                  href={redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"}
+                  href={redirect ? `/signup?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirect)}` : `/signup?email=${encodeURIComponent(email || "")}`}
                   replace
                   className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
                   aria-current={isSignup ? "page" : undefined}
@@ -790,8 +820,58 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     </div>
                   </div>
 
+                  {/* Account Already Created Notice Banner */}
+                  {alreadyExistsNotice && (
+                    <div data-auth-item className="mt-4 rounded-2xl border border-[#d4af37]/60 bg-gradient-to-br from-[#d4af37]/15 via-[#d4af37]/5 to-surface p-5 shadow-xl">
+                      <div className="flex items-start gap-3.5">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#d4af37] text-black shadow-md">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">Account Already Created</span>
+                          <h3 className="mt-0.5 font-display text-lg font-bold text-foreground">
+                            You already have an account!
+                          </h3>
+                          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                            An account with <span className="font-semibold text-foreground underline decoration-[#d4af37]">{alreadyExistsNotice.email}</span> is already active. Your orders, points, and saved addresses are safely preserved.
+                          </p>
+                          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAlreadyExistsNotice(null)
+                                router.replace(redirect ? `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}`)
+                              }}
+                              className="flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-wider text-background shadow transition-all hover:opacity-90 active:scale-98 cursor-pointer"
+                            >
+                              <span>Sign In Directly</span>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M5 12h14m-5-5 5 5-5 5" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleGoogleBtnClick}
+                              className="flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-foreground hover:bg-surface-2 transition-all active:scale-98 cursor-pointer"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                              </svg>
+                              <span>Continue with Google</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Global Error Notice */}
-                  {globalError && (
+                  {globalError && !alreadyExistsNotice && (
                     <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
                       <p className="font-semibold">{globalError}</p>
                       {switchAction && (
@@ -970,7 +1050,19 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               {/* Switch to Login / Signup Bottom Link */}
               <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">
                 {isSignup ? "Already have an account? " : "New to Gayatri Bhai? "}
-                <Link href={isSignup ? "/login" : "/signup"} replace className="font-semibold text-foreground underline underline-offset-4">
+                <Link
+                  href={
+                    isSignup
+                      ? email
+                        ? `/login?email=${encodeURIComponent(email.trim())}`
+                        : "/login"
+                      : email
+                      ? `/signup?email=${encodeURIComponent(email.trim())}`
+                      : "/signup"
+                  }
+                  replace
+                  className="font-semibold text-foreground underline underline-offset-4"
+                >
                   {isSignup ? "Sign in" : "Create account"}
                 </Link>
               </p>

@@ -59,7 +59,29 @@ export async function POST(request: Request) {
       }
     } else {
       // 5. Regular Customer Check
-      customer = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail);
+      customer = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);
+
+      if (!customer && SUPABASE_URL && SUPABASE_KEY) {
+        try {
+          const sbRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(cleanEmail)}&select=*`,
+            {
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+              },
+              cache: "no-store",
+            }
+          );
+          if (sbRes.ok) {
+            const rows = await sbRes.json();
+            if (Array.isArray(rows) && rows.length > 0) {
+              customer = rows[0];
+              db.customers.push(customer);
+            }
+          }
+        } catch {}
+      }
 
       if (!customer) {
         return NextResponse.json(
@@ -75,7 +97,7 @@ export async function POST(request: Request) {
       if (customer.password && customer.password !== password) {
         return NextResponse.json(
           {
-            error: "Incorrect password. Please verify your password and try again.",
+            error: "Incorrect password. Please verify your password or sign in with Google.",
             incorrectPassword: true,
           },
           { status: 401 }

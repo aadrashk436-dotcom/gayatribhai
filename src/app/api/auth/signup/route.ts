@@ -46,13 +46,36 @@ export async function POST(request: Request) {
     db.otps = db.otps || {};
 
     // 5. Check if email already registered (Duplicate Email Check)
-    const existingUser = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail);
+    let existingUser = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);
+    if (!existingUser && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const sbRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(cleanEmail)}&select=*`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+            cache: "no-store",
+          }
+        );
+        if (sbRes.ok) {
+          const rows = await sbRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            existingUser = rows[0];
+            db.customers.push(existingUser);
+          }
+        }
+      } catch {}
+    }
+
     if (existingUser) {
       return NextResponse.json(
         {
-          error: "This email is already registered. Please sign in to your account.",
+          error: "You already have an account with this email. Please sign in to your account.",
           alreadyExists: true,
           email: cleanEmail,
+          name: existingUser.name || cleanName,
         },
         { status: 409 }
       );
@@ -174,6 +197,8 @@ export async function POST(request: Request) {
       password,
       tier: "Silver",
       points: 0,
+      authProvider: "email",
+      authProviders: ["email", "otp"],
       createdAt: new Date().toISOString(),
     };
 
@@ -182,6 +207,32 @@ export async function POST(request: Request) {
       fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
     } catch (saveErr) {
       console.warn("Could not write db.json:", saveErr);
+    }
+
+    // Sync to Supabase
+    if (SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/customers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify({
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            phone: customer.phone,
+            tier: customer.tier,
+            points: customer.points,
+            auth_provider: "email",
+          }),
+        });
+      } catch {
+        // Non-blocking
+      }
     }
 
     const token = `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;

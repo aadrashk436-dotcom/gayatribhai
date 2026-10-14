@@ -71,8 +71,31 @@ export async function POST(request: Request) {
 
     db.customers = db.customers || [];
     let customer = db.customers.find(
-      (c: any) => c.email?.toLowerCase() === clean || c.phone === clean
+      (c: any) => c.email?.toLowerCase().trim() === clean || (clean && c.phone === clean)
     );
+
+    // Also check Supabase if not found in db.json
+    if (!customer && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const sbRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(clean)}&select=*`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+            cache: "no-store",
+          }
+        );
+        if (sbRes.ok) {
+          const rows = await sbRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            customer = rows[0];
+            db.customers.push(customer);
+          }
+        }
+      } catch {}
+    }
 
     let isNewUser = false;
     if (!customer) {
@@ -88,9 +111,18 @@ export async function POST(request: Request) {
         tier: "Silver",
         points: 0,
         authProvider: "otp",
+        authProviders: ["otp"],
         createdAt: new Date().toISOString(),
       };
       db.customers.push(customer);
+    } else {
+      // PRESERVE ALL DATA: existing customer found!
+      if (!customer.authProviders) {
+        customer.authProviders = customer.authProvider ? [customer.authProvider] : ["email"];
+      }
+      if (!customer.authProviders.includes("otp")) {
+        customer.authProviders.push("otp");
+      }
     }
 
     const isAdmin = clean === "gayatripuri634@gmail.com";
@@ -104,6 +136,31 @@ export async function POST(request: Request) {
       fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
     } catch (saveErr) {
       console.warn("Could not save to db.json:", saveErr);
+    }
+
+    // Sync to Supabase
+    if (SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/customers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify({
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            phone: customer.phone || "",
+            avatar: customer.avatar || "",
+            tier: customer.tier || "Silver",
+            points: customer.points ?? 0,
+            auth_provider: customer.authProvider || "otp",
+          }),
+        });
+      } catch {}
     }
 
     const token = isAdmin ? `gb_admin_token_${Date.now()}` : `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;

@@ -84,6 +84,9 @@ export async function POST(request: Request) {
     const cleanEmail = email.toLowerCase().trim();
     const cleanName = name.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
 
+    const SUPABASE_URL = process.env.SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
+    const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
     const dbPath = getDbPath();
     let db: any = { customers: [] };
     if (fs.existsSync(dbPath)) {
@@ -95,8 +98,33 @@ export async function POST(request: Request) {
     }
 
     db.customers = db.customers || [];
-    let customer = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail);
+    let customer = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);
     let isNewUser = false;
+
+    // Fallback: check Supabase if not found in local db.json
+    if (!customer && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const sbRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(cleanEmail)}&select=*`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+            cache: "no-store",
+          }
+        );
+        if (sbRes.ok) {
+          const rows = await sbRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            customer = rows[0];
+            db.customers.push(customer);
+          }
+        }
+      } catch (sbErr) {
+        console.warn("Google auth Supabase check warning:", sbErr);
+      }
+    }
 
     if (!customer) {
       isNewUser = true;
@@ -108,14 +136,30 @@ export async function POST(request: Request) {
         avatar,
         googleId,
         tier: "Silver",
-        points: 250,
+        points: 0,
         authProvider: "google",
+        authProviders: ["google"],
         createdAt: new Date().toISOString(),
       };
       db.customers.push(customer);
     } else {
-      if (avatar && !customer.avatar) customer.avatar = avatar;
-      if (googleId && !customer.googleId) customer.googleId = googleId;
+      // UNIFIED ACCOUNT LINKING: Existing customer found (created via OTP or Email/Password)!
+      // STRICTLY PRESERVE all existing data (id, name, points, tier, phone, password, orders)
+      if (!customer.name && cleanName) {
+        customer.name = cleanName;
+      }
+      if (avatar && !customer.avatar) {
+        customer.avatar = avatar;
+      }
+      if (googleId && !customer.googleId) {
+        customer.googleId = googleId;
+      }
+      if (!customer.authProviders) {
+        customer.authProviders = customer.authProvider ? [customer.authProvider] : ["email"];
+      }
+      if (!customer.authProviders.includes("google")) {
+        customer.authProviders.push("google");
+      }
     }
 
     const isAdmin = cleanEmail === "gayatripuri634@gmail.com";
@@ -131,6 +175,33 @@ export async function POST(request: Request) {
       console.warn("Could not save to db.json:", saveErr);
     }
 
+    // Sync unified customer to Supabase
+    if (SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/customers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify({
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            phone: customer.phone || "",
+            avatar: customer.avatar || "",
+            tier: customer.tier || "Silver",
+            points: customer.points ?? 0,
+            auth_provider: customer.authProvider || "google",
+          }),
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
+
     const token = isAdmin ? `gb_admin_token_${Date.now()}` : `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     return NextResponse.json({
@@ -142,16 +213,16 @@ export async function POST(request: Request) {
         id: customer.id,
         name: customer.name,
         email: customer.email,
-        phone: customer.phone,
-        avatar: customer.avatar,
+        phone: customer.phone || "",
+        avatar: customer.avatar || "",
         tier: customer.tier || "Silver",
-        points: customer.points || 250,
+        points: customer.points ?? 0,
         role: customer.role || (isAdmin ? "super_admin" : "customer"),
       },
       message: isAdmin
         ? `Welcome back, Store Admin ${customer.name}!`
         : isNewUser
-        ? `Welcome to Gayatri Bhai, ${customer.name}! 250 points added.`
+        ? `Welcome to Gayatri Bhai, ${customer.name}!`
         : `Welcome back, ${customer.name}!`,
     });
   } catch (err: any) {
