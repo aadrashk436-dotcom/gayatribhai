@@ -51,11 +51,10 @@ function Field({
         {label}
       </label>
       <div
-        className={`group relative flex items-center rounded-xl border bg-surface/80 px-4 transition-all duration-200 focus-within:bg-surface focus-within:ring-2 ${
-          error
+        className={`group relative flex items-center rounded-xl border bg-surface/80 px-4 transition-all duration-200 focus-within:bg-surface focus-within:ring-2 ${error
             ? "border-[#b4321f] focus-within:border-[#b4321f] focus-within:ring-[#b4321f]/20"
             : "border-border/80 hover:border-border focus-within:border-foreground focus-within:ring-foreground/10"
-        }`}
+          }`}
       >
         <input
           id={id}
@@ -185,7 +184,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     if (!gisLoaded || !(window as any).google?.accounts?.id || !googleClientId) return
 
     try {
-      ;(window as any).google.accounts.id.initialize({
+      ; (window as any).google.accounts.id.initialize({
         client_id: googleClientId,
         callback: async (response: any) => {
           if (response?.credential) {
@@ -196,7 +195,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         cancel_on_tap_outside: true,
       })
 
-      ;(window as any).google.accounts.id.prompt()
+        ; (window as any).google.accounts.id.prompt()
     } catch (gErr) {
       console.warn("Google Identity Services initialization warning:", gErr)
     }
@@ -483,7 +482,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     // Option 2: GIS One-Tap prompt if available
     if (gisLoaded && (window as any).google?.accounts?.id && googleClientId) {
       try {
-        ;(window as any).google.accounts.id.prompt()
+        ; (window as any).google.accounts.id.prompt()
         return
       } catch (err) {
         console.warn("Google ID prompt error:", err)
@@ -744,9 +743,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               <div data-auth-item className="relative mb-6 grid grid-cols-2 rounded-full border border-border p-1">
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${
-                    isSignup ? "translate-x-full" : "translate-x-0"
-                  }`}
+                  className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${isSignup ? "translate-x-full" : "translate-x-0"
+                    }`}
                 />
                 <Link
                   href={redirect ? `/login?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(email || "")}`}
@@ -769,24 +767,24 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               <div data-auth-item className="mb-2">
                 <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#d4af37]">
                   {authStep === "otp"
-                    ? "Step 2 of 2 • Email Verification"
+                    ? "Email Verification"
                     : isSignup
-                    ? "New Patron Registration"
-                    : "Patron Access"}
+                      ? "New Patron Registration"
+                      : "Patron Access"}
                 </span>
                 <h1 className="mt-1 font-display text-2xl sm:text-3xl md:text-4xl leading-tight">
                   {authStep === "otp"
-                    ? "Verify Your Email"
+                    ? "Enter 6-Digit OTP"
                     : isSignup
-                    ? "Create Account"
-                    : "Sign In"}
+                      ? "Create Account"
+                      : "Sign In"}
                 </h1>
                 <p className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
                   {authStep === "otp"
-                    ? `Enter the 6-digit verification code sent to ${email}.`
+                    ? "Enter the 6-digit code sent to your email to verify and continue."
                     : isSignup
-                    ? "Enter your name, email, and create a password to register."
-                    : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
+                      ? "Enter your name, email, and create a password to register."
+                      : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
                 </p>
               </div>
 
@@ -963,22 +961,20 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </>
               ) : (
                 <div className="mt-6 flex flex-col gap-5">
-                  {/* Step 2: OTP Verification Card */}
-                  <div data-auth-item className="rounded-xl border border-border bg-surface p-4 sm:p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">Step 2 of 2 &bull; Email Verification</span>
-                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Code sent
-                      </span>
+                  {/* Compact Email Pill with Edit Action */}
+                  <div data-auth-item className="flex items-center justify-between rounded-xl border border-border/80 bg-surface/90 px-4 py-3 shadow-xs">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/15 text-[#d4af37]">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect width="20" height="16" x="2" y="4" rx="2" />
+                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Code sent to</p>
+                        <p className="truncate text-sm font-bold text-foreground">{email}</p>
+                      </div>
                     </div>
-                    <div className="mt-2.5">
-                      <p className="text-xs text-muted-foreground">Verification code sent to your email:</p>
-                      <p className="mt-0.5 text-base font-semibold text-foreground tracking-tight">{email}</p>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground/80 leading-relaxed">
-                      Please enter the 6-digit code sent to your Gmail inbox (or spam folder) to complete {isSignup ? "account creation" : "sign in"}.
-                    </p>
                     <button
                       type="button"
                       onClick={() => {
@@ -986,9 +982,14 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         setGlobalError(null)
                         setErrors({})
                       }}
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#d4af37] underline underline-offset-4 hover:opacity-85 transition-opacity"
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface transition-all active:scale-95 cursor-pointer shadow-xs"
+                      title="Edit email"
                     >
-                      &larr; Change email or password
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                      </svg>
+                      <span>Edit</span>
                     </button>
                   </div>
 
@@ -1001,45 +1002,79 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
                   {/* OTP Submission Form */}
                   <form onSubmit={handleVerifyOtp} noValidate className="flex flex-col gap-4">
-                    <Field
-                      id="otpCode"
-                      label="6-Digit Verification Code"
-                      value={otpCode}
-                      onChange={setOtpCode}
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      placeholder="• • • • • •"
-                      error={errors.otpCode}
-                    />
+                    <div data-auth-item className="w-full">
+                      <label htmlFor="otpCode" className="block text-xs font-semibold uppercase tracking-[0.12em] text-foreground/80 mb-2">
+                        Enter 6-Digit OTP
+                      </label>
+                      <input
+                        id="otpCode"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        autoFocus
+                        value={otpCode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 6)
+                          setOtpCode(val)
+                          if (errors.otpCode) setErrors((prev) => ({ ...prev, otpCode: "" }))
+                        }}
+                        placeholder="• • • • • •"
+                        aria-invalid={Boolean(errors.otpCode)}
+                        className={`h-14 sm:h-16 w-full rounded-xl border bg-surface/80 px-4 text-center font-mono text-2xl sm:text-3xl font-bold tracking-[0.35em] sm:tracking-[0.5em] text-foreground placeholder:tracking-normal placeholder:font-normal placeholder:text-muted-foreground/35 outline-none transition-all ${
+                          errors.otpCode
+                            ? "border-[#b4321f] focus:ring-2 focus:ring-[#b4321f]/20"
+                            : "border-border hover:border-foreground/40 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
+                        }`}
+                      />
+                      {errors.otpCode && (
+                        <p className="mt-1.5 text-center text-xs font-medium text-[#b4321f]">
+                          {errors.otpCode}
+                        </p>
+                      )}
+                    </div>
 
-                    <div data-auth-item className="flex items-center justify-between text-xs text-muted-foreground px-0.5">
+                    {/* Resend Section */}
+                    <div data-auth-item className="flex items-center justify-between text-xs text-muted-foreground px-1">
                       <span>Didn&apos;t receive the code?</span>
                       {resendCountdown > 0 ? (
-                        <span className="font-medium text-muted-foreground">Resend in {resendCountdown}s</span>
+                        <span className="inline-flex items-center gap-1.5 font-medium text-muted-foreground bg-surface px-3 py-1 rounded-full border border-border">
+                          <span className="size-1.5 rounded-full bg-[#d4af37] animate-pulse" />
+                          Resend in {resendCountdown}s
+                        </span>
                       ) : (
                         <button
                           type="button"
                           disabled={loading}
                           onClick={handleResendOtp}
-                          className="font-bold text-foreground underline underline-offset-2 hover:opacity-80 transition-opacity"
+                          className="inline-flex items-center gap-1.5 font-bold text-[#d4af37] hover:underline underline-offset-4 transition-all cursor-pointer"
                         >
-                          Resend code now
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                            <path d="M3 3v5h5" />
+                            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                            <path d="M16 21h5v-5" />
+                          </svg>
+                          <span>Resend OTP</span>
                         </button>
                       )}
                     </div>
 
+                    {/* Submit Button */}
                     <button
                       id="submit-otp-btn"
                       type="submit"
-                      disabled={loading}
-                      className="w-full mt-4 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                      disabled={loading || otpCode.trim().length < 4}
+                      className="w-full mt-3 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? (
                         <span>Verifying code...</span>
                       ) : (
                         <>
-                          <span>{isSignup ? "Submit Code & Create Account" : "Submit Code & Sign In"}</span>
-                          <Icon name="check" size={18} />
+                          <span>{isSignup ? "Verify & Create Account" : "Verify & Sign In"}</span>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                         </>
                       )}
                     </button>
@@ -1057,8 +1092,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         ? `/login?email=${encodeURIComponent(email.trim())}`
                         : "/login"
                       : email
-                      ? `/signup?email=${encodeURIComponent(email.trim())}`
-                      : "/signup"
+                        ? `/signup?email=${encodeURIComponent(email.trim())}`
+                        : "/signup"
                   }
                   replace
                   className="font-semibold text-foreground underline underline-offset-4"
@@ -1185,7 +1220,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   className="flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#4285F4] text-white text-sm font-semibold tracking-wide transition-all hover:bg-[#3367D6] active:scale-98 disabled:opacity-60 shadow-md"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" fill="#FFF"/>
+                    <path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" fill="#FFF" />
                   </svg>
                   <span>{loading ? "Authenticating with Google..." : "Continue with Google"}</span>
                 </button>
