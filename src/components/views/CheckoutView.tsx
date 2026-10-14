@@ -48,6 +48,30 @@ export function AddressStep({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Automatically show address form if no clean addresses exist
+  useEffect(() => {
+    if (cleanAddresses.length === 0) {
+      setShowAddForm(true)
+    } else if (!selectedId || !cleanAddresses.some((a) => a.id === selectedId)) {
+      const def = cleanAddresses.find((a) => a.isDefault) || cleanAddresses[0]
+      if (def) {
+        setSelectedId(def.id)
+        onSelectAddress?.(def)
+      }
+    }
+  }, [cleanAddresses.length])
+
+  // Prefill user details if available
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        phone: prev.phone || user.phone || "",
+      }))
+    }
+  }, [user])
+
   const validateAddress = () => {
     const errs: Record<string, string> = {}
     const phoneDigits = formData.phone.replace(/\D/g, "")
@@ -90,6 +114,31 @@ export function AddressStep({
     <>
       <span className="eyebrow">Step 1 of 3</span>
       <h1>Where should we deliver?</h1>
+
+      {cleanAddresses.length === 0 && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "14px 18px",
+            background: "rgba(212, 175, 55, 0.08)",
+            border: "1px solid rgba(212, 175, 55, 0.25)",
+            borderRadius: "10px",
+            fontSize: "13px",
+            color: "var(--foreground)",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <span style={{ fontSize: "20px" }}>📍</span>
+          <div>
+            <strong style={{ display: "block", marginBottom: "2px" }}>Please add your delivery address</strong>
+            <p style={{ margin: 0, color: "var(--muted-foreground)", fontSize: "12px" }}>
+              Live courier options and shipping rates will be calculated automatically based on your destination pincode.
+            </p>
+          </div>
+        </div>
+      )}
 
       {cleanAddresses.length > 0 && !showAddForm ? (
         <>
@@ -210,7 +259,7 @@ export function AddressStep({
           </div>
 
           <div className="step-actions">
-            {addresses.length > 0 && (
+            {cleanAddresses.length > 0 && (
               <Button variant="outline" type="button" onClick={() => setShowAddForm(false)}>
                 Cancel
               </Button>
@@ -296,50 +345,41 @@ export function DeliveryStep({
       <span className="eyebrow">Step 2 of 3</span>
       <h1>Select Delivery Speed & Courier Partner</h1>
 
-      {/* ── PACKAGE WEIGHT & VOLUMETRIC DIMENSIONS BANNER (AMAZON / LOGISTICS) ── */}
+      {/* ── CLEAN DESTINATION PIN & SHIPPING STATUS BANNER ── */}
       <div
         style={{
           border: "1px solid var(--border)",
           background: "rgba(212, 175, 55, 0.05)",
           borderRadius: "12px",
-          padding: "16px",
+          padding: "14px 18px",
           marginBottom: "20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <strong style={{ fontSize: "13px", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Icon name="truck" size={16} />
-            Consolidated Order Shipment ({cart.reduce((a, b) => a + b.quantity, 0)} Items)
-          </strong>
-          <span style={{ fontSize: "11px", fontWeight: 700, color: "#d4af37", fontFamily: "monospace" }}>
-            Destination PIN: {pincode}
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Icon name="truck" size={18} />
+          <div>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--foreground)" }}>
+              Shipping to PIN: <strong style={{ color: "#d4af37", letterSpacing: "1px" }}>{pincode}</strong>
+            </span>
+            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--muted-foreground)" }}>
+              {cart.reduce((a, b) => a + b.quantity, 0)} {cart.reduce((a, b) => a + b.quantity, 0) === 1 ? "item" : "items"} in package · Live rates calculated
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", fontSize: "12px", color: "var(--muted-foreground)" }}>
-          <span>
-            Dead Weight: <b style={{ color: "var(--foreground)" }}>{packageSummary?.deadWeightKg ?? (cart.length * 0.35).toFixed(2)} kg</b>
+        {subtotal >= 1999 ? (
+          <span style={{ fontSize: "12px", color: "#10b981", fontWeight: 600 }}>
+            🎉 Complimentary Free Atelier Shipping Unlocked!
           </span>
-          <span>•</span>
-          <span>
-            Dimensions: <b style={{ color: "var(--foreground)" }}>
-              {packageSummary?.dimensions?.length ?? 30} × {packageSummary?.dimensions?.breadth ?? 25} × {packageSummary?.dimensions?.height ?? (cart.length * 4)} cm
-            </b>
+        ) : (
+          <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+            Standard flat rate or express courier available below
           </span>
-          <span>•</span>
-          <span>
-            Volumetric: <b style={{ color: "var(--foreground)" }}>{packageSummary?.volumetricWeightKg ?? 0.6} kg</b>
-          </span>
-          <span>•</span>
-          <span>
-            Billable Weight: <b style={{ color: "#d4af37" }}>{packageSummary?.billableWeightKg ?? 0.6} kg</b>
-          </span>
-        </div>
-
-        {subtotal >= 1999 && (
-          <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#10b981", fontWeight: 600 }}>
-            🎉 You have unlocked Complimentary Free Atelier Shipping on orders over ₹1,999!
-          </p>
         )}
       </div>
 
@@ -507,6 +547,12 @@ export function CheckoutView({
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(() => {
     return cleanAddresses.find((a) => a.isDefault) || cleanAddresses[0] || null
   })
+
+  useEffect(() => {
+    if (!selectedAddress && cleanAddresses.length > 0) {
+      setSelectedAddress(cleanAddresses.find((a) => a.isDefault) || cleanAddresses[0])
+    }
+  }, [cleanAddresses, selectedAddress])
 
   const [selectedCourier, setSelectedCourier] = useState<any>(null)
   const [shippingFee, setShippingFee] = useState<number>(subtotal >= 1999 ? 0 : 99)
@@ -792,14 +838,6 @@ export function CheckoutView({
                 {shippingFee === 0 ? "FREE" : money(shippingFee)}
               </dd>
             </div>
-            {packageSummary && (
-              <div style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
-                <dt>Combined Package</dt>
-                <dd>
-                  {packageSummary.billableWeightKg} kg ({packageSummary.dimensions.length}×{packageSummary.dimensions.breadth}×{packageSummary.dimensions.height} cm)
-                </dd>
-              </div>
-            )}
           </dl>
           <div className="checkout-total">
             <span>Total</span>
