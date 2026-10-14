@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "India's premier atelier for hand-embroidered artisanal shirts and pure French linen resortwear. Masterfully tailored with mother-of-pearl accents and heirloom craftsmanship.",
   alternates: {
-    canonical: "https://gayatribhaishop-zkde-eight.vercel.app",
+    canonical: "https://gayatribhai.vercel.app",
   },
 }
 
@@ -16,10 +16,10 @@ export default function HomePage() {
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://gayatribhaishop-zkde-eight.vercel.app/#organization",
+        "@id": "https://gayatribhai.vercel.app/#organization",
         name: "AVYR by Gayatri",
-        url: "https://gayatribhaishop-zkde-eight.vercel.app",
-        logo: "https://gayatribhaishop-zkde-eight.vercel.app/favicon.ico",
+        url: "https://gayatribhai.vercel.app",
+        logo: "https://gayatribhai.vercel.app/favicon.ico",
         description:
           "Haute artisanal hand-embroidered shirts and pure French linen resortwear.",
         address: {
@@ -38,15 +38,15 @@ export default function HomePage() {
       },
       {
         "@type": "WebSite",
-        "@id": "https://gayatribhaishop-zkde-eight.vercel.app/#website",
-        url: "https://gayatribhaishop-zkde-eight.vercel.app",
+        "@id": "https://gayatribhai.vercel.app/#website",
+        url: "https://gayatribhai.vercel.app",
         name: "AVYR by Gayatri",
         publisher: {
-          "@id": "https://gayatribhaishop-zkde-eight.vercel.app/#organization",
+          "@id": "https://gayatribhai.vercel.app/#organization",
         },
         potentialAction: {
           "@type": "SearchAction",
-          target: "https://gayatribhaishop-zkde-eight.vercel.app/shop?q={search_term_string}",
+          target: "https://gayatribhai.vercel.app/shop?q={search_term_string}",
           "query-input": "required name=search_term_string",
         },
       },

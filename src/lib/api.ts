@@ -258,6 +258,20 @@ export async function apiGoogleLogin(payload: {
   return data;
 }
 
+export async function apiDirectGmailLogin(email: string, name?: string) {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName =
+    name?.trim() ||
+    cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+  const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=0a0a0a,d4af37,18181b`;
+
+  return apiGoogleLogin({
+    email: cleanEmail,
+    name: cleanName,
+    avatar,
+  });
+}
+
 export function apiLogout() {
   if (typeof window !== "undefined") {
     localStorage.removeItem("gb_customer_token");

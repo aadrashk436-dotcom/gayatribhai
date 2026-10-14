@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   keywords:
     "hand embroidered shirts, luxury linen shirts, artisanal menswear, cuban collar shirt, resortwear men, resort dressing, french linen shirts, slow fashion india, AVYR, gayatri clothes, artisanal shirts",
   authors: [{ name: "AVYR Atelier / Gayatri" }],
-  metadataBase: new URL("https://gayatribhaishop-zkde-eight.vercel.app"),
+  metadataBase: new URL("https://gayatribhai.vercel.app"),
   alternates: { canonical: "/" },
   robots: {
     index: true,
@@ -88,13 +88,13 @@ export default function RootLayout({
               "@graph": [
                 {
                   "@type": "ClothingStore",
-                  "@id": "https://gayatribhaishop-zkde-eight.vercel.app/#store",
+                  "@id": "https://gayatribhai.vercel.app/#store",
                   name: "AVYR by Gayatri",
                   alternateName: "Gayatri Bhai Shop",
-                  url: "https://gayatribhaishop-zkde-eight.vercel.app/",
-                  logo: "https://gayatribhaishop-zkde-eight.vercel.app/favicon.svg",
+                  url: "https://gayatribhai.vercel.app/",
+                  logo: "https://gayatribhai.vercel.app/favicon.svg",
                   image:
-                    "https://gayatribhaishop-zkde-eight.vercel.app/assets/site_banners/slide1_desktop.jpg",
+                    "https://gayatribhai.vercel.app/assets/site_banners/slide1_desktop.jpg",
                   description:
                     "Haute artisanal menswear and luxury hand-embroidered linen resortwear handcrafted in limited editions.",
                   priceRange: "₹₹ - ₹₹₹",
@@ -111,14 +111,14 @@ export default function RootLayout({
                 },
                 {
                   "@type": "WebSite",
-                  "@id": "https://gayatribhaishop-zkde-eight.vercel.app/#website",
-                  url: "https://gayatribhaishop-zkde-eight.vercel.app/",
+                  "@id": "https://gayatribhai.vercel.app/#website",
+                  url: "https://gayatribhai.vercel.app/",
                   name: "AVYR Haute Artisanal Shirts",
                   description:
                     "Destination Dressing · Resort Edit · Pure Linen Handcrafted Shirts",
                   publisher: {
                     "@id":
-                      "https://gayatribhaishop-zkde-eight.vercel.app/#store",
+                      "https://gayatribhai.vercel.app/#store",
                   },
                 },
               ],

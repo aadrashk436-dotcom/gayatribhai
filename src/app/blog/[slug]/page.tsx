@@ -7,7 +7,7 @@ interface BlogPageProps {
   params: Promise<{ slug: string }>
 }
 
-const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
+const BASE_URL = "https://gayatribhai.vercel.app"
 
 export async function generateStaticParams() {
   const posts = getStoredBlogPosts(false)

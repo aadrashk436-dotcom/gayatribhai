@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { products } from "@/lib/products"
 import ShopClient from "./ShopClient"
 
-const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
+const BASE_URL = "https://gayatribhai.vercel.app"
 
 export const metadata: Metadata = {
   title: "Shop Luxury Artisanal Shirts | AVYR by Gayatri Atelier",
@@ -16,17 +16,17 @@ export const metadata: Metadata = {
     "AVYR collection",
   ],
   alternates: {
-    canonical: "https://gayatribhaishop-zkde-eight.vercel.app/shop",
+    canonical: "https://gayatribhai.vercel.app/shop",
   },
   openGraph: {
     title: "Shop Luxury Artisanal Shirts | AVYR by Gayatri",
     description:
       "Handcrafted 100% French linen shirts with artisanal embroidery. Explore the complete collection.",
-    url: "https://gayatribhaishop-zkde-eight.vercel.app/shop",
+    url: "https://gayatribhai.vercel.app/shop",
     siteName: "AVYR by Gayatri",
     images: [
       {
-        url: "https://gayatribhaishop-zkde-eight.vercel.app/assets/site_banners/slide1_desktop.jpg",
+        url: "https://gayatribhai.vercel.app/assets/site_banners/slide1_desktop.jpg",
         width: 1920,
         height: 1080,
         alt: "AVYR Artisanal Shirts Collection",

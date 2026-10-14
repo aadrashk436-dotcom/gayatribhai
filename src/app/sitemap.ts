@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 import { products } from "@/lib/products"
 import { getStoredBlogPosts } from "@/lib/blogs"
 
-const BASE_URL = "https://gayatribhaishop-zkde-eight.vercel.app"
+const BASE_URL = "https://gayatribhai.vercel.app"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [

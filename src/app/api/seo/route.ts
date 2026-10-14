@@ -14,7 +14,7 @@ export const DEFAULT_SEO_SETTINGS = {
     keywords:
       "luxury linen shirts, hand embroidered shirts, cuban collar linen, resortwear india, designer shirts",
     ogImage: "/assets/site_banners/slide1_desktop.jpg",
-    canonicalUrl: "https://gayatribhaishop-zkde-eight.vercel.app",
+    canonicalUrl: "https://gayatribhai.vercel.app",
   },
   shop: {
     metaTitle: "Shop Artisan Linen Shirts | Gayatri Bhai Collection",
@@ -23,7 +23,7 @@ export const DEFAULT_SEO_SETTINGS = {
     keywords:
       "buy linen shirts online, resort collection, handcrafted clothing, men luxury fashion",
     ogImage: "/assets/site_banners/slide2_desktop.jpg",
-    canonicalUrl: "https://gayatribhaishop-zkde-eight.vercel.app/shop",
+    canonicalUrl: "https://gayatribhai.vercel.app/shop",
   },
   blog: {
     metaTitle: "The AVYR Journal | Essays on Craft, Linen Science & Sartorial Art",
@@ -32,7 +32,7 @@ export const DEFAULT_SEO_SETTINGS = {
     keywords:
       "linen care, fabric science, cuban collar styling, artisan craft, menswear essays",
     ogImage: "/assets/site_banners/slide2_desktop.jpg",
-    canonicalUrl: "https://gayatribhaishop-zkde-eight.vercel.app/blog",
+    canonicalUrl: "https://gayatribhai.vercel.app/blog",
   },
 }
 

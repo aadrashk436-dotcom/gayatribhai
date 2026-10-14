@@ -167,7 +167,7 @@ export function BlogModal({
         keywords: keywordsArray,
         canonicalUrl:
           blogCanonicalUrl.trim() ||
-          `https://gayatribhaishop-zkde-eight.vercel.app/blog/${slugToUse}`,
+          `https://gayatribhai.vercel.app/blog/${slugToUse}`,
         ogImage: blogOgImage.trim() || blogCoverImage.trim(),
         altText: blogAltText.trim() || blogTitle.trim(),
         noIndex: blogNoIndex,

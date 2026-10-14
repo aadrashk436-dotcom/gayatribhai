@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin", "/checkout", "/login", "/account"],
     },
-    sitemap: "https://gayatribhaishop-zkde-eight.vercel.app/sitemap.xml",
+    sitemap: "https://gayatribhai.vercel.app/sitemap.xml",
   }
 }

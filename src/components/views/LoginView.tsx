@@ -8,7 +8,7 @@ import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
 import Icon from "../common/Icon"
-import { apiLogin, apiSignup, apiSendOtp, apiVerifyOtp, apiGoogleLogin, AuthError } from "../../lib/api"
+import { apiLogin, apiSignup, apiSendOtp, apiVerifyOtp, apiGoogleLogin, apiDirectGmailLogin, AuthError } from "../../lib/api"
 
 gsap.registerPlugin(useGSAP)
 
@@ -79,8 +79,12 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const router = useRouter()
   const root = useRef<HTMLDivElement>(null)
 
-  // Auth Methods: "password" | "otp"
-  const [authMethod, setAuthMethod] = useState<"password" | "otp">("password")
+  // Auth Methods: "gmail" | "password" | "otp"
+  const [authMethod, setAuthMethod] = useState<"gmail" | "password" | "otp">("gmail")
+
+  // Direct Gmail (No OTP) state
+  const [gmailInput, setGmailInput] = useState("")
+  const [gmailName, setGmailName] = useState("")
 
   // Password state
   const [name, setName] = useState("")
@@ -253,6 +257,45 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       } else {
         setGlobalError(err?.message || "Authentication failed. Please verify your details.")
       }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Direct Gmail Login (Instant / No OTP)
+  const submitDirectGmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setGlobalError(null)
+    setErrors({})
+
+    const clean = gmailInput.trim().toLowerCase()
+    if (!clean) {
+      setErrors({ gmailInput: "Please enter your Gmail address" })
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setErrors({ gmailInput: "Please enter a valid email address (e.g. name@gmail.com)" })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await apiDirectGmailLogin(clean, gmailName.trim())
+      const customerName = res.customer?.name || gmailName.trim() || clean.split("@")[0]
+
+      onLogin({
+        id: res.customer?.id || `usr_${Date.now()}`,
+        name: customerName,
+        email: res.customer?.email || clean,
+        phone: res.customer?.phone || "",
+        avatar: res.customer?.avatar || "",
+        joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+        membershipTier: res.customer?.tier || "Silver",
+        points: res.customer?.points || 250,
+      })
+      showToast(res.message || `Signed in directly with Gmail as ${customerName}!`)
+    } catch (err: any) {
+      setGlobalError(err.message || "Direct Gmail authentication failed. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -531,15 +574,35 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
             {isSignup ? "Earn 250 welcome points, track bespoke orders, and access limited drops." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
           </p>
 
-          {/* Mode Switcher: Password vs OTP */}
-          <div data-auth-item className="mt-6 flex rounded-lg border border-border bg-surface p-1">
+          {/* Mode Switcher: Direct Gmail vs Password vs OTP */}
+          <div data-auth-item className="mt-6 flex rounded-lg border border-border bg-surface p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod("gmail")
+                setGlobalError(null)
+              }}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
+                authMethod === "gmail"
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+              </svg>
+              <span>Gmail (No OTP)</span>
+            </button>
             <button
               type="button"
               onClick={() => {
                 setAuthMethod("password")
                 setGlobalError(null)
               }}
-              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.1em] transition-all ${
+              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
                 authMethod === "password"
                   ? "bg-foreground text-background shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -554,13 +617,13 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 setGlobalError(null)
                 setOtpStep(1)
               }}
-              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.1em] transition-all ${
+              className={`flex-1 rounded-md py-2 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
                 authMethod === "otp"
                   ? "bg-foreground text-background shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              OTP Code (Phone/Email)
+              Phone OTP
             </button>
           </div>
 
@@ -578,6 +641,79 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </button>
               )}
             </div>
+          )}
+
+          {/* ── METHOD 0: DIRECT GMAIL LOGIN (NO OTP) ── */}
+          {authMethod === "gmail" && (
+            <form onSubmit={submitDirectGmail} noValidate className="mt-6 flex flex-col gap-4">
+              <div className="rounded-xl border border-[#4285F4]/30 bg-[#4285F4]/5 p-3.5 text-xs text-foreground flex items-center gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                </svg>
+                <div className="leading-tight">
+                  <strong className="font-semibold block text-foreground">Direct 1-Click Gmail Login</strong>
+                  <span className="text-muted-foreground text-[11px]">No OTP or password required. Instant access & 250 welcome points.</span>
+                </div>
+              </div>
+
+              {isSignup && (
+                <Field
+                  id="gmailName"
+                  label="Your full name (optional)"
+                  value={gmailName}
+                  onChange={setGmailName}
+                  autoComplete="name"
+                  placeholder="e.g. Rahul Sharma"
+                />
+              )}
+
+              <Field
+                id="gmailInput"
+                label="Your Gmail address"
+                type="email"
+                value={gmailInput}
+                onChange={setGmailInput}
+                autoComplete="email"
+                inputMode="email"
+                placeholder="e.g. yourname@gmail.com"
+                error={errors.gmailInput}
+              />
+
+              {/* Quick Preset for Store Owner */}
+              <div className="flex flex-wrap items-center justify-between text-xs pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGmailInput("gayatripuri634@gmail.com")
+                    setGmailName("Gayatri Puri")
+                    showToast("Owner Gmail loaded. Click Sign In.")
+                  }}
+                  className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-[11px]"
+                >
+                  Fill Owner Gmail: gayatripuri634@gmail.com
+                </button>
+                <span className="text-[11px] text-[#34A853] font-semibold flex items-center gap-1">
+                  ✓ Instant / No OTP
+                </span>
+              </div>
+
+              <button
+                data-auth-item
+                type="submit"
+                disabled={loading}
+                className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+              >
+                {loading ? "Signing in..." : isSignup ? "Create Account with Gmail (No OTP)" : "Sign In with Gmail (Instant / No OTP)"}
+                {!loading && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                    <path d="M5 12h14m-5-5 5 5-5 5" />
+                  </svg>
+                )}
+              </button>
+            </form>
           )}
 
           {/* ── METHOD 1: PASSWORD AUTH ── */}
