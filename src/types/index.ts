@@ -11,6 +11,7 @@ export interface User {
   joinedDate?: string
   membershipTier?: "Silver" | "Gold" | "Artisan VIP"
   points?: number
+  addresses?: Address[]
 }
 
 export interface Address {

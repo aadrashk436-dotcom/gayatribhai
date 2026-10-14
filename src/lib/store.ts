@@ -9,17 +9,11 @@ export function isDummyAddress(addr: Address | null | undefined): boolean {
   if (!addr) return true
   const name = (addr.name || "").toLowerCase().trim()
   const street = (addr.street || "").toLowerCase().trim()
-  const phone = (addr.phone || "").replace(/\D/g, "")
   const id = addr.id || ""
 
-  // Purge legacy demo/mock addresses
-  if (name.includes("arjun mehta") || name.includes("arjun singhania")) return true
-  if (street.includes("sea view apartments") || street.includes("altamount road")) return true
-  if (phone === "9876543210" || phone === "9820123456" || phone === "9820144210") return true
-  if (id === "addr_1" || id === "addr_2") {
-    if (street.includes("bandra") || street.includes("lower parel") || addr.pincode === "400050" || addr.pincode === "400013") {
-      return true
-    }
+  // Only purge legacy demo/mock addresses with arjun mehta and sea view apartments
+  if ((id === "addr_1" || id === "addr_2") && (name.includes("arjun mehta") || street.includes("sea view apartments"))) {
+    return true
   }
   return false
 }
@@ -147,7 +141,23 @@ export const useStore = create<AppState>()(
       user: null,
       setUser: (user) =>
         set((state) => {
-          const cleanAddresses = state.addresses.filter((a) => !isDummyAddress(a))
+          let cleanAddresses = state.addresses.filter((a) => !isDummyAddress(a))
+          if (user?.addresses && Array.isArray(user.addresses) && user.addresses.length > 0) {
+            const userAddrs = user.addresses.filter((a) => !isDummyAddress(a))
+            const merged = [...cleanAddresses]
+            for (const ua of userAddrs) {
+              const idx = merged.findIndex((m) => m.id === ua.id)
+              if (idx >= 0) {
+                merged[idx] = ua
+              } else {
+                merged.push(ua)
+              }
+            }
+            if (merged.length > 0 && !merged.some((a) => a.isDefault)) {
+              merged[0].isDefault = true
+            }
+            cleanAddresses = merged
+          }
           return {
             user,
             addresses: cleanAddresses,

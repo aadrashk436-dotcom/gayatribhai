@@ -12,7 +12,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVI
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, email, name, newEmail, phone } = body;
+    const { id, email, name, newEmail, phone, addresses } = body;
 
     const cleanEmail = (email || "").toLowerCase().trim();
     const cleanNewEmail = (newEmail || cleanEmail).toLowerCase().trim();
@@ -48,6 +48,7 @@ export async function PATCH(request: Request) {
         ...(cleanName && { name: cleanName }),
         ...(cleanNewEmail && { email: cleanNewEmail }),
         phone: cleanPhone,
+        ...(Array.isArray(addresses) && { addresses }),
         updatedAt: new Date().toISOString(),
       };
       updatedCustomer = db.customers[existingIdx];
@@ -57,6 +58,7 @@ export async function PATCH(request: Request) {
         name: cleanName || cleanEmail.split("@")[0],
         email: cleanNewEmail || cleanEmail,
         phone: cleanPhone,
+        addresses: Array.isArray(addresses) ? addresses : [],
         tier: "Silver",
         points: 0,
         createdAt: new Date().toISOString(),
@@ -99,6 +101,7 @@ export async function PATCH(request: Request) {
         name: updatedCustomer.name,
         email: updatedCustomer.email,
         phone: updatedCustomer.phone || "",
+        addresses: updatedCustomer.addresses || [],
         tier: updatedCustomer.tier || "Silver",
         points: updatedCustomer.points || 0,
       },

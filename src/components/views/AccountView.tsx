@@ -267,6 +267,22 @@ function OrderCard({
         </div>
       </div>
 
+      {/* Delivery Address Details */}
+      {(order.shippingAddress?.street || order.address) && (
+        <div className="mt-3.5 flex items-start gap-2.5 rounded-lg border border-border/50 bg-surface-2/40 p-3 text-xs text-muted-foreground">
+          <span className="text-sm shrink-0 mt-0.5">📍</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-foreground">
+              Delivery to: {order.shippingAddress?.name || order.customer || "Valued Patron"}
+              {order.phone && <span className="ml-2 font-normal text-muted-foreground">• {order.phone}</span>}
+            </p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+              {[order.shippingAddress?.street || order.address, order.shippingAddress?.area, `${order.shippingAddress?.city || order.city || ""}${order.pincode ? ` — PIN ${order.pincode}` : ""}`].filter(Boolean).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Progress Track Bar */}
       {!isCancelled && (
         <div className="mt-5">
@@ -368,6 +384,11 @@ function AddressDialog({ initial, onClose, onSave }: { initial: Address; onClose
   const [form, setForm] = useState<Address>(initial)
   const [error, setError] = useState("")
   const set = (k: keyof Address, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    setForm(initial)
+    setError("")
+  }, [initial])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
@@ -557,29 +578,54 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
 
   // Fetch real user orders from API
   useEffect(() => {
-    if (!user) return
     let isMounted = true
     const fetchOrders = async () => {
       setLoadingOrders(true)
       try {
         const params = new URLSearchParams()
-        if (user.email) params.set("email", user.email)
-        if (user.phone) params.set("phone", user.phone)
-        if (user.id) params.set("userId", user.id)
+        if (user?.email) params.set("email", user.email)
+        if (user?.phone) params.set("phone", user.phone)
+        if (user?.id) params.set("userId", user.id)
 
-        if (!params.toString()) {
-          setOrders([])
-          setLoadingOrders(false)
-          return
-        }
-        const res = await fetch(`/api/orders?${params.toString()}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (isMounted) {
-            setOrders(Array.isArray(data.orders) ? data.orders : [])
+        let localOrderIds: string[] = []
+        try {
+          localOrderIds = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+        } catch {}
+
+        let fetchedList: any[] = []
+        if (params.toString()) {
+          const res = await fetch(`/api/orders?${params.toString()}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (Array.isArray(data.orders)) {
+              fetchedList = data.orders
+            }
           }
-        } else {
-          if (isMounted) setOrders([])
+        }
+
+        // Fetch any orders from localOrderIds that were placed on this device but not returned yet
+        const missingIds = localOrderIds.filter(
+          (oid) => !fetchedList.some((o) => o.id === oid || o.orderNumber === oid)
+        )
+        if (missingIds.length > 0) {
+          const extraOrders = await Promise.all(
+            missingIds.map(async (oid) => {
+              try {
+                const r = await fetch(`/api/orders?id=${oid}`)
+                if (r.ok) {
+                  const d = await r.json()
+                  return d.order
+                }
+              } catch {}
+              return null
+            })
+          )
+          const validExtras = extraOrders.filter(Boolean)
+          fetchedList = [...validExtras, ...fetchedList]
+        }
+
+        if (isMounted) {
+          setOrders(fetchedList)
         }
       } catch (err) {
         console.warn("Could not load user orders:", err)
@@ -862,21 +908,60 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">{a.phone}</p>
                         <div className="mt-4 flex flex-wrap gap-4 border-t border-border pt-4 text-sm font-semibold">
-                          <button type="button" onClick={() => setDialog(a)} className="underline underline-offset-4 cursor-pointer">
+                          <button
+                            type="button"
+                            onClick={() => setDialog(a)}
+                            className="underline underline-offset-4 cursor-pointer text-foreground hover:opacity-80"
+                          >
                             Edit
                           </button>
                           {!a.isDefault && (
-                            <button type="button" onClick={() => onSetDefaultAddress(a.id)} className="underline underline-offset-4 cursor-pointer">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                onSetDefaultAddress(a.id)
+                                showToast(`"${a.name}" set as default address`)
+                                if (user?.id || user?.email) {
+                                  const updated = addresses.map((x) => ({ ...x, isDefault: x.id === a.id }))
+                                  try {
+                                    await fetch("/api/auth/profile", {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        id: user.id,
+                                        email: user.email,
+                                        addresses: updated,
+                                      }),
+                                    })
+                                  } catch {}
+                                }
+                              }}
+                              className="underline underline-offset-4 cursor-pointer text-[#d4af37] hover:brightness-110"
+                            >
                               Make default
                             </button>
                           )}
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               onDeleteAddress(a.id)
                               showToast("Address removed")
+                              if (user?.id || user?.email) {
+                                const updated = addresses.filter((x) => x.id !== a.id)
+                                try {
+                                  await fetch("/api/auth/profile", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      id: user.id,
+                                      email: user.email,
+                                      addresses: updated,
+                                    }),
+                                  })
+                                } catch {}
+                              }
                             }}
-                            className="text-[#b4321f] underline underline-offset-4 cursor-pointer"
+                            className="text-[#b4321f] underline underline-offset-4 cursor-pointer hover:opacity-80"
                           >
                             Remove
                           </button>
@@ -1015,10 +1100,35 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
         <AddressDialog
           initial={dialog}
           onClose={() => setDialog(null)}
-          onSave={(a) => {
+          onSave={async (a) => {
             onSaveAddress(a)
+            const wasEditing = Boolean(dialog.id)
             setDialog(null)
-            showToast(dialog.id ? "Address updated" : "Address added")
+            showToast(wasEditing ? "Address updated successfully" : "New address added")
+            if (user?.id || user?.email) {
+              const existingIdx = addresses.findIndex((x) => x.id === a.id)
+              let nextList = [...addresses]
+              if (a.isDefault || nextList.length === 0) {
+                nextList = nextList.map((x) => ({ ...x, isDefault: false }))
+                a = { ...a, isDefault: true }
+              }
+              if (existingIdx >= 0) {
+                nextList[existingIdx] = a
+              } else {
+                nextList.push(a)
+              }
+              try {
+                await fetch("/api/auth/profile", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: user.id,
+                    email: user.email,
+                    addresses: nextList,
+                  }),
+                })
+              } catch {}
+            }
           }}
         />
       )}

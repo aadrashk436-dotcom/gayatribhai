@@ -895,6 +895,8 @@ export function CheckoutView({
   const [complete, setComplete] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [placedCartItems, setPlacedCartItems] = useState<typeof cart>([])
+  const saveAddress = useStore((state) => state.saveAddress)
+  const setStoreUser = useStore((state) => state.setUser)
   const [confirmedOrderId, setConfirmedOrderId] = useState<string>(
     "GB-" + Math.floor(100000 + Math.random() * 900000)
   )
@@ -969,6 +971,24 @@ export function CheckoutView({
           if (orderRes?.orderNumber) {
             setConfirmedOrderId(orderRes.orderNumber)
             setConfirmedPaymentMethod("Cash on Delivery")
+            try {
+              saveAddress(orderAddress)
+              if (!user) {
+                setStoreUser({
+                  id: `cust_${Date.now()}`,
+                  name: orderAddress.name || "Customer",
+                  email: orderAddress.email || "customer@gayatribhai.com",
+                  phone: orderAddress.phone || "",
+                  membershipTier: "Silver",
+                  points: 100,
+                })
+              }
+              const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+              if (!existingIds.includes(orderRes.orderNumber)) {
+                existingIds.unshift(orderRes.orderNumber)
+                localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
+              }
+            } catch {}
           } else if (orderRes?.error) {
             throw new Error(orderRes.error)
           }
@@ -1056,6 +1076,24 @@ export function CheckoutView({
               orderId: rzpOrderId,
               orderNumber: createdOrderNum,
             })
+            saveAddress(orderAddress)
+            if (!user) {
+              setStoreUser({
+                id: `cust_${Date.now()}`,
+                name: orderAddress.name || "Customer",
+                email: orderAddress.email || "customer@gayatribhai.com",
+                phone: orderAddress.phone || "",
+                membershipTier: "Silver",
+                points: 100,
+              })
+            }
+            if (createdOrderNum) {
+              const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+              if (!existingIds.includes(createdOrderNum)) {
+                existingIds.unshift(createdOrderNum)
+                localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
+              }
+            }
           } catch (e) {
             console.error("Payment verify notification:", e)
           }
