@@ -7,6 +7,7 @@ export interface ButtonProps {
   className?: string
   disabled?: boolean
   type?: "button" | "submit"
+  style?: React.CSSProperties
 }
 
 export function Button({
@@ -16,12 +17,14 @@ export function Button({
   className = "",
   disabled = false,
   type = "button",
+  style,
 }: ButtonProps) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      style={style}
       className={`btn btn-${variant} ${className}`}
     >
       {children}

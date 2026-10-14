@@ -8,6 +8,7 @@ import Button from "../common/Button"
 import Icon from "../common/Icon"
 import { useStore } from "@/lib/store"
 import { loadRazorpayScript, apiCreateOrder, apiVerifyPayment } from "../../lib/api"
+import { downloadOrderInvoice } from "../../utils/invoice"
 
 export interface CheckoutViewProps {
   cart: CartItem[]
@@ -642,7 +643,20 @@ export function CheckoutView({
           </div>
         )}
 
-        <div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
+          <Button
+            onClick={() => downloadOrderInvoice(confirmedOrderId)}
+            style={{
+              background: "#d4af37",
+              color: "#0a0a0a",
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            📄 Download Invoice (PDF)
+          </Button>
           <Button
             onClick={() => {
               setCart([])
