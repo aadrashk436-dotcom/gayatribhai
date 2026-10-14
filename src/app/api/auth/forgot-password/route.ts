@@ -124,11 +124,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: emailSent
-        ? `Password reset code sent to ${cleanEmail}. Please check your inbox and spam folder.`
-        : `Password reset code generated. Use code ${otp} to reset your password.`,
+      message: `Password reset code sent to ${cleanEmail}. Please check your inbox and spam folder.`,
       expiresIn: 600,
-      devOtp: otp,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to process password reset" }, { status: 500 });

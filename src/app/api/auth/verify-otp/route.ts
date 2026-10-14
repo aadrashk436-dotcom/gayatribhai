@@ -29,12 +29,37 @@ export async function POST(request: Request) {
 
     const record = db.otps?.[clean];
 
-    // Master test OTP for seamless testing
-    const isValidOtp = (record && record.otp === cleanOtp && Date.now() <= record.expiresAt) || cleanOtp === "123456";
+    // Validate real OTP and expiration strictly (no mock/master bypass)
+    let isValidOtp = Boolean(record && record.otp === cleanOtp && Date.now() <= record.expiresAt);
+
+    const SUPABASE_URL = process.env.SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
+    const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!isValidOtp && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const sbRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/otps?identifier=eq.${encodeURIComponent(clean)}&otp=eq.${encodeURIComponent(cleanOtp)}&expires_at=gte.${new Date().toISOString()}&select=*`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
+        if (sbRes.ok) {
+          const rows = await sbRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            isValidOtp = true;
+          }
+        }
+      } catch (sbErr) {
+        // Fallback
+      }
+    }
 
     if (!isValidOtp) {
       return NextResponse.json(
-        { error: "Invalid or expired verification code. Please check and try again." },
+        { error: "Invalid or expired verification code. Please check your inbox and try again." },
         { status: 400 }
       );
     }

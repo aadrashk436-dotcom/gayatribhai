@@ -337,10 +337,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       setOtpStep(2)
       setOtpSentMessage(res.message || `Verification code sent to ${clean}`)
       showToast(res.message || "Verification code sent!")
-      if (res.devOtp) {
-        // Pre-fill or make testable seamlessly
-        console.log(`[Gayatri Bhai OTP] Your verification code is: ${res.devOtp}`)
-      }
     } catch (err: any) {
       setGlobalError(err.message || "Failed to send verification code. Please try again.")
     } finally {
@@ -495,9 +491,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       const res = await apiForgotPassword(clean)
       setResetStep(2)
       showToast(res.message || "Reset code sent to your email!")
-      if (res.devOtp) {
-        console.log(`[Gayatri Bhai Reset Code] ${res.devOtp}`)
-      }
     } catch (err: any) {
       setGlobalError(err.message || "Failed to send reset code. Please check your email and try again.")
     } finally {
@@ -657,7 +650,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     onChange={setResetOtp}
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    placeholder="123456"
+                    placeholder="• • • • • •"
                     error={errors.resetOtp}
                   />
 
@@ -969,7 +962,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         onChange={setOtpCode}
                         inputMode="numeric"
                         autoComplete="one-time-code"
-                        placeholder="123456"
+                        placeholder="• • • • • •"
                         error={errors.otpCode}
                       />
 

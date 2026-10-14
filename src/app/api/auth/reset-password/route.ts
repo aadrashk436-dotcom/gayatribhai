@@ -44,20 +44,33 @@ export async function POST(request: Request) {
 
     const record = db.otps[cleanEmail];
 
-    // Master test code "123456" or actual stored OTP
-    const isMasterOtp = cleanOtp === "123456";
-    const isOtpValid = record && record.otp === cleanOtp;
+    // Strictly validate real stored OTP (no master code bypass)
+    let isOtpValid = Boolean(record && record.otp === cleanOtp && (!record.expiresAt || Date.now() <= record.expiresAt));
 
-    if (!isMasterOtp && !isOtpValid) {
-      return NextResponse.json({ error: "Invalid verification code. Please check and try again." }, { status: 400 });
+    if (!isOtpValid && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const sbRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/otps?identifier=eq.${encodeURIComponent(cleanEmail)}&otp=eq.${encodeURIComponent(cleanOtp)}&expires_at=gte.${new Date().toISOString()}&select=*`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
+        if (sbRes.ok) {
+          const rows = await sbRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            isOtpValid = true;
+          }
+        }
+      } catch (sbErr) {
+        // Fallback
+      }
     }
 
-    // Check expiration if not master code
-    if (!isMasterOtp && record && record.expiresAt && Date.now() > record.expiresAt) {
-      return NextResponse.json(
-        { error: "Verification code has expired. Please request a new code." },
-        { status: 400 }
-      );
+    if (!isOtpValid) {
+      return NextResponse.json({ error: "Invalid or expired verification code. Please check your inbox and try again." }, { status: 400 });
     }
 
     // Find customer or create admin if needed

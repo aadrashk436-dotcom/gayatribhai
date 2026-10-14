@@ -118,12 +118,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: isEmail
-        ? emailSent
-          ? `Verification code sent to ${clean}. Please check your inbox and spam folder.`
-          : `Verification code generated. If email takes a moment, your code is ${otp}.`
+        ? `Verification code sent to ${clean}. Please check your inbox and spam folder.`
         : `Verification code sent to ${clean}.`,
       expiresIn: 300,
-      devOtp: otp, // Always returned for instant seamless testing
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to send OTP" }, { status: 500 });
