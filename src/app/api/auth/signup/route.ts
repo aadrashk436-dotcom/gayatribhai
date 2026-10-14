@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       phone: cleanPhone || "",
       password,
       tier: "Silver",
-      points: 250,
+      points: 0,
       createdAt: new Date().toISOString(),
     };
 

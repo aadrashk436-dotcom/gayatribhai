@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         email: isEmail ? clean : "",
         phone: !isEmail ? clean : "",
         tier: "Silver",
-        points: 250,
+        points: 0,
         authProvider: "otp",
         createdAt: new Date().toISOString(),
       };
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         phone: customer.phone,
         avatar: customer.avatar || "",
         tier: customer.tier || "Silver",
-        points: customer.points || 250,
+        points: customer.points || 0,
         role: customer.role || (isAdmin ? "super_admin" : "customer"),
       },
       message: isAdmin

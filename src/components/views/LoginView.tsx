@@ -8,7 +8,7 @@ import { gsap } from "gsap"
 import { useGSAP } from "@gsap/react"
 import type { User, View } from "../../types"
 import Icon from "../common/Icon"
-import { apiLogin, apiSignup, apiSendOtp, apiVerifyOtp, apiGoogleLogin, apiDirectGmailLogin, apiForgotPassword, apiResetPassword, AuthError } from "../../lib/api"
+import { apiLogin, apiSignup, apiGoogleLogin, apiDirectGmailLogin, apiForgotPassword, apiResetPassword, AuthError } from "../../lib/api"
 
 gsap.registerPlugin(useGSAP)
 
@@ -87,23 +87,12 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const redirect = searchParams.get("redirect")
   const root = useRef<HTMLDivElement>(null)
 
-  // Auth Methods: "password" | "otp"
-  const [authMethod, setAuthMethod] = useState<"password" | "otp">("password")
-
-  // Password state
+  // Form state
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(true)
-
-  // OTP state
-  const [otpIdentifier, setOtpIdentifier] = useState("")
-  const [otpName, setOtpName] = useState("")
-  const [otpCode, setOtpCode] = useState("")
-  const [otpStep, setOtpStep] = useState<1 | 2>(1)
-  const [otpSentMessage, setOtpSentMessage] = useState("")
 
   // Google GIS & Modal state
   const googleBtnContainerRef = useRef<HTMLDivElement>(null)
@@ -134,7 +123,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         .fromTo(".auth-visual img", { scale: 1.25 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
         .from("[data-auth-item]", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0.3)
     },
-    { scope: root, dependencies: [mode, authMethod, otpStep, isForgotPassword, resetStep], revertOnUpdate: true },
+    { scope: root, dependencies: [mode, isForgotPassword, resetStep], revertOnUpdate: true },
   )
 
   const googleClientId =
@@ -194,7 +183,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
     if (isSignup && name.trim().length < 2) next.name = "Please enter your full name (minimum 2 characters)"
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Please enter a valid email address (e.g. name@domain.com)"
-    if (isSignup && phone && !/^[0-9+\s-]{10,15}$/.test(phone.trim())) next.phone = "Please enter a valid 10-digit mobile number"
     if (password.length < 6) next.password = "Password must be at least 6 characters"
     if (isSignup && !agree) next.agree = "Please accept the terms to continue"
     setErrors(next)
@@ -214,14 +202,14 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         const res = await apiSignup({
           name: name.trim(),
           email: email.trim(),
-          phone: phone.trim(),
+          phone: "",
           password,
         })
         onLogin({
           id: res.customer?.id || `usr_${Date.now()}`,
           name: res.customer?.name || name.trim(),
           email: res.customer?.email || email.trim(),
-          phone: res.customer?.phone || phone.trim(),
+          phone: res.customer?.phone || "",
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
           membershipTier: res.customer?.tier || "Silver",
           points: res.customer?.points || 0,
@@ -233,7 +221,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           id: res.customer?.id || `usr_${Date.now()}`,
           name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
           email: res.customer?.email || email.trim(),
-          phone: res.customer?.phone || phone.trim(),
+          phone: res.customer?.phone || "",
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
           membershipTier: res.customer?.tier || "Silver",
           points: res.customer?.points || 0,
@@ -303,73 +291,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     }
   }
 
-  // Handle Send OTP
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setGlobalError(null)
-    setErrors({})
-
-    const clean = otpIdentifier.trim()
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)
-    const isPhone = /^[0-9+\s-]{10,15}$/.test(clean)
-
-    if (!clean) {
-      setErrors({ otpIdentifier: "Please enter your mobile number or email" })
-      return
-    }
-
-    if (!isEmail && !isPhone) {
-      setErrors({ otpIdentifier: "Please enter a valid 10-digit mobile number or email address" })
-      return
-    }
-
-    if (isSignup && otpName.trim().length < 2) {
-      setErrors({ otpName: "Please enter your full name (minimum 2 characters)" })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await apiSendOtp(clean)
-      setOtpStep(2)
-      setOtpSentMessage(res.message || `Verification code sent to ${clean}`)
-      showToast(res.message || "Verification code sent!")
-    } catch (err: any) {
-      setGlobalError(err.message || "Failed to send verification code. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Handle Verify OTP
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setGlobalError(null)
-
-    if (!otpCode || otpCode.trim().length < 4) {
-      setErrors({ otpCode: "Please enter the 6-digit verification code" })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await apiVerifyOtp(otpIdentifier.trim(), otpCode.trim(), isSignup ? otpName.trim() : undefined)
-      onLogin({
-        id: res.customer?.id || `usr_${Date.now()}`,
-        name: res.customer?.name || (isSignup ? otpName.trim() : "Patron"),
-        email: res.customer?.email || (otpIdentifier.includes("@") ? otpIdentifier.trim() : ""),
-        phone: res.customer?.phone || (!otpIdentifier.includes("@") ? otpIdentifier.trim() : ""),
-        joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-        membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 0,
-      })
-      showToast(res.message || `Welcome to Gayatri Bhai, ${res.customer?.name || "Patron"}!`)
-    } catch (err: any) {
-      setGlobalError(err.message || "Invalid or expired verification code. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // Handle Google Credential Token (from GIS One Tap or Official Button)
   const handleGoogleCredentialToken = async (credential: string) => {
@@ -529,7 +450,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         avatar: res.customer?.avatar || "",
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
-        points: res.customer?.points || 250,
+        points: res.customer?.points || 0,
       })
       showToast(res.message || "Password updated successfully! Welcome back.")
     } catch (err: any) {
@@ -767,39 +688,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </div>
               </div>
 
-              {/* ── Mode Switcher: Password vs OTP Login ── */}
-              <div data-auth-item className="grid grid-cols-2 rounded-lg border border-border bg-surface p-1 gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMethod("password")
-                    setGlobalError(null)
-                  }}
-                  className={`rounded-md py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
-                    authMethod === "password"
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Password
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMethod("otp")
-                    setGlobalError(null)
-                    setOtpStep(1)
-                  }}
-                  className={`rounded-md py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-all ${
-                    authMethod === "otp"
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Email / Phone OTP
-                </button>
-              </div>
-
               {/* Global Error Notice */}
               {globalError && (
                 <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
@@ -816,171 +704,76 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 </div>
               )}
 
-              {/* ── METHOD 1: PASSWORD AUTH ── */}
-              {authMethod === "password" && (
-                <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
-                  {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" placeholder="e.g. Rahul Sharma" error={errors.name} />}
-                  <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
-                  {isSignup && (
-                    <Field id="phone" label="Mobile number (optional)" type="tel" value={phone} onChange={setPhone} autoComplete="tel" inputMode="tel" placeholder="e.g. 98765 43210" error={errors.phone} />
-                  )}
-                  <Field
-                    id="password"
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={setPassword}
-                    autoComplete={isSignup ? "new-password" : "current-password"}
-                    placeholder="••••••••"
-                    error={errors.password}
-                    trailing={
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
-                      </button>
-                    }
-                  />
+              {/* ── Email & Password Form ── */}
+              <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
+                {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" placeholder="e.g. Rahul Sharma" error={errors.name} />}
+                <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
+                <Field
+                  id="password"
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={setPassword}
+                  autoComplete={isSignup ? "new-password" : "current-password"}
+                  placeholder="••••••••"
+                  error={errors.password}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                    </button>
+                  }
+                />
 
-                  {isSignup ? (
-                    <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
-                      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
-                      <span>
-                        I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
-                        <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
-                        {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
-                      </span>
+                {isSignup ? (
+                  <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+                    <span>
+                      I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
+                      <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
+                      {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
+                    </span>
+                  </label>
+                ) : (
+                  <div data-auth-item className="flex justify-between items-center text-xs">
+                    <label className="flex items-center gap-2 text-muted-foreground cursor-pointer select-none text-[12px]">
+                      <input type="checkbox" defaultChecked className="size-3.5 rounded accent-foreground" />
+                      <span>Remember me</span>
                     </label>
-                  ) : (
-                    <div data-auth-item className="flex justify-between items-center text-xs">
-                      <label className="flex items-center gap-2 text-muted-foreground cursor-pointer select-none text-[12px]">
-                        <input type="checkbox" defaultChecked className="size-3.5 rounded accent-foreground" />
-                        <span>Remember me</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsForgotPassword(true)
-                          setResetEmail(email || "")
-                          setResetStep(1)
-                          setGlobalError(null)
-                          setErrors({})
-                        }}
-                        className="font-medium text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true)
+                        setResetEmail(email || "")
+                        setResetStep(1)
+                        setGlobalError(null)
+                        setErrors({})
+                      }}
+                      className="font-medium text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  data-auth-item
+                  type="submit"
+                  disabled={loading}
+                  className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                >
+                  {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
+                  {!loading && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                      <path d="M5 12h14m-5-5 5 5-5 5" />
+                    </svg>
                   )}
-
-                  <button
-                    data-auth-item
-                    type="submit"
-                    disabled={loading}
-                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
-                  >
-                    {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
-                    {!loading && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                        <path d="M5 12h14m-5-5 5 5-5 5" />
-                      </svg>
-                    )}
-                  </button>
-                </form>
-              )}
-
-              {/* ── METHOD 2: OTP AUTHENTICATION ── */}
-              {authMethod === "otp" && (
-                <div className="mt-6">
-                  {otpStep === 1 ? (
-                    <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-                      {isSignup && (
-                        <Field
-                          id="otpName"
-                          label="Your full name"
-                          value={otpName}
-                          onChange={setOtpName}
-                          autoComplete="name"
-                          error={errors.otpName}
-                        />
-                      )}
-                      <Field
-                        id="otpIdentifier"
-                        label="Email or Mobile Number"
-                        value={otpIdentifier}
-                        onChange={setOtpIdentifier}
-                        placeholder="e.g. name@gmail.com or 9876543210"
-                        error={errors.otpIdentifier}
-                      />
-
-                      <p className="text-[11px] text-muted-foreground pt-0.5">
-                        We will send a secure 6-digit one-time code to verify your identity.
-                      </p>
-
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
-                      >
-                        {loading ? "Sending code..." : "Send Verification Code"}
-                        {!loading && <Icon name="arrow" size={16} />}
-                      </button>
-                    </form>
-                  ) : (
-                    <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
-                      <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">Verification Code Sent</p>
-                        <p className="font-semibold text-foreground mt-1">{otpIdentifier}</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOtpStep(1)
-                            setOtpCode("")
-                          }}
-                          className="mt-2 text-xs font-bold text-[#d4af37] underline underline-offset-2"
-                        >
-                          Change mobile / email
-                        </button>
-                      </div>
-
-                      <Field
-                        id="otpCode"
-                        label="Enter 6-digit code"
-                        value={otpCode}
-                        onChange={setOtpCode}
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        placeholder="• • • • • •"
-                        error={errors.otpCode}
-                      />
-
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Didn&apos;t receive code?</span>
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={handleSendOtp}
-                          className="font-semibold text-foreground underline underline-offset-2 hover:opacity-80"
-                        >
-                          Resend code
-                        </button>
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
-                      >
-                        {loading ? "Verifying..." : isSignup ? "Verify & Create Account" : "Verify & Sign In"}
-                        {!loading && <Icon name="check" size={16} />}
-                      </button>
-                    </form>
-                  )}
-                </div>
-              )}
+                </button>
+              </form>
 
               {/* Switch to Login / Signup Bottom Link */}
               <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">

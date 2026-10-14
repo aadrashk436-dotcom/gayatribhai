@@ -20,11 +20,10 @@ export async function POST(request: Request) {
 
     const clean = identifier.trim();
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean);
-    const isPhone = /^[0-9+\s-]{10,15}$/.test(clean);
 
-    if (!isEmail && !isPhone) {
+    if (!isEmail) {
       return NextResponse.json(
-        { error: "Please enter a valid email address or 10-digit mobile number" },
+        { error: "Please enter a valid email address. Phone number login is not supported." },
         { status: 400 }
       );
     }

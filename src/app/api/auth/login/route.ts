@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         phone: customer.phone || "",
         avatar: customer.avatar || "",
         tier: customer.tier || "Silver",
-        points: customer.points || 250,
+        points: customer.points || 0,
       },
       message: `Welcome back, ${customer.name}!`,
     });
