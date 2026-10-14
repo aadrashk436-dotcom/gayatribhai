@@ -79,8 +79,9 @@ function CancelOrderDialog({
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Are you sure you wish to cancel this order? Since shipment has not yet been assigned to our courier partner,
-          we will cancel the order immediately and refund any amount charged to your original payment method.
+          {order.paymentMethod === "Cash on Delivery"
+            ? "Are you sure you wish to cancel this Cash on Delivery order? Since shipment has not yet been assigned to our courier partner, we will cancel the order immediately. No payment was collected."
+            : "Are you sure you wish to cancel this order? Since shipment has not yet been assigned to our courier partner, we will cancel the order immediately and refund any amount charged to your original payment method."}
         </p>
 
         <div className="rounded-lg border border-border bg-surface-2 p-3 text-xs space-y-1">
@@ -174,7 +175,18 @@ function OrderCard({
     <article className="rounded-sm border border-border bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{orderId}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{orderId}</p>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                order.paymentMethod === "Cash on Delivery"
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+              }`}
+            >
+              {order.paymentMethod === "Cash on Delivery" ? "💵 Cash on Delivery" : "💳 Online (Paid)"}
+            </span>
+          </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{dateStr}</p>
         </div>
         <span
@@ -259,7 +271,9 @@ function OrderCard({
       {isCancelled && (
         <div className="mt-4 rounded-xl border border-[#b4321f]/20 bg-[#b4321f]/5 p-3 flex items-center justify-between text-xs text-[#b4321f]">
           <span>Order cancelled {order.cancelReason ? `(${order.cancelReason})` : "upon request"}</span>
-          <span className="font-semibold uppercase tracking-wider text-[10px]">Payment Refunded</span>
+          <span className="font-semibold uppercase tracking-wider text-[10px]">
+            {order.paymentMethod === "Cash on Delivery" ? "Order Voided (No Charge)" : "Payment Refunded"}
+          </span>
         </div>
       )}
 

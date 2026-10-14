@@ -469,54 +469,154 @@ export function PaymentStep({
   onPay: (method: string) => void
   onBack: () => void
 }) {
-  const [method, setMethod] = useState("UPI")
+  const [paymentType, setPaymentType] = useState<"ONLINE" | "COD">("ONLINE")
+  const [onlineSubMethod, setOnlineSubMethod] = useState("UPI")
+
+  const handleProceed = () => {
+    if (paymentType === "COD") {
+      onPay("Cash on Delivery")
+    } else {
+      onPay(onlineSubMethod)
+    }
+  }
 
   return (
     <>
       <span className="eyebrow">Step 3 of 3</span>
-      <h1>Choose payment method</h1>
-      <div className="payment-tabs">
-        {["UPI", "Card", "Net Banking", "Wallet", "Cash on Delivery"].map((x) => (
-          <button
-            className={method === x ? "active" : ""}
-            onClick={() => setMethod(x)}
-            key={x}
-            type="button"
-          >
-            {x}
-          </button>
-        ))}
-      </div>
-      <div className="payment-panel">
-        {method === "UPI" ? (
-          <>
-            <label>
-              UPI ID (Optional)
-              <input placeholder="yourname@okhdfcbank" />
-            </label>
-            <p>Pay securely using Google Pay, PhonePe, Paytm, or any UPI app via Razorpay Test Mode.</p>
-          </>
-        ) : method === "Card" ? (
-          <>
-            <p>Pay securely using Credit, Debit, or Corporate Cards via Razorpay Test Mode.</p>
-          </>
-        ) : method === "Cash on Delivery" ? (
-          <div style={{ padding: "8px 0" }}>
-            <p style={{ fontWeight: 600, color: "#d4af37", marginBottom: 6 }}>💵 Cash on Delivery (Pay at Doorstep)</p>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>Pay in cash or via UPI QR code when our courier delivers your package.</p>
+      <h1>Select payment method</h1>
+
+      {/* Primary Payment Selector: Online vs COD */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+        <button
+          type="button"
+          onClick={() => setPaymentType("ONLINE")}
+          style={{
+            border: paymentType === "ONLINE" ? "1.5px solid #d4af37" : "1px solid var(--border)",
+            background: paymentType === "ONLINE" ? "rgba(212, 175, 55, 0.08)" : "transparent",
+            borderRadius: "12px",
+            padding: "16px 14px",
+            textAlign: "left",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+            <strong style={{ fontSize: "14px", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "6px" }}>
+              💳 Online Payment
+            </strong>
+            <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}>
+              RECOMMENDED
+            </span>
           </div>
-        ) : (
-          <p>
-            Select your preferred {method.toLowerCase()} option securely on the next screen.
+          <p style={{ margin: 0, fontSize: "11px", color: "var(--muted-foreground)" }}>
+            Instant UPI (GPay, PhonePe, Paytm), Cards & Net Banking via Razorpay
           </p>
-        )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPaymentType("COD")}
+          style={{
+            border: paymentType === "COD" ? "1.5px solid #d4af37" : "1px solid var(--border)",
+            background: paymentType === "COD" ? "rgba(212, 175, 55, 0.08)" : "transparent",
+            borderRadius: "12px",
+            padding: "16px 14px",
+            textAlign: "left",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+            <strong style={{ fontSize: "14px", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "6px" }}>
+              💵 Cash on Delivery
+            </strong>
+            <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(212, 175, 55, 0.15)", color: "#d4af37" }}>
+              PAY AT DOORSTEP
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: "11px", color: "var(--muted-foreground)" }}>
+            Pay in cash or scan courier UPI QR when your order arrives
+          </p>
+        </button>
       </div>
-      <div className="step-actions">
+
+      {paymentType === "ONLINE" ? (
+        <div>
+          <div className="payment-tabs">
+            {["UPI", "Card", "Net Banking", "Wallet"].map((x) => (
+              <button
+                className={onlineSubMethod === x ? "active" : ""}
+                onClick={() => setOnlineSubMethod(x)}
+                key={x}
+                type="button"
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+          <div className="payment-panel">
+            {onlineSubMethod === "UPI" ? (
+              <>
+                <label>
+                  UPI ID (Optional)
+                  <input placeholder="yourname@okhdfcbank" />
+                </label>
+                <p>Pay securely using Google Pay, PhonePe, Paytm, BHIM, or any UPI app via Razorpay Secure Gateway.</p>
+              </>
+            ) : onlineSubMethod === "Card" ? (
+              <>
+                <p>Pay securely using Visa, MasterCard, RuPay, Maestro, or Corporate Cards via Razorpay Secure Gateway.</p>
+              </>
+            ) : (
+              <p>
+                Select your preferred {onlineSubMethod.toLowerCase()} option securely on the next Razorpay checkout screen.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            padding: "20px",
+            background: "rgba(212, 175, 55, 0.04)",
+            border: "1px solid var(--border)",
+            borderRadius: "12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "22px" }}>💵</span>
+            <div>
+              <strong style={{ fontSize: "14px", color: "var(--foreground)" }}>Cash on Delivery (Doorstep Payment)</strong>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                You can pay using cash or scan the courier delivery agent's UPI QR code at the time of delivery.
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(212, 175, 55, 0.25)",
+              borderRadius: "8px",
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+              lineHeight: 1.5,
+            }}
+          >
+            🛡️ <strong>Cancellation Policy:</strong> Like online orders, Cash on Delivery orders can be easily cancelled from your Account dashboard before shipping is assigned to our courier partner. Once the courier AWB is generated and shipment is dispatched, cancellation cannot be processed.
+          </div>
+        </div>
+      )}
+
+      <div className="step-actions" style={{ marginTop: "24px" }}>
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={() => onPay(method)}>
-          {method === "Cash on Delivery" ? "Place COD Order" : `Pay ${money(total)} securely`}
+        <Button onClick={handleProceed} className="continue">
+          {paymentType === "COD" ? "Place Cash on Delivery Order" : `Pay ${money(total)} via Razorpay`}
         </Button>
       </div>
     </>
@@ -536,6 +636,7 @@ export function CheckoutView({
   const [confirmedOrderId, setConfirmedOrderId] = useState<string>(
     "GB-" + Math.floor(100000 + Math.random() * 900000)
   )
+  const [confirmedPaymentMethod, setConfirmedPaymentMethod] = useState<string>("Razorpay (Online)")
 
   const subtotal = cart.reduce(
     (sum, x) =>
@@ -577,7 +678,7 @@ export function CheckoutView({
       }))
 
       // Handle Cash on Delivery directly
-      if (chosenMethod === "Cash on Delivery") {
+      if (chosenMethod === "Cash on Delivery" || chosenMethod === "COD") {
         try {
           const orderRes = await apiCreateOrder(
             orderItems,
@@ -593,9 +694,15 @@ export function CheckoutView({
           )
           if (orderRes?.orderNumber) {
             setConfirmedOrderId(orderRes.orderNumber)
+            setConfirmedPaymentMethod("Cash on Delivery")
+          } else if (orderRes?.error) {
+            throw new Error(orderRes.error)
           }
         } catch (err: any) {
-          console.warn("COD order error:", err)
+          console.error("COD order error:", err)
+          alert(err.message || "Failed to place Cash on Delivery order. Please try again.")
+          setIsPaying(false)
+          return
         }
         setCart([])
         setStep(4)
@@ -603,6 +710,8 @@ export function CheckoutView({
         setIsPaying(false)
         return
       }
+
+      setConfirmedPaymentMethod("Razorpay (Online)")
 
       // Online Razorpay Flow
       const loaded = await loadRazorpayScript()
@@ -703,27 +812,55 @@ export function CheckoutView({
           Thank you for choosing Gayatri Bhai. Your garments are being hand-pressed and packaged in our signature box. We have dispatched tracking details to your registered phone.
         </p>
 
-        {selectedCourier && (
+        <div
+          style={{
+            margin: "16px auto",
+            padding: "14px 18px",
+            background: "rgba(212, 175, 55, 0.08)",
+            border: "1px solid rgba(212, 175, 55, 0.3)",
+            borderRadius: "12px",
+            maxWidth: "440px",
+            fontSize: "12px",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontWeight: 700, color: "#d4af37" }}>
+              💳 Mode: {confirmedPaymentMethod}
+            </span>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background: confirmedPaymentMethod === "Cash on Delivery" ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)",
+                color: confirmedPaymentMethod === "Cash on Delivery" ? "#f59e0b" : "#10b981",
+              }}
+            >
+              {confirmedPaymentMethod === "Cash on Delivery" ? "Pay at Doorstep" : "Payment Verified"}
+            </span>
+          </div>
+
+          {selectedCourier && (
+            <p style={{ margin: "4px 0 0", color: "var(--foreground)" }}>
+              🚚 Shipping Partner: <strong>{selectedCourier.name}</strong> ({selectedCourier.etd || "2-3 business days"})
+            </p>
+          )}
+
           <div
             style={{
-              margin: "16px auto",
-              padding: "12px 18px",
-              background: "rgba(212, 175, 55, 0.08)",
-              border: "1px solid rgba(212, 175, 55, 0.3)",
-              borderRadius: "10px",
-              maxWidth: "400px",
-              fontSize: "12px",
-              textAlign: "left",
+              marginTop: "10px",
+              paddingTop: "8px",
+              borderTop: "1px solid rgba(212, 175, 55, 0.2)",
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+              lineHeight: 1.4,
             }}
           >
-            <p style={{ margin: 0, fontWeight: 700, color: "#d4af37" }}>
-              🚚 Shipping Partner: {selectedCourier.name}
-            </p>
-            <p style={{ margin: "4px 0 0", color: "var(--muted-foreground)" }}>
-              Estimated transit: {selectedCourier.etd || "2-3 business days"}
-            </p>
+            🛡️ <strong>Cancellation Policy:</strong> You can cancel this order from your Account dashboard anytime before courier shipping is assigned. Once AWB tracking is generated, shipment is locked for delivery.
           </div>
-        )}
+        </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
           <Button

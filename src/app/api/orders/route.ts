@@ -37,9 +37,17 @@ function normalizeOrder(o: any) {
   if (rawStatus === "DELIVERED" || rawStatus === "delivered") displayStatus = "Delivered";
   if (rawStatus === "CANCELLED" || rawStatus === "cancelled") displayStatus = "Cancelled";
 
-  let displayPaymentStatus: "Paid" | "Pending COD" = "Pending COD";
+  const isCodOrder =
+    o.paymentMethod === "Cash on Delivery" ||
+    o.paymentMethod === "COD" ||
+    o.payment_method === "cod" ||
+    o.payment_method === "Cash on Delivery";
+
+  let displayPaymentStatus: "Paid" | "Pending COD" = isCodOrder ? "Pending COD" : "Pending COD";
   if (o.paymentStatus === "PAID" || o.paymentStatus === "Paid" || o.payment_status === "paid") {
     displayPaymentStatus = "Paid";
+  } else if (!isCodOrder && (o.paymentStatus === "Pending" || o.paymentStatus === "PENDING")) {
+    displayPaymentStatus = "Pending COD"; // display status fallback
   }
 
   let formattedDate = o.date;
@@ -88,8 +96,10 @@ function normalizeOrder(o: any) {
       firstItem.image ||
       p?.images?.[0] ||
       "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
-    paymentMethod: o.paymentMethod || (o.payment_method === "razorpay" ? "Razorpay (Online)" : "Razorpay (Online)"),
-    paymentId: o.paymentId || o.razorpayPaymentId || o.razorpay_payment_id || "",
+    paymentMethod: isCodOrder
+      ? "Cash on Delivery"
+      : o.paymentMethod || (o.payment_method === "razorpay" ? "Razorpay (Online)" : "Razorpay (Online)"),
+    paymentId: o.paymentId || o.razorpayPaymentId || o.razorpay_payment_id || (isCodOrder ? `cod_${o.orderNumber || o.id}` : ""),
     paymentStatus: displayPaymentStatus,
     status: displayStatus,
     date: formattedDate || "Today",
@@ -218,6 +228,29 @@ export async function PATCH(request: Request) {
 
     if (!targetIds.length) {
       return NextResponse.json({ error: "Order ID(s) required" }, { status: 400 });
+    }
+
+    // Strict Cancellation Rule (applies equally to COD and Online orders):
+    // Orders CANNOT be cancelled if shipment has already been assigned with courier/AWB or already dispatched/delivered.
+    if (status === "Cancelled" || status === "CANCELLED") {
+      const lockedOrders = orders
+        .filter((o: any) => targetIds.includes(o.id) || targetIds.includes(o.orderNumber))
+        .filter((o: any) => {
+          const hasAwb = Boolean(o.awb);
+          const s = (o.status || "").toLowerCase();
+          const isDispatched = s === "dispatched" || s === "shipped" || s === "assigned to courier" || s === "delivered";
+          return hasAwb || isDispatched;
+        });
+
+      if (lockedOrders.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Order cannot be cancelled because courier shipment / AWB has already been assigned.",
+            lockedOrderIds: lockedOrders.map((o: any) => o.id || o.orderNumber),
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const updatedOrders = orders.map((o: any) => {
