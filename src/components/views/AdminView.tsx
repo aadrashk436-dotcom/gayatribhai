@@ -1144,7 +1144,10 @@ export function AdminView() {
   ]
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0c10] text-zinc-100 font-sans selection:bg-[#d4af37] selection:text-black">
+    <div
+      data-theme="dark"
+      className="dark flex h-screen overflow-hidden bg-[#0a0c10] text-zinc-100 font-sans selection:bg-[#d4af37] selection:text-black [color-scheme:dark]"
+    >
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-2xl border border-[#d4af37]/40 bg-[#14171d]/95 px-5 py-3 text-xs font-semibold text-white shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-3">

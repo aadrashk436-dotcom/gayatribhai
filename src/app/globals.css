@@ -121,7 +121,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button,
+button {
+  font: inherit;
+  color: inherit;
+}
+
 input,
 select,
 textarea {
@@ -4789,17 +4793,7 @@ h2 {
 }
 
 .admin aside button {
-  padding: 12px 15px;
-  border: 0;
-  background: none;
-  color: #aeb8af;
-  text-align: left;
-  font-size: 10px;
-}
-
-.admin aside button.active {
-  background: rgba(255, 255, 255, .1);
-  color: #fff;
+  color: inherit;
 }
 
 .admin .admin-exit {

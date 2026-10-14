@@ -94,25 +94,35 @@ export function AdminSidebar({
             return (
               <button
                 key={item.name}
+                type="button"
                 onClick={() => {
                   setActiveTab(item.name)
                   setMobileMenuOpen(false)
                 }}
                 className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-wider transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? "bg-gradient-to-r from-[#d4af37] via-[#e2c462] to-[#c59d28] text-black shadow-lg shadow-[#d4af37]/30 font-extrabold scale-[1.01]"
-                    : "text-zinc-100 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10"
+                    ? "bg-gradient-to-r from-[#d4af37] via-[#e2c462] to-[#c59d28] shadow-lg shadow-[#d4af37]/30 scale-[1.01]"
+                    : "bg-white/[0.04] hover:bg-white/12 border border-white/5 hover:border-white/15"
                 }`}
+                style={{ color: isActive ? "#000000" : "#ffffff" }}
               >
                 <div className="flex items-center gap-3">
                   <IconComp
-                    className={`h-4 w-4 transition-transform ${
+                    className={`h-4 w-4 shrink-0 transition-transform ${
                       isActive
                         ? "text-black"
                         : "text-[#d4af37] group-hover:scale-110 group-hover:text-[#f3e5ab]"
                     }`}
+                    style={{ color: isActive ? "#000000" : "#d4af37" }}
                   />
-                  <span className="tracking-wide">{item.name}</span>
+                  <span
+                    className={`tracking-wide text-xs ${
+                      isActive ? "text-black font-extrabold" : "text-white font-medium"
+                    }`}
+                    style={{ color: isActive ? "#000000" : "#ffffff" }}
+                  >
+                    {item.name}
+                  </span>
                 </div>
                 {item.badge !== null && (
                   <span
