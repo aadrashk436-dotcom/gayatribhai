@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
+import { createOtpToken } from "@/lib/otpAuth";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -44,7 +45,9 @@ export async function POST(request: Request) {
 
     // Generate 6-digit Reset Code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const expiresInMs = 15 * 60 * 1000; // 15 minutes
+    const expiresAt = Date.now() + expiresInMs;
+    const verificationToken = createOtpToken(cleanEmail, otp, expiresInMs);
 
     db.otps = db.otps || {};
     db.otps[cleanEmail] = { otp, expiresAt, type: "password_reset" };
@@ -122,11 +125,21 @@ export async function POST(request: Request) {
       console.error("[Gayatri Bhai Reset] SMTP Error:", mailError);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
+      verificationToken,
       message: `Password reset code sent to ${cleanEmail}. Please check your inbox and spam folder.`,
-      expiresIn: 600,
+      expiresIn: 900,
     });
+
+    response.cookies.set("gb_reset_token", verificationToken, {
+      path: "/",
+      httpOnly: true,
+      maxAge: 900,
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to process password reset" }, { status: 500 });
   }

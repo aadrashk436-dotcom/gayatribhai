@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { verifyOtpToken } from "@/lib/otpAuth";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -11,7 +12,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVI
 
 export async function POST(request: Request) {
   try {
-    const { email, otp, newPassword } = await request.json();
+    const { email, otp, newPassword, verificationToken } = await request.json();
 
     const cleanEmail = (email || "").toLowerCase().trim();
     const cleanOtp = (otp || "").toString().trim();
@@ -29,6 +30,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "New password must be at least 6 characters long." }, { status: 400 });
     }
 
+    // Read cookie token if present
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookieToken = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("gb_reset_token=") || c.startsWith("gb_otp_token="))
+      ?.split("=")[1];
+
+    const tokenToCheck = verificationToken || cookieToken;
+
+    let isOtpValid = false;
+
+    // 1. Check stateless cryptographic token (resilient on serverless)
+    if (tokenToCheck) {
+      const verifyRes = verifyOtpToken(cleanEmail, cleanOtp, tokenToCheck);
+      if (verifyRes.valid) {
+        isOtpValid = true;
+      }
+    }
+
     // Read DB
     const dbPath = getDbPath();
     let db: any = { customers: [], otps: {} };
@@ -42,11 +63,15 @@ export async function POST(request: Request) {
     db.otps = db.otps || {};
     db.customers = db.customers || [];
 
-    const record = db.otps[cleanEmail];
+    // 2. Fallback check local db.otps
+    if (!isOtpValid) {
+      const record = db.otps[cleanEmail];
+      if (record && record.otp === cleanOtp && (!record.expiresAt || Date.now() <= record.expiresAt)) {
+        isOtpValid = true;
+      }
+    }
 
-    // Strictly validate real stored OTP (no master code bypass)
-    let isOtpValid = Boolean(record && record.otp === cleanOtp && (!record.expiresAt || Date.now() <= record.expiresAt));
-
+    // 3. Fallback check Supabase
     if (!isOtpValid && SUPABASE_URL && SUPABASE_KEY) {
       try {
         const sbRes = await fetch(
@@ -129,7 +154,7 @@ export async function POST(request: Request) {
 
     const token = `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       customer: {
@@ -144,6 +169,10 @@ export async function POST(request: Request) {
       },
       message: "Password reset successful! You are now signed in.",
     });
+
+    response.cookies.set("gb_reset_token", "", { path: "/", maxAge: 0 });
+    response.cookies.set("gb_otp_token", "", { path: "/", maxAge: 0 });
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to reset password." }, { status: 500 });
   }

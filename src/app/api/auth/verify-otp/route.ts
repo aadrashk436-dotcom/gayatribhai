@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { verifyOtpToken } from "@/lib/otpAuth";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -8,7 +9,7 @@ function getDbPath() {
 
 export async function POST(request: Request) {
   try {
-    const { identifier, otp, name } = await request.json();
+    const { identifier, otp, name, verificationToken } = await request.json();
 
     if (!identifier || !otp) {
       return NextResponse.json({ error: "Identifier and verification code are required" }, { status: 400 });
@@ -16,6 +17,26 @@ export async function POST(request: Request) {
 
     const clean = identifier.trim().toLowerCase();
     const cleanOtp = otp.toString().trim();
+
+    // Read cookie token if present
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookieToken = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("gb_otp_token="))
+      ?.split("=")[1];
+
+    const tokenToCheck = verificationToken || cookieToken;
+
+    let isValidOtp = false;
+
+    // 1. Verify stateless cryptographic token
+    if (tokenToCheck) {
+      const verifyRes = verifyOtpToken(clean, cleanOtp, tokenToCheck);
+      if (verifyRes.valid) {
+        isValidOtp = true;
+      }
+    }
 
     const dbPath = getDbPath();
     let db: any = { customers: [], otps: {} };
@@ -27,14 +48,18 @@ export async function POST(request: Request) {
       }
     }
 
-    const record = db.otps?.[clean];
-
-    // Validate real OTP and expiration strictly (no mock/master bypass)
-    let isValidOtp = Boolean(record && record.otp === cleanOtp && Date.now() <= record.expiresAt);
+    // 2. Check local db.otps
+    if (!isValidOtp) {
+      const record = db.otps?.[clean];
+      if (record && record.otp === cleanOtp && Date.now() <= record.expiresAt) {
+        isValidOtp = true;
+      }
+    }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
     const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+    // 3. Fallback check Supabase
     if (!isValidOtp && SUPABASE_URL && SUPABASE_KEY) {
       try {
         const sbRes = await fetch(
@@ -165,7 +190,7 @@ export async function POST(request: Request) {
 
     const token = isAdmin ? `gb_admin_token_${Date.now()}` : `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       isAdmin,
@@ -186,6 +211,9 @@ export async function POST(request: Request) {
         ? "Account created successfully via OTP. Welcome to Gayatri Bhai!"
         : "Welcome back!",
     });
+
+    response.cookies.set("gb_otp_token", "", { path: "/", maxAge: 0 });
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to verify OTP" }, { status: 500 });
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
+import { createOtpToken } from "@/lib/otpAuth";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -30,7 +31,9 @@ export async function POST(request: Request) {
 
     // Generate secure 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+    const expiresInMs = 10 * 60 * 1000; // 10 minutes validity
+    const expiresAt = Date.now() + expiresInMs;
+    const verificationToken = createOtpToken(clean.toLowerCase(), otp, expiresInMs);
 
     // 1. Save to local db.json
     try {
@@ -114,13 +117,23 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
+      verificationToken,
       message: isEmail
         ? `Verification code sent to ${clean}. Please check your inbox and spam folder.`
         : `Verification code sent to ${clean}.`,
-      expiresIn: 300,
+      expiresIn: 600,
     });
+
+    response.cookies.set("gb_otp_token", verificationToken, {
+      path: "/",
+      httpOnly: true,
+      maxAge: 600,
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to send OTP" }, { status: 500 });
   }

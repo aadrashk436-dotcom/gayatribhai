@@ -178,11 +178,17 @@ export class AuthError extends Error {
 }
 
 // ─── Customer Auth ───
-export async function apiLogin(email: string, password: string, otp?: string, step?: "initiate" | "verify") {
+export async function apiLogin(
+  email: string,
+  password: string,
+  otp?: string,
+  step?: "initiate" | "verify",
+  verificationToken?: string
+) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ email, password, otp, step }),
+    body: JSON.stringify({ email, password, otp, step, verificationToken }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -201,6 +207,7 @@ export async function apiSignup(formData: {
   password: string;
   otp?: string;
   step?: "initiate" | "verify";
+  verificationToken?: string;
 }) {
   const res = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: "POST",
@@ -229,11 +236,11 @@ export async function apiSendOtp(identifier: string) {
   return data;
 }
 
-export async function apiVerifyOtp(identifier: string, otp: string, name?: string) {
+export async function apiVerifyOtp(identifier: string, otp: string, name?: string, verificationToken?: string) {
   const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ identifier, otp, name }),
+    body: JSON.stringify({ identifier, otp, name, verificationToken }),
   });
   const data = await res.json();
   if (!res.ok) throw new AuthError(data.error || "Invalid verification code", res.status, data);
@@ -255,11 +262,11 @@ export async function apiForgotPassword(email: string) {
   return data;
 }
 
-export async function apiResetPassword(email: string, otp: string, newPassword: string) {
+export async function apiResetPassword(email: string, otp: string, newPassword: string, verificationToken?: string) {
   const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ email, otp, newPassword }),
+    body: JSON.stringify({ email, otp, newPassword, verificationToken }),
   });
   const data = await res.json();
   if (!res.ok) throw new AuthError(data.error || "Failed to reset password", res.status, data);

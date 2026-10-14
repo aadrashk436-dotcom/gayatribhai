@@ -107,6 +107,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
   // OTP Verification state
   const [otpCode, setOtpCode] = useState("")
+  const [verificationToken, setVerificationToken] = useState("")
   const [resendCountdown, setResendCountdown] = useState(0)
   const [otpSentMessage, setOtpSentMessage] = useState("")
 
@@ -130,6 +131,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [resetOtp, setResetOtp] = useState("")
+  const [resetVerificationToken, setResetVerificationToken] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -231,6 +233,9 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           password,
           step: "initiate",
         })
+        if (res.verificationToken) {
+          setVerificationToken(res.verificationToken)
+        }
         setAuthStep("otp")
         setOtpCode("")
         setResendCountdown(30)
@@ -238,6 +243,9 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         showToast("Verification code sent to your email!")
       } else {
         const res = await apiLogin(email.trim(), password, undefined, "initiate")
+        if (res.verificationToken) {
+          setVerificationToken(res.verificationToken)
+        }
         setAuthStep("otp")
         setOtpCode("")
         setResendCountdown(30)
@@ -307,6 +315,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           password,
           otp: cleanOtp,
           step: "verify",
+          verificationToken: verificationToken || undefined,
         })
         onLogin({
           id: res.customer?.id || `usr_${Date.now()}`,
@@ -319,7 +328,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         })
         showToast("Account created successfully. Welcome to Gayatri Bhai!")
       } else {
-        const res = await apiLogin(email.trim(), password, cleanOtp, "verify")
+        const res = await apiLogin(email.trim(), password, cleanOtp, "verify", verificationToken || undefined)
         onLogin({
           id: res.customer?.id || `usr_${Date.now()}`,
           name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
@@ -346,14 +355,20 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     setLoading(true)
     try {
       if (isSignup) {
-        await apiSignup({
+        const res = await apiSignup({
           name: name.trim(),
           email: email.trim(),
           password,
           step: "initiate",
         })
+        if (res.verificationToken) {
+          setVerificationToken(res.verificationToken)
+        }
       } else {
-        await apiLogin(email.trim(), password, undefined, "initiate")
+        const res = await apiLogin(email.trim(), password, undefined, "initiate")
+        if (res.verificationToken) {
+          setVerificationToken(res.verificationToken)
+        }
       }
       setResendCountdown(30)
       showToast(`Fresh verification code sent to ${email.trim()}!`)
@@ -519,6 +534,9 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     setLoading(true)
     try {
       const res = await apiForgotPassword(clean)
+      if (res.verificationToken) {
+        setResetVerificationToken(res.verificationToken)
+      }
       setResetStep(2)
       showToast(res.message || "Reset code sent to your email!")
     } catch (err: any) {
@@ -552,7 +570,12 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
 
     setLoading(true)
     try {
-      const res = await apiResetPassword(resetEmail.trim().toLowerCase(), cleanOtp, newPassword)
+      const res = await apiResetPassword(
+        resetEmail.trim().toLowerCase(),
+        cleanOtp,
+        newPassword,
+        resetVerificationToken || undefined
+      )
       setIsForgotPassword(false)
       onLogin({
         id: res.customer?.id || `usr_${Date.now()}`,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { sendOtpEmail } from "@/lib/mailer";
+import { createOtpToken, verifyOtpToken } from "@/lib/otpAuth";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -12,7 +13,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVI
 
 export async function POST(request: Request) {
   try {
-    const { email, password, otp, step } = await request.json();
+    const { email, password, otp, step, verificationToken } = await request.json();
 
     // 1. Validation - Email
     const cleanEmail = (email || "").toLowerCase().trim();
@@ -110,7 +111,9 @@ export async function POST(request: Request) {
 
     if (!isVerifyStep) {
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+      const expiresInMs = 10 * 60 * 1000; // 10 minutes
+      const expiresAt = Date.now() + expiresInMs;
+      const token = createOtpToken(cleanEmail, generatedOtp, expiresInMs);
 
       db.otps[cleanEmail] = {
         otp: generatedOtp,
@@ -158,12 +161,22 @@ export async function POST(request: Request) {
         console.error("[Login OTP] Email send error:", mailErr);
       }
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         otpRequired: true,
         email: cleanEmail,
+        verificationToken: token,
         message: `Verification code sent to ${cleanEmail}. Please enter the 6-digit code to complete login.`,
       });
+
+      response.cookies.set("gb_otp_token", token, {
+        path: "/",
+        httpOnly: true,
+        maxAge: 600,
+        sameSite: "lax",
+      });
+
+      return response;
     }
 
     // ── STEP 2: VERIFY OTP CODE & COMPLETE LOGIN ──
@@ -172,10 +185,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please enter the 6-digit verification code" }, { status: 400 });
     }
 
-    const record = db.otps?.[cleanEmail];
-    let isValidOtp = Boolean(record && record.otp === cleanOtp && Date.now() <= record.expiresAt);
+    // Read cookie token if present
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookieToken = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("gb_otp_token="))
+      ?.split("=")[1];
 
-    // Fallback check in Supabase if local check failed
+    const tokenToCheck = verificationToken || cookieToken;
+
+    let isValidOtp = false;
+
+    // 1. Check stateless cryptographic token (works across all serverless instances)
+    if (tokenToCheck) {
+      const verifyRes = verifyOtpToken(cleanEmail, cleanOtp, tokenToCheck);
+      if (verifyRes.valid) {
+        isValidOtp = true;
+      }
+    }
+
+    // 2. Check local db.otps
+    if (!isValidOtp) {
+      const record = db.otps?.[cleanEmail];
+      if (record && record.otp === cleanOtp && Date.now() <= record.expiresAt) {
+        isValidOtp = true;
+      }
+    }
+
+    // 3. Fallback check in Supabase
     if (!isValidOtp && SUPABASE_URL && SUPABASE_KEY) {
       try {
         const sbRes = await fetch(
@@ -219,7 +257,7 @@ export async function POST(request: Request) {
       ? `gb_admin_token_${Date.now()}`
       : `gb_token_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       isAdmin,
@@ -235,6 +273,9 @@ export async function POST(request: Request) {
       },
       message: isAdmin ? "Welcome back, Store Admin Gayatri Puri!" : `Welcome back, ${customer.name}!`,
     });
+
+    response.cookies.set("gb_otp_token", "", { path: "/", maxAge: 0 });
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Login failed. Please try again." }, { status: 500 });
   }
