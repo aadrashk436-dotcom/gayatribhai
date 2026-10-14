@@ -575,7 +575,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   return (
     <div ref={root} className="grid min-h-[calc(100svh-80px)] bg-background text-foreground md:min-h-[calc(100svh-100px)] lg:grid-cols-2">
       {/* Left Visual Column */}
-      <div className="auth-visual relative h-32 sm:h-48 overflow-hidden lg:h-auto lg:min-h-full">
+      <div className="auth-visual relative h-28 sm:h-44 overflow-hidden lg:h-auto lg:min-h-full">
         <Image
           src="/assets/banners/auth-portrait.jpg"
           alt="Artisanal Hand-Embroidered Luxury Shirt"
@@ -584,10 +584,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover object-[center_20%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
-        <div className="absolute bottom-3 left-4 right-4 text-white sm:bottom-6 sm:left-6 sm:right-6 lg:bottom-14 lg:left-14 lg:right-14">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-[#d4af37]">GAYATRI BHAI ATELIER</p>
-          <p className="mt-0.5 font-display text-xl sm:text-2xl md:text-3xl lg:text-5xl leading-tight">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+        <div className="absolute bottom-2.5 left-4 right-4 text-white sm:bottom-6 sm:left-6 sm:right-6 lg:bottom-14 lg:left-14 lg:right-14">
+          <p className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-[0.24em] text-[#d4af37]">GAYATRI BHAI ATELIER</p>
+          <p className="mt-0.5 font-display text-lg sm:text-2xl md:text-3xl lg:text-5xl leading-tight">
             {isSignup ? "Artistry in Every Thread." : "Welcome to Haute Luxury."}
           </p>
           <p className="hidden sm:block mt-1 text-[11px] uppercase tracking-widest text-zinc-300">
@@ -597,7 +597,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       </div>
 
       {/* Right Form Column */}
-      <div className="flex items-center justify-center px-4 py-6 sm:px-8 sm:py-10 md:px-12 md:py-14 lg:px-16 w-full">
+      <div className="flex items-center justify-center px-3.5 py-4 sm:px-8 sm:py-10 md:px-12 md:py-14 lg:px-16 w-full">
         <div className="w-full max-w-md mx-auto">
           {isForgotPassword ? (
             <div data-auth-item className="mt-2">
@@ -842,7 +842,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                                 setAlreadyExistsNotice(null)
                                 router.replace(redirect ? `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}`)
                               }}
-                              className="flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-wider text-background shadow transition-all hover:opacity-90 active:scale-98 cursor-pointer"
+                              className="flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-wider text-background shadow transition-all hover:opacity-90 active:scale-98 cursor-pointer"
                             >
                               <span>Sign In Directly</span>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -852,7 +852,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                             <button
                               type="button"
                               onClick={handleGoogleBtnClick}
-                              className="flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-foreground hover:bg-surface-2 transition-all active:scale-98 cursor-pointer"
+                              className="flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-foreground hover:bg-surface-2 transition-all active:scale-98 cursor-pointer"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
@@ -962,17 +962,17 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               ) : (
                 <div className="mt-6 flex flex-col gap-5">
                   {/* Compact Email Pill with Edit Action */}
-                  <div data-auth-item className="flex items-center justify-between rounded-xl border border-border/80 bg-surface/90 px-4 py-3 shadow-xs">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/15 text-[#d4af37]">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div data-auth-item className="flex items-center justify-between rounded-xl border border-border/80 bg-surface/90 px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-xs gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/15 text-[#d4af37]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect width="20" height="16" x="2" y="4" rx="2" />
                           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                         </svg>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Code sent to</p>
-                        <p className="truncate text-sm font-bold text-foreground">{email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Code sent to</p>
+                        <p className="truncate text-xs sm:text-sm font-bold text-foreground">{email}</p>
                       </div>
                     </div>
                     <button
@@ -982,7 +982,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         setGlobalError(null)
                         setErrors({})
                       }}
-                      className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface transition-all active:scale-95 cursor-pointer shadow-xs"
+                      className="shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold text-foreground hover:bg-surface transition-all active:scale-95 cursor-pointer shadow-xs"
                       title="Edit email"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1001,7 +1001,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   )}
 
                   {/* OTP Submission Form */}
-                  <form onSubmit={handleVerifyOtp} noValidate className="flex flex-col gap-4">
+                  <form onSubmit={handleVerifyOtp} noValidate className="flex flex-col gap-3.5 sm:gap-4">
                     <div data-auth-item className="w-full">
                       <label htmlFor="otpCode" className="block text-xs font-semibold uppercase tracking-[0.12em] text-foreground/80 mb-2">
                         Enter 6-Digit OTP
@@ -1021,7 +1021,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                         }}
                         placeholder="• • • • • •"
                         aria-invalid={Boolean(errors.otpCode)}
-                        className={`h-14 sm:h-16 w-full rounded-xl border bg-surface/80 px-4 text-center font-mono text-2xl sm:text-3xl font-bold tracking-[0.35em] sm:tracking-[0.5em] text-foreground placeholder:tracking-normal placeholder:font-normal placeholder:text-muted-foreground/35 outline-none transition-all ${
+                        className={`h-13 sm:h-16 w-full rounded-xl border bg-surface/80 px-2 sm:px-4 text-center font-mono text-xl sm:text-3xl font-bold tracking-[0.25em] sm:tracking-[0.45em] text-foreground placeholder:tracking-normal placeholder:font-normal placeholder:text-muted-foreground/35 outline-none transition-all ${
                           errors.otpCode
                             ? "border-[#b4321f] focus:ring-2 focus:ring-[#b4321f]/20"
                             : "border-border hover:border-foreground/40 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
@@ -1035,10 +1035,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                     </div>
 
                     {/* Resend Section */}
-                    <div data-auth-item className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                      <span>Didn&apos;t receive the code?</span>
+                    <div data-auth-item className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-muted-foreground px-0.5">
+                      <span>Didn&apos;t receive code?</span>
                       {resendCountdown > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 font-medium text-muted-foreground bg-surface px-3 py-1 rounded-full border border-border">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-muted-foreground bg-surface px-2.5 py-1 rounded-full border border-border">
                           <span className="size-1.5 rounded-full bg-[#d4af37] animate-pulse" />
                           Resend in {resendCountdown}s
                         </span>
@@ -1065,7 +1065,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                       id="submit-otp-btn"
                       type="submit"
                       disabled={loading || otpCode.trim().length < 4}
-                      className="w-full mt-3 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                      className="w-full mt-2 sm:mt-3 flex h-13 sm:h-14 items-center justify-center gap-2.5 sm:gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.12em] sm:tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? (
                         <span>Verifying code...</span>
