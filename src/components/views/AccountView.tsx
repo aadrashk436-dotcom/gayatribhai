@@ -437,7 +437,28 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   const root = useRef<HTMLDivElement>(null)
   const [tab, setTab] = useState<Tab>("Overview")
   const [dialog, setDialog] = useState<Address | null>(null)
-  const [profile, setProfile] = useState({ name: user?.name ?? "", email: user?.email ?? "", phone: user?.phone ?? "" })
+
+  const defaultPhone = user?.phone || addresses.find((a) => a.isDefault)?.phone || addresses[0]?.phone || ""
+  const defaultName = user?.name || addresses.find((a) => a.isDefault)?.name || addresses[0]?.name || ""
+  const defaultEmail = user?.email || ""
+
+  const [profile, setProfile] = useState({
+    name: defaultName,
+    email: defaultEmail,
+    phone: defaultPhone,
+  })
+
+  // Synchronize profile state when user hydrates or updates
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || addresses.find((a) => a.isDefault)?.name || addresses[0]?.name || "",
+        email: user.email || "",
+        phone: user.phone || addresses.find((a) => a.isDefault)?.phone || addresses[0]?.phone || "",
+      })
+    }
+  }, [user, addresses])
+
   const [prefs, setPrefs] = useState({ drops: true, orders: true, whatsapp: false })
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
@@ -540,12 +561,14 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
 
   if (!user) return <GuestState />
 
-  const initials = user.name
+  const displayName = user.name || (user.email ? user.email.split("@")[0].replace(/[._]/g, " ") : "Valued Patron")
+  const initials = displayName
     .split(" ")
+    .filter(Boolean)
     .map((p) => p[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase() || "GB"
   const points = user.points ?? 0
   const tier = user.membershipTier ?? "Silver"
 
@@ -579,8 +602,8 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-accent">
                 <Icon name="award" size={12} /> {tier} member
               </span>
-              <h1 className="mt-2 font-display text-3xl leading-none md:text-5xl">{user.name}</h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">{`${user.email}${user.joinedDate ? ` · Since ${user.joinedDate}` : ""}`}</p>
+              <h1 className="mt-2 font-display text-3xl leading-none md:text-5xl">{displayName}</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">{`${user.email || ""}${user.joinedDate ? ` · Since ${user.joinedDate}` : ""}`}</p>
             </div>
           </div>
           <div data-profile-item className="flex gap-2">
@@ -830,14 +853,45 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                 <h2 className="font-display text-3xl">Settings</h2>
                 <form
                   className="grid gap-4 rounded-sm border border-border bg-surface p-5 md:grid-cols-2 md:p-6"
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault()
-                    if (profile.name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(profile.email)) {
-                      showToast("Please enter a valid name and email")
+                    const cleanName = profile.name.trim()
+                    const cleanEmail = profile.email.trim()
+                    const cleanPhone = profile.phone.trim()
+
+                    if (cleanName.length < 2) {
+                      showToast("Please enter a valid full name (minimum 2 characters)")
                       return
                     }
-                    onUpdateUser({ ...user, ...profile })
-                    showToast("Profile updated")
+                    if (cleanEmail && !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+                      showToast("Please enter a valid email address")
+                      return
+                    }
+
+                    const updatedUser = {
+                      ...user,
+                      name: cleanName,
+                      email: cleanEmail || user.email,
+                      phone: cleanPhone,
+                    }
+                    onUpdateUser(updatedUser)
+                    showToast("Profile details updated successfully")
+
+                    try {
+                      await fetch("/api/auth/profile", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          id: user.id,
+                          email: user.email,
+                          name: cleanName,
+                          newEmail: cleanEmail,
+                          phone: cleanPhone,
+                        }),
+                      })
+                    } catch (err) {
+                      console.warn("Could not sync profile to backend:", err)
+                    }
                   }}
                 >
                   {(
@@ -850,7 +904,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                     <label key={key} className={`text-sm font-medium ${key === "name" ? "md:col-span-2" : ""}`}>
                       {label}
                       <input
-                        value={profile[key]}
+                        value={profile[key] ?? ""}
                         onChange={(e) => setProfile((p) => ({ ...p, [key]: e.target.value }))}
                         autoComplete={ac}
                         className="mt-1.5 h-12 w-full rounded-sm border border-border bg-background px-4 text-[15px] outline-none focus:border-foreground"
