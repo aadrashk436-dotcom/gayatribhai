@@ -184,6 +184,17 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
             </thead>
             {isLoadingOrders ? (
               <SkeletonOrdersTable />
+            ) : filteredOrders.length === 0 ? (
+              <tbody className="divide-y divide-white/5">
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-zinc-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <p className="font-semibold text-white text-sm">No orders found</p>
+                      <p className="text-xs text-zinc-500">Live store orders will appear here automatically when placed.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
             ) : (
               <tbody className="divide-y divide-white/5">
                 {filteredOrders.map((ord) => {

@@ -1,6 +1,4 @@
-"use client"
-
-import React from "react"
+import React, { useMemo } from "react"
 import Image from "next/image"
 import {
   IndianRupee,
@@ -30,6 +28,17 @@ export function AdminDashboardTab({
   customerList,
   setActiveTab,
 }: AdminDashboardTabProps) {
+  const totalRevenue = useMemo(() => {
+    return orderList.reduce((sum, o) => {
+      const orderTotal = o.total || 0
+      return sum + (orderTotal > 10000 ? Math.round(orderTotal / 100) : orderTotal)
+    }, 0)
+  }, [orderList])
+
+  const shirtsSoldCount = useMemo(() => {
+    return orderList.reduce((sum, o) => sum + (o.qty || 1), 0)
+  }, [orderList])
+
   return (
     <div className="space-y-8 animate-in fade-in duration-150">
       {/* 4 Hero KPI Cards */}
@@ -45,10 +54,10 @@ export function AdminDashboardTab({
               </div>
             </div>
             <div className="mt-4">
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">₹8,42,590</h3>
+              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{formatINR(totalRevenue)}</h3>
               <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span>+18.2% vs last month</span>
+                <span>Live from store orders</span>
               </div>
             </div>
           </div>
@@ -61,10 +70,10 @@ export function AdminDashboardTab({
               </div>
             </div>
             <div className="mt-4">
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{orderList.length + 1243}</h3>
+              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{orderList.length}</h3>
               <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span>+12.5% fulfillment rate</span>
+                <span>Real-time database sync</span>
               </div>
             </div>
           </div>
@@ -77,10 +86,10 @@ export function AdminDashboardTab({
               </div>
             </div>
             <div className="mt-4">
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">1,614 Units</h3>
+              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{shirtsSoldCount} {shirtsSoldCount === 1 ? "Unit" : "Units"}</h3>
               <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400 font-semibold">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span>+16.8% volume</span>
+                <span>Total verified items</span>
               </div>
             </div>
           </div>
@@ -93,10 +102,10 @@ export function AdminDashboardTab({
               </div>
             </div>
             <div className="mt-4">
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{customerList.length + 407}</h3>
+              <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">{customerList.length}</h3>
               <div className="flex items-center gap-1.5 mt-2 text-xs text-purple-400 font-semibold">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span>94% Repeat Loyalty</span>
+                <span>Active registered accounts</span>
               </div>
             </div>
           </div>
@@ -230,7 +239,14 @@ export function AdminDashboardTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {orderList.slice(0, 5).map((ord) => (
+              {orderList.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-zinc-500 text-xs">
+                    No store orders yet. Real live customer orders will appear here automatically.
+                  </td>
+                </tr>
+              ) : (
+                orderList.slice(0, 5).map((ord) => (
                 <tr key={ord.id} className="hover:bg-white/[0.02] transition">
                   <td className="py-3.5 px-3 font-mono font-bold text-[#d4af37]">{ord.id}</td>
                   <td className="py-3.5 px-3">
@@ -270,7 +286,7 @@ export function AdminDashboardTab({
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

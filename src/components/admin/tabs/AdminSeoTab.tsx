@@ -44,11 +44,11 @@ export const AdminSeoTab: React.FC<AdminSeoTabProps> = ({
           </div>
 
           <div>
-            <label className="block font-semibold text-zinc-400 mb-1">Razorpay Live Key ID</label>
+            <label className="block font-semibold text-zinc-400 mb-1">Razorpay API Key ID (Active Test Mode)</label>
             <input
               type="text"
               disabled
-              value="rzp_live_Tl6lD0OL5uKch9"
+              value="rzp_test_Tl6r6m9eEhjxUb"
               className="w-full rounded-xl border border-white/10 bg-[#0d0f12] px-4 py-2.5 text-white font-mono"
             />
           </div>

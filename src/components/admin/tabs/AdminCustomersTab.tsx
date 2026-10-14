@@ -36,7 +36,15 @@ export const AdminCustomersTab: React.FC<AdminCustomersTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {customerList.map((c) => (
+              {customerList.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-zinc-400">
+                    <p className="font-semibold text-white text-sm">No registered patrons yet</p>
+                    <p className="text-xs text-zinc-500 mt-1">Patrons who sign up or check out will be listed here dynamically.</p>
+                  </td>
+                </tr>
+              ) : (
+                customerList.map((c) => (
                 <tr key={c.id} className="hover:bg-white/[0.02] transition">
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
@@ -71,7 +79,7 @@ export const AdminCustomersTab: React.FC<AdminCustomersTabProps> = ({
                   <td className="py-4 px-4 font-mono text-[#d4af37] font-semibold">{c.points} pts</td>
                   <td className="py-4 px-4 text-zinc-400">{c.joined}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

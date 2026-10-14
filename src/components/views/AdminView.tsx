@@ -240,14 +240,24 @@ export function AdminView() {
       const fetchOrders = fetch("/api/orders")
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+          if (data && Array.isArray(data.orders)) {
             setOrderList(data.orders)
           }
         })
         .catch((e) => console.warn("Could not load orders from API:", e))
         .finally(() => setIsLoadingOrders(false))
 
-      // 3. Live Hero Banners
+      // 3. Live Customers
+      const fetchCustomers = fetch("/api/admin/customers")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.customers)) {
+            setCustomerList(data.customers)
+          }
+        })
+        .catch((e) => console.warn("Could not load customers from API:", e))
+
+      // 4. Live Hero Banners
       const fetchBanners = fetch("/api/banners")
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => {
@@ -258,7 +268,7 @@ export function AdminView() {
         .catch((e) => console.warn("Could not load banners from API:", e))
         .finally(() => setIsLoadingBanners(false))
 
-      // 4. Live Atelier Blogs
+      // 5. Live Atelier Blogs
       const fetchBlogs = fetch("/api/blogs?all=true")
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => {
@@ -269,7 +279,7 @@ export function AdminView() {
         .catch((e) => console.warn("Could not load blogs from API:", e))
         .finally(() => setIsLoadingBlogs(false))
 
-      // 5. Live Global SEO Settings
+      // 6. Live Global SEO Settings
       const fetchSeo = fetch("/api/seo")
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -280,7 +290,7 @@ export function AdminView() {
         .catch((e) => console.warn("Could not load SEO settings from API:", e))
         .finally(() => setIsLoadingSeo(false))
 
-      await Promise.allSettled([fetchProducts, fetchOrders, fetchBanners, fetchBlogs, fetchSeo])
+      await Promise.allSettled([fetchProducts, fetchOrders, fetchCustomers, fetchBanners, fetchBlogs, fetchSeo])
     } finally {
       setIsLoadingAll(false)
       setIsRefreshing(false)

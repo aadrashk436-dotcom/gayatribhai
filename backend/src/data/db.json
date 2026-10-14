@@ -1194,26 +1194,6 @@
   ],
   "customers": [
     {
-      "id": "cust_1791902311300",
-      "name": "Rohan Sharma",
-      "email": "rohan.sharma.1791902311298@testdomain.com",
-      "phone": "9876543210",
-      "password": "ValidPassword123!",
-      "tier": "Silver",
-      "points": 250,
-      "createdAt": "2026-10-13T14:38:31.300Z"
-    },
-    {
-      "id": "cust_1791904008588",
-      "name": "Test User",
-      "email": "testuser@gmail.com",
-      "phone": "",
-      "tier": "Silver",
-      "points": 250,
-      "authProvider": "otp",
-      "createdAt": "2026-10-13T15:06:48.588Z"
-    },
-    {
       "id": "cust_1791904009129",
       "name": "Gayatri Puri",
       "email": "gayatripuri634@gmail.com",
@@ -1239,6 +1219,62 @@
   ],
   "addresses": [],
   "orders": [
+    {
+      "id": "GB-481181",
+      "orderNumber": "GB-481181",
+      "customer": "Savan Test Patron",
+      "customerName": "Savan Test Patron",
+      "email": "opsavan30@gmail.com",
+      "customerEmail": "opsavan30@gmail.com",
+      "phone": "+91 98765 43210",
+      "customerPhone": "+91 98765 43210",
+      "address": "123 Atelier Street, Bandra West",
+      "city": "Mumbai, Maharashtra",
+      "pincode": "400050",
+      "shippingAddress": {
+        "name": "Savan Test Patron",
+        "email": "opsavan30@gmail.com",
+        "phone": "+91 98765 43210",
+        "street": "123 Atelier Street, Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "shirtName": "Azure Leaf Hand-Embroidered Shirt",
+      "sku": "M26/SS/CON/CS/23",
+      "size": "L",
+      "qty": 1,
+      "price": 2100,
+      "total": 2100,
+      "totalPaise": 210000,
+      "image": "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+      "items": [
+        {
+          "productId": "69ba28a30b819d3f52ce23a2",
+          "id": "69ba28a30b819d3f52ce23a2",
+          "name": "Azure Leaf Hand-Embroidered Shirt",
+          "sku": "M26/SS/CON/CS/23",
+          "size": "L",
+          "quantity": 1,
+          "price": 2100,
+          "image": "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+          "color": "Sky Blue"
+        }
+      ],
+      "subtotal": 2100,
+      "discount": 0,
+      "shipping": 0,
+      "courierName": "Blue Dart Express Air",
+      "courierRate": 0,
+      "packageSummary": {},
+      "paymentMethod": "Razorpay (Online)",
+      "paymentId": "order_TnoEWT4qvq8fAW",
+      "paymentStatus": "Pending",
+      "razorpayOrderId": "order_TnoEWT4qvq8fAW",
+      "status": "Pending Verification",
+      "date": "14 Oct, 07:14 pm",
+      "createdAt": "2026-10-14T13:44:41.814Z"
+    },
     {
       "id": "ord_1791901219701",
       "orderNumber": "GB-219403",
@@ -1268,45 +1304,6 @@
       "razorpayOrderId": "order_TnQJ3rEaRL4nZD",
       "status": "PROCESSING",
       "createdAt": "2026-10-13T14:20:19.701Z"
-    },
-    {
-      "id": "ord_demo_101",
-      "order_number": "ORD-2026-8819",
-      "customer_id": "cust_demo_1",
-      "shipping_address": {
-        "name": "Arjun Singhania",
-        "phone": "9820123456",
-        "street": "B-42, Altamount Road, Cumballa Hill",
-        "city": "Mumbai",
-        "state": "Maharashtra",
-        "pincode": "400026"
-      },
-      "items": [
-        {
-          "productId": "69ba28a30b819d3f52ce23a2",
-          "name": "Azure Leaf Hand-Embroidered Shirt",
-          "sku": "M26/SS/CON/CS/23",
-          "size": "L",
-          "quantity": 1,
-          "price": 210000,
-          "image": "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"
-        }
-      ],
-      "subtotal": 210000,
-      "discount_amount": 0,
-      "shipping_cost": 0,
-      "total": 210000,
-      "payment_method": "razorpay",
-      "payment_status": "paid",
-      "order_status": "confirmed",
-      "package_weight": 0.35,
-      "package_length": 30,
-      "package_breadth": 25,
-      "package_height": 4,
-      "razorpay_order_id": "order_demo_rzp_1",
-      "razorpay_payment_id": "pay_demo_rzp_1",
-      "created_at": "2026-10-13T11:32:53.444Z",
-      "updated_at": "2026-10-13T13:32:53.444Z"
     }
   ],
   "coupons": [

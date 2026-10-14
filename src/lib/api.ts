@@ -105,6 +105,7 @@ export async function apiCreateOrder(
     shippingFee?: number;
     selectedCourier?: any;
     packageSummary?: any;
+    paymentMethod?: string;
   }
 ) {
   const res = await fetch(`${API_BASE_URL}/checkout/create-order`, {
@@ -117,6 +118,7 @@ export async function apiCreateOrder(
       shippingFee: shippingOptions?.shippingFee,
       selectedCourier: shippingOptions?.selectedCourier,
       packageSummary: shippingOptions?.packageSummary,
+      paymentMethod: shippingOptions?.paymentMethod,
     }),
   });
   const data = await res.json();

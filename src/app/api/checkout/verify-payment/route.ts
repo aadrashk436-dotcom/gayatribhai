@@ -3,7 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "bCNz3b7Dumt4cNUaHsq3dF7A";
+const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "LKDAqXf8Q3zqLQL7ziSnMQw1";
 
 export async function POST(request: Request) {
   try {
@@ -29,12 +29,14 @@ export async function POST(request: Request) {
       if (fs.existsSync(dbPath)) {
         const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
         if (db.orders) {
-          const order = db.orders.find((o: any) => o.razorpayOrderId === razorpay_order_id);
+          const order = db.orders.find((o: any) => o.razorpayOrderId === razorpay_order_id || o.id === razorpay_order_id);
           if (order) {
-            order.paymentStatus = "PAID";
-            order.status = "CONFIRMED";
+            order.paymentStatus = "Paid";
+            order.status = "Verified";
+            order.paymentId = razorpay_payment_id;
             order.razorpayPaymentId = razorpay_payment_id;
             order.paidAt = new Date().toISOString();
+            order.updatedAt = new Date().toISOString();
             fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
           }
         }

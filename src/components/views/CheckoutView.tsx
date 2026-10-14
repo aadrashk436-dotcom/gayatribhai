@@ -426,7 +426,7 @@ export function PaymentStep({
   onBack,
 }: {
   total: number
-  onPay: () => void
+  onPay: (method: string) => void
   onBack: () => void
 }) {
   const [method, setMethod] = useState("UPI")
@@ -451,28 +451,20 @@ export function PaymentStep({
         {method === "UPI" ? (
           <>
             <label>
-              UPI ID
-              <input placeholder="yourname@bank" />
+              UPI ID (Optional)
+              <input placeholder="yourname@okhdfcbank" />
             </label>
-            <p>Or pay securely using your preferred UPI app through Razorpay.</p>
+            <p>Pay securely using Google Pay, PhonePe, Paytm, or any UPI app via Razorpay Test Mode.</p>
           </>
         ) : method === "Card" ? (
           <>
-            <label>
-              Card number
-              <input placeholder="0000 0000 0000 0000" />
-            </label>
-            <div className="form-row">
-              <label>
-                Expiry
-                <input placeholder="MM / YY" />
-              </label>
-              <label>
-                CVV
-                <input placeholder="•••" />
-              </label>
-            </div>
+            <p>Pay securely using Credit, Debit, or Corporate Cards via Razorpay Test Mode.</p>
           </>
+        ) : method === "Cash on Delivery" ? (
+          <div style={{ padding: "8px 0" }}>
+            <p style={{ fontWeight: 600, color: "#d4af37", marginBottom: 6 }}>💵 Cash on Delivery (Pay at Doorstep)</p>
+            <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>Pay in cash or via UPI QR code when our courier delivers your package.</p>
+          </div>
         ) : (
           <p>
             Select your preferred {method.toLowerCase()} option securely on the next screen.
@@ -483,7 +475,9 @@ export function PaymentStep({
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={onPay}>Pay {money(total)} securely</Button>
+        <Button onClick={() => onPay(method)}>
+          {method === "Cash on Delivery" ? "Place COD Order" : `Pay ${money(total)} securely`}
+        </Button>
       </div>
     </>
   )
@@ -520,7 +514,7 @@ export function CheckoutView({
 
   const finalTotal = subtotal + shippingFee
 
-  const handlePay = async () => {
+  const handlePay = async (chosenMethod = "UPI") => {
     if (!selectedAddress) {
       alert("Please provide and select a delivery address before proceeding to payment.")
       setStep(1)
@@ -530,18 +524,47 @@ export function CheckoutView({
 
     setIsPaying(true)
     try {
-      const loaded = await loadRazorpayScript()
-      if (!loaded) {
-        setStep(4)
-        setComplete(true)
-        return
-      }
-
       const orderItems = cart.map((item) => ({
         productId: item.id,
         size: item.size || "M",
         quantity: item.quantity,
       }))
+
+      // Handle Cash on Delivery directly
+      if (chosenMethod === "Cash on Delivery") {
+        try {
+          const orderRes = await apiCreateOrder(
+            orderItems,
+            selectedAddress,
+            undefined,
+            undefined,
+            {
+              shippingFee,
+              selectedCourier,
+              packageSummary,
+              paymentMethod: "Cash on Delivery",
+            }
+          )
+          if (orderRes?.orderNumber) {
+            setConfirmedOrderId(orderRes.orderNumber)
+          }
+        } catch (err: any) {
+          console.warn("COD order error:", err)
+        }
+        setCart([])
+        setStep(4)
+        setComplete(true)
+        setIsPaying(false)
+        return
+      }
+
+      // Online Razorpay Flow
+      const loaded = await loadRazorpayScript()
+      if (!loaded) {
+        alert("Payment gateway failed to load. Please try again or select Cash on Delivery.")
+        setIsPaying(false)
+        return
+      }
 
       let rzpOrderId = ""
       let finalAmount = finalTotal * 100 // paise
@@ -556,6 +579,7 @@ export function CheckoutView({
             shippingFee,
             selectedCourier,
             packageSummary,
+            paymentMethod: chosenMethod || "Razorpay (Online)",
           }
         )
         if (orderRes?.razorpayOrderId) {
@@ -565,12 +589,17 @@ export function CheckoutView({
             setConfirmedOrderId(orderRes.orderNumber)
           }
         }
-      } catch (err) {
-        console.warn("Backend order creation fallback:", err)
+      } catch (err: any) {
+        console.error("Razorpay order creation error:", err)
+        alert(err.message || "Failed to initiate payment")
+        setIsPaying(false)
+        return
       }
 
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_Tl6r6m9eEhjxUb"
+
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_Tl6lD0OL5uKch9",
+        key: razorpayKey,
         amount: finalAmount,
         currency: "INR",
         name: "Gayatri Bhai",
@@ -595,6 +624,7 @@ export function CheckoutView({
           setCart([])
           setStep(4)
           setComplete(true)
+          setIsPaying(false)
         },
         modal: {
           ondismiss: function () {
@@ -604,6 +634,10 @@ export function CheckoutView({
       }
 
       const rzp = new (window as any).Razorpay(options)
+      rzp.on("payment.failed", function (resp: any) {
+        alert(resp.error?.description || "Payment failed. Please try another method.")
+        setIsPaying(false)
+      })
       rzp.open()
     } catch (err: any) {
       alert(err.message || "Payment process could not be initialized")

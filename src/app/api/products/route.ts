@@ -12,14 +12,27 @@ function getProductsFilePath() {
 
 function readStoredProducts() {
   try {
-    const filePath = getProductsFilePath();
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const dbFilePath = path.join(process.cwd(), "backend", "src", "data", "db.json");
+    if (fs.existsSync(dbFilePath)) {
+      const data = JSON.parse(fs.readFileSync(dbFilePath, "utf8"));
       if (Array.isArray(data.products) && data.products.length > 0) {
         return data.products.map((p: any) => ({
           ...p,
           price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
           mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
+          reviews: p.reviews_count || p.reviews || 0,
+        }));
+      }
+    }
+    const productsJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+    if (fs.existsSync(productsJsonPath)) {
+      const prodData = JSON.parse(fs.readFileSync(productsJsonPath, "utf8"));
+      if (Array.isArray(prodData) && prodData.length > 0) {
+        return prodData.map((p: any) => ({
+          ...p,
+          price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
+          mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
+          reviews: p.reviews_count || p.reviews || 0,
         }));
       }
     }
@@ -31,9 +44,9 @@ function readStoredProducts() {
 
 function saveProductToDb(newProduct: any) {
   try {
-    const filePath = getProductsFilePath();
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
+    if (fs.existsSync(dbPath)) {
+      const data = JSON.parse(fs.readFileSync(dbPath, "utf8"));
       data.products = data.products || [];
       const existingIdx = data.products.findIndex((p: any) => p.id === newProduct.id || p.slug === newProduct.slug);
       if (existingIdx >= 0) {
@@ -41,7 +54,11 @@ function saveProductToDb(newProduct: any) {
       } else {
         data.products.unshift(newProduct);
       }
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+      fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
+
+      // Also keep backend/src/data/products.json synchronized
+      const prodJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+      fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
     }
   } catch (err) {
     console.warn("Could not save product to file:", err);
@@ -58,37 +75,6 @@ export async function GET(request: Request) {
     const stored = readStoredProducts();
     let items = stored || localProducts;
     let source = stored ? "db" : "local";
-
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2500);
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*`, {
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-          },
-          signal: controller.signal,
-          next: { revalidate: 60 },
-        });
-        clearTimeout(timeout);
-        if (res.ok) {
-          const supabaseData = await res.json();
-          if (Array.isArray(supabaseData) && supabaseData.length > 0) {
-            items = supabaseData.map((p: any) => ({
-              ...p,
-              price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
-              mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
-              reviews: p.reviews_count || p.reviews || 0,
-            }));
-            source = "supabase";
-          }
-        }
-      } catch {
-        // Fallback to local products if Supabase is offline/paused
-        items = localProducts;
-      }
-    }
 
     let filtered = [...items];
 

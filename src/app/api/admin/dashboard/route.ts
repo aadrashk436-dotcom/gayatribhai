@@ -23,8 +23,19 @@ export async function GET() {
       console.warn("DB read error in admin dashboard:", e);
     }
 
-    const totalRevenuePaise = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-    const totalRevenueRupees = Math.round(totalRevenuePaise / 100);
+    let totalRevenueRupees = 0;
+    let shirtsSoldCount = 0;
+
+    orders.forEach((o) => {
+      const orderTotal = o.total || 0;
+      const orderInRupees = orderTotal > 10000 ? Math.round(orderTotal / 100) : orderTotal;
+      totalRevenueRupees += orderInRupees;
+      if (Array.isArray(o.items) && o.items.length > 0) {
+        shirtsSoldCount += o.items.reduce((s: number, it: any) => s + (it.quantity || it.qty || 1), 0);
+      } else {
+        shirtsSoldCount += (o.qty || 1);
+      }
+    });
 
     const lowStockAlerts = products.filter((p) => {
       const stockValues = Object.values(p.stock || {}) as number[];
@@ -33,10 +44,10 @@ export async function GET() {
 
     return NextResponse.json({
       metrics: {
-        totalRevenue: totalRevenueRupees || 842590,
-        ordersCount: orders.length || 1248,
-        shirtsSoldCount: (orders.length * 2) || 1614,
-        customersCount: customers.length || 412,
+        totalRevenue: totalRevenueRupees,
+        ordersCount: orders.length,
+        shirtsSoldCount: shirtsSoldCount,
+        customersCount: customers.length,
       },
       recentOrders: orders.slice(0, 10),
       lowStockAlerts: lowStockAlerts.map((p) => ({
@@ -47,9 +58,9 @@ export async function GET() {
         stock: p.stock,
       })),
       liveServices: {
-        razorpay: "LIVE",
+        razorpay: "TEST_MODE (rzp_test_Tl6r6m9eEhjxUb)",
         shiprocket: "LIVE",
-        supabase: "CONFIGURED",
+        supabase: "CONNECTED",
       },
     });
   } catch (err: any) {

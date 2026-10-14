@@ -1,10 +1,101 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { products } from "@/products";
 
 // Order persistence helper
 function getOrdersFilePath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
+}
+
+function normalizeOrder(o: any) {
+  const firstItem = (o.items && o.items[0]) || {};
+  const prodId = firstItem.productId || firstItem.id;
+  const p = products.find((prod) => prod.id === prodId || prod.slug === prodId);
+
+  const streetAddr =
+    typeof o.address === "string" && o.address.length > 0
+      ? o.address
+      : o.shippingAddress?.street || o.shippingAddress?.address || "";
+  const cityStr =
+    o.city ||
+    (o.shippingAddress?.city
+      ? o.shippingAddress?.state
+        ? `${o.shippingAddress.city}, ${o.shippingAddress.state}`
+        : o.shippingAddress.city
+      : "");
+  const pincodeStr = o.pincode || o.shippingAddress?.pincode || "";
+
+  const totalPaise = o.totalPaise || (o.total > 10000 ? o.total : (o.total || 0) * 100);
+  const totalRupees = o.total > 10000 ? Math.round(o.total / 100) : (o.total || Math.round(totalPaise / 100));
+
+  const rawStatus = o.status || "Pending Verification";
+  let displayStatus = rawStatus;
+  if (rawStatus === "PROCESSING" || rawStatus === "processing") displayStatus = "Pending Verification";
+  if (rawStatus === "CONFIRMED" || rawStatus === "confirmed") displayStatus = "Verified";
+  if (rawStatus === "SHIPPED" || rawStatus === "shipped") displayStatus = "Dispatched";
+  if (rawStatus === "DELIVERED" || rawStatus === "delivered") displayStatus = "Delivered";
+  if (rawStatus === "CANCELLED" || rawStatus === "cancelled") displayStatus = "Cancelled";
+
+  let displayPaymentStatus: "Paid" | "Pending COD" = "Pending COD";
+  if (o.paymentStatus === "PAID" || o.paymentStatus === "Paid" || o.payment_status === "paid") {
+    displayPaymentStatus = "Paid";
+  }
+
+  let formattedDate = o.date;
+  if (!formattedDate && o.createdAt) {
+    try {
+      formattedDate = new Date(o.createdAt).toLocaleString("en-IN", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      formattedDate = "Recently";
+    }
+  }
+
+  return {
+    ...o,
+    id: o.orderNumber || o.order_number || o.id,
+    orderNumber: o.orderNumber || o.order_number || o.id,
+    customer: o.customer || o.customerName || o.shippingAddress?.name || "Customer",
+    customerName: o.customerName || o.customer || o.shippingAddress?.name || "Customer",
+    email: o.email || o.customerEmail || o.shippingAddress?.email || "",
+    customerEmail: o.customerEmail || o.email || o.shippingAddress?.email || "",
+    phone: o.phone || o.customerPhone || o.shippingAddress?.phone || "",
+    customerPhone: o.customerPhone || o.phone || o.shippingAddress?.phone || "",
+    address: streetAddr,
+    city: cityStr,
+    pincode: pincodeStr,
+    shippingAddress: o.shippingAddress || {
+      name: o.customer,
+      street: streetAddr,
+      city: cityStr,
+      pincode: pincodeStr,
+      phone: o.phone,
+    },
+    shirtName: o.shirtName || firstItem.name || p?.name || "Artisanal Linen Shirt",
+    sku: o.sku || firstItem.sku || p?.sku || "GB-LUX-01",
+    size: o.size || firstItem.size || "M",
+    qty: o.qty || firstItem.quantity || 1,
+    price: o.price || firstItem.price || p?.price || totalRupees,
+    total: totalRupees,
+    totalPaise,
+    image:
+      o.image ||
+      firstItem.image ||
+      p?.images?.[0] ||
+      "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+    paymentMethod: o.paymentMethod || (o.payment_method === "razorpay" ? "Razorpay (Online)" : "Razorpay (Online)"),
+    paymentId: o.paymentId || o.razorpayPaymentId || o.razorpay_payment_id || "",
+    paymentStatus: displayPaymentStatus,
+    status: displayStatus,
+    date: formattedDate || "Today",
+    courier: o.courier || o.courierName || null,
+    awb: o.awb || null,
+  };
 }
 
 function readStoredOrders() {
@@ -12,7 +103,7 @@ function readStoredOrders() {
     const filePath = getOrdersFilePath();
     if (fs.existsSync(filePath)) {
       const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      return data.orders || [];
+      return (data.orders || []).map(normalizeOrder);
     }
   } catch (err) {
     console.warn("Could not read stored orders:", err);
@@ -26,9 +117,15 @@ function saveOrder(newOrder: any) {
     if (fs.existsSync(filePath)) {
       const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
       data.orders = data.orders || [];
-      const existingIdx = data.orders.findIndex((o: any) => o.id === newOrder.id || o.orderNumber === newOrder.orderNumber);
+      const existingIdx = data.orders.findIndex(
+        (o: any) => o.id === newOrder.id || o.orderNumber === newOrder.orderNumber
+      );
       if (existingIdx >= 0) {
-        data.orders[existingIdx] = { ...data.orders[existingIdx], ...newOrder, updatedAt: new Date().toISOString() };
+        data.orders[existingIdx] = {
+          ...data.orders[existingIdx],
+          ...newOrder,
+          updatedAt: new Date().toISOString(),
+        };
       } else {
         data.orders.unshift(newOrder);
       }
@@ -59,8 +156,13 @@ export async function GET(request: Request) {
       const cleanPhoneDigits = phone ? phone.replace(/\D/g, "") : null;
 
       const userOrders = orders.filter((o: any) => {
-        const emailMatch = cleanEmail && o.customerEmail?.toLowerCase() === cleanEmail;
-        const phoneMatch = cleanPhoneDigits && o.customerPhone?.replace(/\D/g, "") === cleanPhoneDigits;
+        const emailMatch =
+          cleanEmail &&
+          (o.customerEmail?.toLowerCase() === cleanEmail || o.email?.toLowerCase() === cleanEmail);
+        const phoneMatch =
+          cleanPhoneDigits &&
+          (o.customerPhone?.replace(/\D/g, "") === cleanPhoneDigits ||
+            o.phone?.replace(/\D/g, "") === cleanPhoneDigits);
         return Boolean(emailMatch || phoneMatch);
       });
       return NextResponse.json({ orders: userOrders, total: userOrders.length });
