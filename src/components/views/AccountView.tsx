@@ -710,7 +710,12 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
             <button type="button" onClick={() => setTab("Settings")} className="flex h-11 items-center gap-2 rounded-full border border-border px-5 text-xs font-semibold uppercase tracking-[0.12em]">
               <Icon name="edit" size={15} /> Edit profile
             </button>
-            <button type="button" onClick={onLogout} className="flex h-11 items-center gap-2 rounded-full bg-foreground px-5 text-xs font-semibold uppercase tracking-[0.12em] text-background">
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex h-11 items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-5 text-xs font-bold uppercase tracking-[0.12em] text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer"
+              title="Log out of your account"
+            >
               <Icon name="logout" size={15} /> Log out
             </button>
           </div>
@@ -1087,9 +1092,19 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                   ))}
                 </div>
 
-                <button type="button" onClick={onLogout} className="flex h-12 items-center justify-center gap-2 rounded-full border border-[#b4321f]/40 text-sm font-semibold text-[#b4321f] md:w-48">
-                  <Icon name="logout" size={16} /> Log out
-                </button>
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-2">
+                  <div>
+                    <p className="font-semibold text-rose-500">Sign Out of Session</p>
+                    <p className="text-sm text-muted-foreground">Securely log out of this device. Your orders and saved wardrobe remain safe.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="flex h-11 items-center justify-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/15 px-6 text-xs font-bold uppercase tracking-[0.12em] text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Icon name="logout" size={15} /> Log out
+                  </button>
+                </div>
               </>
             )}
           </div>

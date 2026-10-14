@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Menu, ChevronRight, RefreshCw, Truck, Plus, Download } from "lucide-react"
+import { Menu, ChevronRight, RefreshCw, Truck, Plus, Download, LogOut } from "lucide-react"
 
 interface AdminHeaderProps {
   activeTab: string
@@ -114,6 +114,23 @@ export function AdminHeader({
             <span className="sm:hidden">New Blog</span>
           </button>
         )}
+
+        {/* Admin Quick Logout Button */}
+        <button
+          onClick={() => {
+            try {
+              localStorage.removeItem("gb_admin_token")
+              localStorage.removeItem("gb_admin_user")
+              sessionStorage.clear()
+            } catch {}
+            window.location.href = "/login"
+          }}
+          className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3.5 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-600 hover:text-white transition active:scale-95 shadow-sm cursor-pointer ml-1"
+          title="Sign out of Admin Suite"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">Logout</span>
+        </button>
       </div>
     </header>
   )
