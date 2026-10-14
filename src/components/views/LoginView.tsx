@@ -87,12 +87,27 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
   const redirect = searchParams.get("redirect")
   const root = useRef<HTMLDivElement>(null)
 
-  // Form state
+  // Step in Authentication: "credentials" -> "otp"
+  const [authStep, setAuthStep] = useState<"credentials" | "otp">("credentials")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(true)
+
+  // OTP Verification state
+  const [otpCode, setOtpCode] = useState("")
+  const [resendCountdown, setResendCountdown] = useState(0)
+  const [otpSentMessage, setOtpSentMessage] = useState("")
+
+  // Resend countdown timer
+  useEffect(() => {
+    if (resendCountdown <= 0) return
+    const interval = setInterval(() => {
+      setResendCountdown((c) => Math.max(0, c - 1))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [resendCountdown])
 
   // Google GIS & Modal state
   const googleBtnContainerRef = useRef<HTMLDivElement>(null)
@@ -123,7 +138,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         .fromTo(".auth-visual img", { scale: 1.25 }, { scale: 1, duration: 1.6, ease: "expo.out" }, 0.2)
         .from("[data-auth-item]", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0.3)
     },
-    { scope: root, dependencies: [mode, isForgotPassword, resetStep], revertOnUpdate: true },
+    { scope: root, dependencies: [mode, authStep, isForgotPassword, resetStep], revertOnUpdate: true },
   )
 
   const googleClientId =
@@ -189,8 +204,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     return Object.keys(next).length === 0
   }
 
-  // Submit Password Login / Signup
-  const submitPassword = async (e: React.FormEvent) => {
+  // Step 1: Submit Credentials & Send Email Verification Code
+  const submitCredentials = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validatePasswordForm()) return
     setLoading(true)
@@ -202,31 +217,21 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         const res = await apiSignup({
           name: name.trim(),
           email: email.trim(),
-          phone: "",
           password,
+          step: "initiate",
         })
-        onLogin({
-          id: res.customer?.id || `usr_${Date.now()}`,
-          name: res.customer?.name || name.trim(),
-          email: res.customer?.email || email.trim(),
-          phone: res.customer?.phone || "",
-          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-          membershipTier: res.customer?.tier || "Silver",
-          points: res.customer?.points || 0,
-        })
-        showToast("Account created successfully. Welcome to Gayatri Bhai!")
+        setAuthStep("otp")
+        setOtpCode("")
+        setResendCountdown(30)
+        setOtpSentMessage(res.message || `Verification code sent to ${email.trim()}`)
+        showToast("Verification code sent to your email!")
       } else {
-        const res = await apiLogin(email.trim(), password)
-        onLogin({
-          id: res.customer?.id || `usr_${Date.now()}`,
-          name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
-          email: res.customer?.email || email.trim(),
-          phone: res.customer?.phone || "",
-          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-          membershipTier: res.customer?.tier || "Silver",
-          points: res.customer?.points || 0,
-        })
-        showToast(res.isAdmin ? "Welcome back, Store Admin!" : `Welcome back, ${res.customer?.name || "Customer"}`)
+        const res = await apiLogin(email.trim(), password, undefined, "initiate")
+        setAuthStep("otp")
+        setOtpCode("")
+        setResendCountdown(30)
+        setOtpSentMessage(res.message || `Verification code sent to ${email.trim()}`)
+        showToast("Verification code sent to your email!")
       }
     } catch (err: any) {
       if (err?.alreadyExists || err?.status === 409 || err?.message?.includes("already registered")) {
@@ -247,6 +252,84 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
       } else {
         setGlobalError(err?.message || "Authentication failed. Please verify your details.")
       }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Step 2: Verify 6-digit OTP Code & Finish Authentication
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setGlobalError(null)
+    setErrors({})
+
+    const cleanOtp = otpCode.trim()
+    if (!cleanOtp || cleanOtp.length < 4) {
+      setErrors({ otpCode: "Please enter the 6-digit verification code" })
+      return
+    }
+
+    setLoading(true)
+    try {
+      if (isSignup) {
+        const res = await apiSignup({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          otp: cleanOtp,
+          step: "verify",
+        })
+        onLogin({
+          id: res.customer?.id || `usr_${Date.now()}`,
+          name: res.customer?.name || name.trim(),
+          email: res.customer?.email || email.trim(),
+          phone: res.customer?.phone || "",
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: res.customer?.tier || "Silver",
+          points: res.customer?.points || 0,
+        })
+        showToast("Account created successfully. Welcome to Gayatri Bhai!")
+      } else {
+        const res = await apiLogin(email.trim(), password, cleanOtp, "verify")
+        onLogin({
+          id: res.customer?.id || `usr_${Date.now()}`,
+          name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
+          email: res.customer?.email || email.trim(),
+          phone: res.customer?.phone || "",
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: res.customer?.tier || "Silver",
+          points: res.customer?.points || 0,
+        })
+        showToast(res.isAdmin ? "Welcome back, Store Admin!" : `Welcome back, ${res.customer?.name || "Customer"}`)
+      }
+    } catch (err: any) {
+      setGlobalError(err?.message || "Invalid or expired verification code. Please try again.")
+      setErrors({ otpCode: "Invalid or expired code" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Resend OTP Code
+  const handleResendOtp = async () => {
+    if (resendCountdown > 0) return
+    setGlobalError(null)
+    setLoading(true)
+    try {
+      if (isSignup) {
+        await apiSignup({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          step: "initiate",
+        })
+      } else {
+        await apiLogin(email.trim(), password, undefined, "initiate")
+      }
+      setResendCountdown(30)
+      showToast(`Fresh verification code sent to ${email.trim()}!`)
+    } catch (err: any) {
+      setGlobalError(err?.message || "Failed to resend verification code.")
     } finally {
       setLoading(false)
     }
@@ -654,126 +737,216 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               </div>
 
               <h1 data-auth-item className="font-display text-2xl sm:text-3xl md:text-4xl leading-tight">
-                {isSignup ? "Create your account" : "Sign in to your account"}
+                {authStep === "otp"
+                  ? "Enter the 6-digit verification code sent to your email address."
+                  : isSignup
+                  ? "Enter your details to receive your 6-digit verification code."
+                  : "Sign in with your email & password to receive your verification code."}
               </h1>
               <p data-auth-item className="mt-1.5 text-xs sm:text-[14px] text-muted-foreground">
-                {isSignup ? "Track bespoke orders, access exclusive drops, and enjoy patron benefits." : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
+                {authStep === "otp"
+                  ? `Sent to ${email}. Check your inbox and spam folder.`
+                  : isSignup
+                  ? "Track bespoke orders, access exclusive drops, and enjoy patron benefits."
+                  : "Access your bespoke orders, wishlist, and exclusive patron benefits."}
               </p>
 
-              {/* ── Prominent Google 1-Click SSO Button ── */}
-              <div data-auth-item className="mt-5 sm:mt-6">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleGoogleBtnClick}
-                  className="flex w-full h-12 sm:h-13 items-center justify-center gap-2.5 sm:gap-3 rounded-full border border-border bg-surface px-4 sm:px-6 text-xs sm:text-sm font-semibold tracking-wide text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/50"
-                >
-                  <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
-                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
-                  </svg>
-                  <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
-                </button>
-              </div>
-
-              {/* ── Divider ── */}
-              <div data-auth-item className="relative my-6 text-center">
-                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-widest">
-                  <span className="bg-background px-4 text-muted-foreground">or continue with email</span>
-                </div>
-              </div>
-
-              {/* Global Error Notice */}
-              {globalError && (
-                <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
-                  <p className="font-semibold">{globalError}</p>
-                  {switchAction && (
+              {authStep === "credentials" ? (
+                <>
+                  {/* ── Prominent Google 1-Click SSO Button ── */}
+                  <div data-auth-item className="mt-5 sm:mt-6">
                     <button
                       type="button"
-                      onClick={switchAction.action}
-                      className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                      disabled={loading}
+                      onClick={handleGoogleBtnClick}
+                      className="flex w-full h-12 sm:h-13 items-center justify-center gap-2.5 sm:gap-3 rounded-full border border-border bg-surface px-4 sm:px-6 text-xs sm:text-sm font-semibold tracking-wide text-foreground transition-all hover:bg-surface-2 active:scale-98 shadow-sm hover:border-[#4285F4]/50"
                     >
-                      {switchAction.label} &rarr;
+                      <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z" />
+                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z" />
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
+                      </svg>
+                      <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
                     </button>
+                  </div>
+
+                  {/* ── Divider ── */}
+                  <div data-auth-item className="relative my-6 text-center">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                      <span className="bg-background px-4 text-muted-foreground">or continue with email</span>
+                    </div>
+                  </div>
+
+                  {/* Global Error Notice */}
+                  {globalError && (
+                    <div data-auth-item className="mt-5 rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
+                      <p className="font-semibold">{globalError}</p>
+                      {switchAction && (
+                        <button
+                          type="button"
+                          onClick={switchAction.action}
+                          className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                        >
+                          {switchAction.label} &rarr;
+                        </button>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
 
-              {/* ── Email & Password Form ── */}
-              <form onSubmit={submitPassword} noValidate className="mt-6 flex flex-col gap-4">
-                {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" placeholder="e.g. Rahul Sharma" error={errors.name} />}
-                <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
-                <Field
-                  id="password"
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={setPassword}
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  placeholder="••••••••"
-                  error={errors.password}
-                  trailing={
+                  {/* ── Email & Password Form (Step 1) ── */}
+                  <form onSubmit={submitCredentials} noValidate className="mt-6 flex flex-col gap-4">
+                    {isSignup && <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" placeholder="e.g. Rahul Sharma" error={errors.name} />}
+                    <Field id="email" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="e.g. name@domain.com" error={errors.email} />
+                    <Field
+                      id="password"
+                      label="Password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={setPassword}
+                      autoComplete={isSignup ? "new-password" : "current-password"}
+                      placeholder="••••••••"
+                      error={errors.password}
+                      trailing={
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                        </button>
+                      }
+                    />
+
+                    {isSignup ? (
+                      <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+                        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+                        <span>
+                          I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
+                          <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
+                          {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
+                        </span>
+                      </label>
+                    ) : (
+                      <div data-auth-item className="flex justify-between items-center text-xs">
+                        <label className="flex items-center gap-2 text-muted-foreground cursor-pointer select-none text-[12px]">
+                          <input type="checkbox" defaultChecked className="size-3.5 rounded accent-foreground" />
+                          <span>Remember me</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsForgotPassword(true)
+                            setResetEmail(email || "")
+                            setResetStep(1)
+                            setGlobalError(null)
+                            setErrors({})
+                          }}
+                          className="font-medium text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                    )}
+
                     <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      data-auth-item
+                      type="submit"
+                      disabled={loading}
+                      className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
                     >
-                      <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                      {loading ? "Checking credentials & sending code..." : isSignup ? "Continue & Send Code" : "Sign In & Send Code"}
+                      {!loading && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                          <path d="M5 12h14m-5-5 5 5-5 5" />
+                        </svg>
+                      )}
                     </button>
-                  }
-                />
-
-                {isSignup ? (
-                  <label data-auth-item className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
-                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 accent-current" />
-                    <span>
-                      I agree to the <span className="text-foreground underline underline-offset-2">Terms</span> and{" "}
-                      <span className="text-foreground underline underline-offset-2">Privacy Policy</span>.
-                      {errors.agree && <span className="mt-1 block text-xs font-medium text-[#b4321f]">{errors.agree}</span>}
-                    </span>
-                  </label>
-                ) : (
-                  <div data-auth-item className="flex justify-between items-center text-xs">
-                    <label className="flex items-center gap-2 text-muted-foreground cursor-pointer select-none text-[12px]">
-                      <input type="checkbox" defaultChecked className="size-3.5 rounded accent-foreground" />
-                      <span>Remember me</span>
-                    </label>
+                  </form>
+                </>
+              ) : (
+                <div className="mt-6 flex flex-col gap-5">
+                  {/* Step 2: OTP Verification Card */}
+                  <div data-auth-item className="rounded-xl border border-border bg-surface p-4 sm:p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">Step 2 of 2 &bull; Email Verification</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Code sent
+                      </span>
+                    </div>
+                    <div className="mt-2.5">
+                      <p className="text-xs text-muted-foreground">Verification code sent to your email:</p>
+                      <p className="mt-0.5 text-base font-semibold text-foreground tracking-tight">{email}</p>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground/80 leading-relaxed">
+                      Please enter the 6-digit code sent to your Gmail inbox (or spam folder) to complete {isSignup ? "account creation" : "sign in"}.
+                    </p>
                     <button
                       type="button"
                       onClick={() => {
-                        setIsForgotPassword(true)
-                        setResetEmail(email || "")
-                        setResetStep(1)
+                        setAuthStep("credentials")
                         setGlobalError(null)
                         setErrors({})
                       }}
-                      className="font-medium text-foreground underline underline-offset-4 hover:opacity-80 transition-opacity"
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#d4af37] underline underline-offset-4 hover:opacity-85 transition-opacity"
                     >
-                      Forgot password?
+                      &larr; Change email or password
                     </button>
                   </div>
-                )}
 
-                <button
-                  data-auth-item
-                  type="submit"
-                  disabled={loading}
-                  className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
-                >
-                  {loading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
-                  {!loading && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                      <path d="M5 12h14m-5-5 5 5-5 5" />
-                    </svg>
+                  {/* Global Error Notice */}
+                  {globalError && (
+                    <div data-auth-item className="rounded-lg border border-[#b4321f]/40 bg-[#b4321f]/10 p-4 text-sm text-[#b4321f]">
+                      <p className="font-semibold">{globalError}</p>
+                    </div>
                   )}
-                </button>
-              </form>
+
+                  {/* OTP Submission Form */}
+                  <form onSubmit={handleVerifyOtp} noValidate className="flex flex-col gap-4">
+                    <Field
+                      id="otpCode"
+                      label="6-Digit Verification Code"
+                      value={otpCode}
+                      onChange={setOtpCode}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="• • • • • •"
+                      error={errors.otpCode}
+                    />
+
+                    <div data-auth-item className="flex items-center justify-between text-xs text-muted-foreground px-0.5">
+                      <span>Didn&apos;t receive the code?</span>
+                      {resendCountdown > 0 ? (
+                        <span className="font-medium text-muted-foreground">Resend in {resendCountdown}s</span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={handleResendOtp}
+                          className="font-bold text-foreground underline underline-offset-2 hover:opacity-80 transition-opacity"
+                        >
+                          Resend code now
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      data-auth-item
+                      type="submit"
+                      disabled={loading}
+                      className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                    >
+                      {loading ? "Verifying code..." : isSignup ? "Verify & Create Account" : "Verify & Sign In"}
+                      {!loading && <Icon name="check" size={16} />}
+                    </button>
+                  </form>
+                </div>
+              )}
 
               {/* Switch to Login / Signup Bottom Link */}
               <p data-auth-item className="mt-8 text-center text-sm text-muted-foreground">

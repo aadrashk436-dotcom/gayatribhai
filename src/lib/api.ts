@@ -178,11 +178,11 @@ export class AuthError extends Error {
 }
 
 // ─── Customer Auth ───
-export async function apiLogin(email: string, password: string) {
+export async function apiLogin(email: string, password: string, otp?: string, step?: "initiate" | "verify") {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, otp, step }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -194,7 +194,14 @@ export async function apiLogin(email: string, password: string) {
   return data;
 }
 
-export async function apiSignup(formData: { name: string; email: string; phone?: string; password: string }) {
+export async function apiSignup(formData: {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  otp?: string;
+  step?: "initiate" | "verify";
+}) {
   const res = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: "POST",
     headers: getHeaders(),
