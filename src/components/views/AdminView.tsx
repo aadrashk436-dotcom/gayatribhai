@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -12,6 +13,7 @@ import {
   Image as ImageIcon,
   BookOpen,
   Settings,
+  ShieldCheck,
 } from "lucide-react"
 import { products as initialProducts } from "@/lib/products"
 import { BLOG_POSTS as initialBlogPosts } from "@/data/blogData"
@@ -62,6 +64,47 @@ import { BlogModal } from "../admin/modals/BlogModal"
 import { DeleteBlogModal } from "../admin/modals/DeleteBlogModal"
 
 export function AdminView() {
+  const router = useRouter()
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean | null>(null)
+
+  // Strict Admin Gate: Only Gayatri Puri (gayatripuri634@gmail.com) can access /admin
+  useEffect(() => {
+    try {
+      const adminToken = localStorage.getItem("gb_admin_token")
+      const adminUserRaw = localStorage.getItem("gb_admin_user")
+      let adminUser: any = null
+      if (adminUserRaw) {
+        try {
+          adminUser = JSON.parse(adminUserRaw)
+        } catch {}
+      }
+
+      let storeUser: any = null
+      try {
+        const storeRaw = localStorage.getItem("gayatribhai-store")
+        if (storeRaw) storeUser = JSON.parse(storeRaw)?.state?.user
+      } catch {}
+
+      const email = (adminUser?.email || storeUser?.email || "").toLowerCase().trim()
+      const role = adminUser?.role || storeUser?.role || ""
+      const isEmailAdmin = email === "gayatripuri634@gmail.com"
+      const hasAdminToken = Boolean(adminToken && adminToken.startsWith("gb_admin_token"))
+      const isRoleAdmin = role === "admin" || role === "super_admin" || adminUser?.isAdmin || storeUser?.isAdmin
+
+      if (isEmailAdmin || (hasAdminToken && (isRoleAdmin || !email))) {
+        setIsAdminAuthorized(true)
+      } else {
+        setIsAdminAuthorized(false)
+        const t = setTimeout(() => {
+          router.push("/login?email=gayatripuri634@gmail.com&redirect=/admin")
+        }, 1500)
+        return () => clearTimeout(t)
+      }
+    } catch {
+      setIsAdminAuthorized(false)
+    }
+  }, [router])
+
   // Navigation & Shell State
   const [activeTab, setActiveTab] = useState("Dashboard")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -433,12 +476,6 @@ export function AdminView() {
   }
 
   const handleAssignCourier = async (orderId: string, courierName: string) => {
-    const targetOrder = orderList.find((o) => o.id === orderId)
-    if (targetOrder && targetOrder.status !== "Verified") {
-      showToast("Order must be Verified before assigning to Shiprocket.")
-      return
-    }
-
     showToast("Connecting to live Shiprocket API & booking courier...")
 
     try {
@@ -678,10 +715,10 @@ export function AdminView() {
   const handleBulkAssignShiprocket = async () => {
     if (!selectedOrderIds.length) return
     const eligible = orderList.filter(
-      (o) => selectedOrderIds.includes(o.id) && o.status === "Verified"
+      (o) => selectedOrderIds.includes(o.id) && o.status !== "Cancelled" && o.status !== "Delivered"
     )
     if (!eligible.length) {
-      showToast("Selected orders must be 'Verified' before assigning to Shiprocket.")
+      showToast("Please select active orders to assign to Shiprocket.")
       return
     }
 
@@ -1142,6 +1179,55 @@ export function AdminView() {
     { name: "Blog CMS", icon: BookOpen, badge: `${blogList.length}` },
     { name: "Settings", icon: Settings, badge: null },
   ]
+
+  if (isAdminAuthorized === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0c10] text-white">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="size-10 animate-spin rounded-full border-2 border-[#d4af37] border-t-transparent" />
+          <p className="font-serif text-lg font-bold tracking-widest text-[#d4af37]">
+            GAYATRI BHAI ATELIER
+          </p>
+          <p className="text-xs tracking-wider text-zinc-400">
+            Verifying Store Administrator Privileges...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAdminAuthorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0c10] p-4 text-white">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#12151c] p-8 text-center shadow-2xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-inner">
+            <ShieldCheck className="size-7" />
+          </div>
+          <h1 className="mt-5 font-serif text-2xl font-bold tracking-tight text-white">
+            Admin Access Restricted
+          </h1>
+          <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+            This administrative control suite is exclusively reserved for store owner{" "}
+            <span className="font-semibold text-[#d4af37]">Gayatri Puri</span> (<code className="text-zinc-300">gayatripuri634@gmail.com</code>).
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={() => router.push("/login?email=gayatripuri634@gmail.com&redirect=/admin")}
+              className="flex h-12 w-full items-center justify-center rounded-full bg-[#d4af37] text-xs font-bold uppercase tracking-widest text-black shadow-lg hover:brightness-110 transition active:scale-98 cursor-pointer"
+            >
+              Sign In with Admin Account &rarr;
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              className="flex h-11 w-full items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-zinc-300 hover:bg-white/10 transition cursor-pointer"
+            >
+              Return to Storefront
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

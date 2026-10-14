@@ -45,19 +45,67 @@ export async function POST(request: Request) {
     let customer: any = null;
 
     if (isAdmin) {
-      customer = db.customers.find((c: any) => c.email?.toLowerCase() === cleanEmail) || {
-        id: "admin_super_1",
-        name: "Gayatri Puri (Store Owner)",
-        email: "gayatripuri634@gmail.com",
-        phone: "+91 98765 43210",
-        tier: "Platinum",
-        points: 10000,
-        role: "super_admin",
-      };
-      const expectedPass = customer?.password || "AdminPassword123!";
-      if (password !== expectedPass && password !== "AdminPassword123!") {
+      let existingCustomer = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);
+      if (!existingCustomer) {
+        customer = {
+          id: "admin_super_1",
+          name: "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: "+91 98765 43210",
+          tier: "Platinum",
+          points: 10000,
+          role: "admin",
+          isAdmin: true,
+          password: password || "AdminPassword123!",
+        };
+        db.customers.push(customer);
+        try {
+          fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
+        } catch {}
+      } else {
+        customer = existingCustomer;
+        customer.role = "admin";
+        customer.isAdmin = true;
+      }
+
+      const expectedPass = customer?.password;
+      const passValid =
+        password === "AdminPassword123!" ||
+        (expectedPass && password === expectedPass) ||
+        (!expectedPass && password.length >= 6);
+
+      if (!passValid) {
         return NextResponse.json({ error: "Incorrect admin password. Please try again." }, { status: 401 });
       }
+
+      // Update stored password if new
+      if (customer && password && customer.password !== password) {
+        customer.password = password;
+        try {
+          fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
+        } catch {}
+      }
+
+      // Direct instant admin authentication
+      const token = `gb_admin_token_${Date.now()}`;
+      return NextResponse.json({
+        success: true,
+        token,
+        isAdmin: true,
+        redirect: "/admin",
+        customer: {
+          id: customer.id || "admin_super_1",
+          name: customer.name || "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: customer.phone || "+91 98765 43210",
+          avatar: customer.avatar || "",
+          tier: "Platinum",
+          points: 10000,
+          role: "admin",
+          isAdmin: true,
+        },
+        message: "Welcome back, Store Admin Gayatri Puri!",
+      });
     } else {
       // 5. Regular Customer Check
       customer = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);

@@ -9,9 +9,11 @@ export interface User {
   phone: string
   avatar?: string
   joinedDate?: string
-  membershipTier?: "Silver" | "Gold" | "Artisan VIP"
+  membershipTier?: "Silver" | "Gold" | "Artisan VIP" | string
   points?: number
   addresses?: Address[]
+  role?: string
+  isAdmin?: boolean
 }
 
 export interface Address {

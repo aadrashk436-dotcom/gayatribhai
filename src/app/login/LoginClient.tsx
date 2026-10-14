@@ -18,6 +18,22 @@ function LoginClientContent({ mode = "login" }: { mode?: "login" | "signup" }) {
       mode={mode}
       onLogin={(user) => {
         setUser(user)
+        const isStoreAdmin =
+          user.email?.toLowerCase().trim() === "gayatripuri634@gmail.com" ||
+          user.role === "admin" ||
+          user.role === "super_admin" ||
+          user.isAdmin
+
+        if (isStoreAdmin) {
+          try {
+            localStorage.setItem("gb_admin_token", "gb_admin_token_live")
+            localStorage.setItem("gb_admin_user", JSON.stringify({ ...user, role: "admin", isAdmin: true }))
+          } catch {}
+          setToast("Welcome to Admin Suite, Gayatri Puri!")
+          router.push("/admin")
+          return
+        }
+
         if (redirect && redirect.startsWith("/")) {
           router.push(redirect)
         } else {

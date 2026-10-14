@@ -243,6 +243,26 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         showToast("Verification code sent to your email!")
       } else {
         const res = await apiLogin(email.trim(), password, undefined, "initiate")
+        if (res.isAdmin || email.trim().toLowerCase() === "gayatripuri634@gmail.com") {
+          try {
+            localStorage.setItem("gb_admin_token", res.token || "gb_admin_token_live")
+            localStorage.setItem("gb_admin_user", JSON.stringify({ ...res.customer, role: "admin", isAdmin: true }))
+          } catch {}
+          onLogin({
+            id: res.customer?.id || "admin_super_1",
+            name: res.customer?.name || "Gayatri Puri (Store Owner)",
+            email: "gayatripuri634@gmail.com",
+            phone: res.customer?.phone || "+91 98765 43210",
+            joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+            membershipTier: "Platinum",
+            points: 10000,
+            role: "admin",
+            isAdmin: true,
+          })
+          showToast("Welcome to Gayatri Bhai Admin Suite, Gayatri Puri!")
+          router.push("/admin")
+          return
+        }
         if (res.verificationToken) {
           setVerificationToken(res.verificationToken)
         }
@@ -329,6 +349,29 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         showToast("Account created successfully. Welcome to Gayatri Bhai!")
       } else {
         const res = await apiLogin(email.trim(), password, cleanOtp, "verify", verificationToken || undefined)
+        const isUserAdmin = res.isAdmin || email.trim().toLowerCase() === "gayatripuri634@gmail.com" || res.customer?.email?.toLowerCase() === "gayatripuri634@gmail.com"
+        
+        if (isUserAdmin) {
+          try {
+            localStorage.setItem("gb_admin_token", res.token || "gb_admin_token_live")
+            localStorage.setItem("gb_admin_user", JSON.stringify({ ...res.customer, role: "admin", isAdmin: true }))
+          } catch {}
+          onLogin({
+            id: res.customer?.id || "admin_super_1",
+            name: res.customer?.name || "Gayatri Puri (Store Owner)",
+            email: "gayatripuri634@gmail.com",
+            phone: res.customer?.phone || "+91 98765 43210",
+            joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+            membershipTier: "Platinum",
+            points: 10000,
+            role: "admin",
+            isAdmin: true,
+          })
+          showToast("Welcome back, Store Admin Gayatri Puri!")
+          router.push("/admin")
+          return
+        }
+
         onLogin({
           id: res.customer?.id || `usr_${Date.now()}`,
           name: res.customer?.name || email.split("@")[0].replace(/[._]/g, " "),
@@ -337,8 +380,10 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
           joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
           membershipTier: res.customer?.tier || "Silver",
           points: res.customer?.points || 0,
+          role: "customer",
+          isAdmin: false,
         })
-        showToast(res.isAdmin ? "Welcome back, Store Admin!" : `Welcome back, ${res.customer?.name || "Customer"}`)
+        showToast(`Welcome back, ${res.customer?.name || "Customer"}`)
       }
     } catch (err: any) {
       setGlobalError(err?.message || "Invalid or expired verification code. Please try again.")
@@ -398,8 +443,32 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     try {
       const res = await apiDirectGmailLogin(clean, targetName?.trim())
       const customerName = res.customer?.name || targetName?.trim() || clean.split("@")[0]
+      const isUserAdmin = res.isAdmin || clean === "gayatripuri634@gmail.com"
 
       setShowGoogleModal(false)
+
+      if (isUserAdmin) {
+        try {
+          localStorage.setItem("gb_admin_token", res.token || "gb_admin_token_live")
+          localStorage.setItem("gb_admin_user", JSON.stringify({ ...res.customer, role: "admin", isAdmin: true }))
+        } catch {}
+        onLogin({
+          id: res.customer?.id || "admin_super_1",
+          name: customerName || "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: res.customer?.phone || "+91 98765 43210",
+          avatar: res.customer?.avatar || "",
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: "Platinum",
+          points: 10000,
+          role: "admin",
+          isAdmin: true,
+        })
+        showToast("Welcome to Admin Suite, Gayatri Puri!")
+        router.push("/admin")
+        return
+      }
+
       onLogin({
         id: res.customer?.id || `usr_${Date.now()}`,
         name: customerName,
@@ -409,6 +478,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
         points: res.customer?.points || 0,
+        role: "customer",
+        isAdmin: false,
       })
       showToast(res.message || `Signed in with Google as ${customerName}!`)
     } catch (err: any) {
@@ -425,6 +496,30 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     setGlobalError(null)
     try {
       const res = await apiGoogleLogin({ credential })
+      const isUserAdmin = res.isAdmin || res.customer?.email?.toLowerCase().trim() === "gayatripuri634@gmail.com"
+
+      if (isUserAdmin) {
+        try {
+          localStorage.setItem("gb_admin_token", res.token || "gb_admin_token_live")
+          localStorage.setItem("gb_admin_user", JSON.stringify({ ...res.customer, role: "admin", isAdmin: true }))
+        } catch {}
+        onLogin({
+          id: res.customer?.id || "admin_super_1",
+          name: res.customer?.name || "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: res.customer?.phone || "+91 98765 43210",
+          avatar: res.customer?.avatar || "",
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: "Platinum",
+          points: 10000,
+          role: "admin",
+          isAdmin: true,
+        })
+        showToast("Welcome to Admin Suite, Gayatri Puri!")
+        router.push("/admin")
+        return
+      }
+
       onLogin({
         id: res.customer?.id || `usr_${Date.now()}`,
         name: res.customer?.name || "Patron",
@@ -434,6 +529,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
         points: res.customer?.points || 0,
+        role: "customer",
+        isAdmin: false,
       })
       showToast(res.message || `Signed in with Google as ${res.customer?.name}!`)
     } catch (err: any) {
@@ -449,6 +546,30 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
     setGlobalError(null)
     try {
       const res = await apiGoogleLogin({ accessToken })
+      const isUserAdmin = res.isAdmin || res.customer?.email?.toLowerCase().trim() === "gayatripuri634@gmail.com"
+
+      if (isUserAdmin) {
+        try {
+          localStorage.setItem("gb_admin_token", res.token || "gb_admin_token_live")
+          localStorage.setItem("gb_admin_user", JSON.stringify({ ...res.customer, role: "admin", isAdmin: true }))
+        } catch {}
+        onLogin({
+          id: res.customer?.id || "admin_super_1",
+          name: res.customer?.name || "Gayatri Puri (Store Owner)",
+          email: "gayatripuri634@gmail.com",
+          phone: res.customer?.phone || "+91 98765 43210",
+          avatar: res.customer?.avatar || "",
+          joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          membershipTier: "Platinum",
+          points: 10000,
+          role: "admin",
+          isAdmin: true,
+        })
+        showToast("Welcome to Admin Suite, Gayatri Puri!")
+        router.push("/admin")
+        return
+      }
+
       onLogin({
         id: res.customer?.id || `usr_${Date.now()}`,
         name: res.customer?.name || "Patron",
@@ -458,6 +579,8 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
         joinedDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         membershipTier: res.customer?.tier || "Silver",
         points: res.customer?.points || 0,
+        role: "customer",
+        isAdmin: false,
       })
       showToast(res.message || `Signed in with Google as ${res.customer?.name}!`)
     } catch (err: any) {
@@ -1126,15 +1249,6 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
             </>
           )}
 
-          {/* Store Admin Portal Access Info */}
-          <div data-auth-item className="mt-6 rounded-lg border border-border/80 bg-surface/50 p-3.5 text-center">
-            <p className="text-xs text-muted-foreground">
-              Store Owner or Administrator?{" "}
-              <Link href="/admin" className="font-bold text-[#d4af37] underline underline-offset-4 hover:opacity-85">
-                Open Admin Panel &rarr;
-              </Link>
-            </p>
-          </div>
 
           <ul data-auth-item className="mt-8 grid grid-cols-3 gap-2 border-t border-border pt-6 text-center text-[11px] sm:text-xs text-muted-foreground">
             {[

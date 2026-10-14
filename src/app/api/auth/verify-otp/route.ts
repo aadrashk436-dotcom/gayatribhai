@@ -154,7 +154,8 @@ export async function POST(request: Request) {
     if (isAdmin) {
       customer.tier = "Platinum";
       customer.points = Math.max(customer.points || 0, 10000);
-      customer.role = "super_admin";
+      customer.role = "admin";
+      customer.isAdmin = true;
     }
 
     try {
@@ -194,6 +195,7 @@ export async function POST(request: Request) {
       success: true,
       token,
       isAdmin,
+      redirect: isAdmin ? "/admin" : undefined,
       isNewUser,
       customer: {
         id: customer.id,
@@ -203,7 +205,8 @@ export async function POST(request: Request) {
         avatar: customer.avatar || "",
         tier: customer.tier || "Silver",
         points: customer.points || 0,
-        role: customer.role || (isAdmin ? "super_admin" : "customer"),
+        role: isAdmin ? "admin" : (customer.role || "customer"),
+        isAdmin,
       },
       message: isAdmin
         ? "Welcome back, Store Admin Gayatri Puri!"

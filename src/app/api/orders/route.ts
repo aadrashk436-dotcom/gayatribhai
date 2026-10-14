@@ -277,11 +277,18 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Order ID(s) required" }, { status: 400 });
     }
 
+    const targetIdStrs = targetIds.map((t: any) => String(t).trim().toUpperCase());
+
     // Strict Cancellation Rule (applies equally to COD and Online orders):
     // Orders CANNOT be cancelled if shipment has already been assigned with courier/AWB or already dispatched/delivered.
     if (status === "Cancelled" || status === "CANCELLED") {
       const lockedOrders = orders
-        .filter((o: any) => targetIds.includes(o.id) || targetIds.includes(o.orderNumber))
+        .filter((o: any) => {
+          const m =
+            targetIdStrs.includes(String(o.id || "").trim().toUpperCase()) ||
+            targetIdStrs.includes(String(o.orderNumber || "").trim().toUpperCase());
+          return m;
+        })
         .filter((o: any) => {
           const hasAwb = Boolean(o.awb);
           const s = (o.status || "").toLowerCase();
@@ -301,7 +308,11 @@ export async function PATCH(request: Request) {
     }
 
     const updatedOrders = orders.map((o: any) => {
-      if (targetIds.includes(o.id) || targetIds.includes(o.orderNumber)) {
+      const matches =
+        targetIdStrs.includes(String(o.id || "").trim().toUpperCase()) ||
+        targetIdStrs.includes(String(o.orderNumber || "").trim().toUpperCase());
+
+      if (matches) {
         const isNowDelivered = status === "Delivered" || status === "delivered";
         const newPaymentStatus =
           paymentStatus ||

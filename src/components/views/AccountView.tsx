@@ -576,68 +576,68 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
     }
   }
 
-  // Fetch real user orders from API
-  useEffect(() => {
-    let isMounted = true
-    const fetchOrders = async () => {
-      setLoadingOrders(true)
+  // Fetch real user orders from API with no-cache for instant live status reflection
+  const fetchUserOrders = async () => {
+    setLoadingOrders(true)
+    try {
+      const params = new URLSearchParams()
+      if (user?.email) params.set("email", user.email)
+      if (user?.phone) params.set("phone", user.phone)
+      if (user?.id) params.set("userId", user.id)
+
+      let localOrderIds: string[] = []
       try {
-        const params = new URLSearchParams()
-        if (user?.email) params.set("email", user.email)
-        if (user?.phone) params.set("phone", user.phone)
-        if (user?.id) params.set("userId", user.id)
+        localOrderIds = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+      } catch {}
 
-        let localOrderIds: string[] = []
-        try {
-          localOrderIds = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
-        } catch {}
-
-        let fetchedList: any[] = []
-        if (params.toString()) {
-          const res = await fetch(`/api/orders?${params.toString()}`)
-          if (res.ok) {
-            const data = await res.json()
-            if (Array.isArray(data.orders)) {
-              fetchedList = data.orders
-            }
+      let fetchedList: any[] = []
+      if (params.toString()) {
+        const res = await fetch(`/api/orders?${params.toString()}&_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data.orders)) {
+            fetchedList = data.orders
           }
         }
-
-        // Fetch any orders from localOrderIds that were placed on this device but not returned yet
-        const missingIds = localOrderIds.filter(
-          (oid) => !fetchedList.some((o) => o.id === oid || o.orderNumber === oid)
-        )
-        if (missingIds.length > 0) {
-          const extraOrders = await Promise.all(
-            missingIds.map(async (oid) => {
-              try {
-                const r = await fetch(`/api/orders?id=${oid}`)
-                if (r.ok) {
-                  const d = await r.json()
-                  return d.order
-                }
-              } catch {}
-              return null
-            })
-          )
-          const validExtras = extraOrders.filter(Boolean)
-          fetchedList = [...validExtras, ...fetchedList]
-        }
-
-        if (isMounted) {
-          setOrders(fetchedList)
-        }
-      } catch (err) {
-        console.warn("Could not load user orders:", err)
-        if (isMounted) setOrders([])
-      } finally {
-        if (isMounted) setLoadingOrders(false)
       }
+
+      // Fetch any orders from localOrderIds that were placed on this device but not returned yet
+      const missingIds = localOrderIds.filter(
+        (oid) => !fetchedList.some((o) => o.id === oid || o.orderNumber === oid)
+      )
+      if (missingIds.length > 0) {
+        const extraOrders = await Promise.all(
+          missingIds.map(async (oid) => {
+            try {
+              const r = await fetch(`/api/orders?id=${oid}&_t=${Date.now()}`, {
+                cache: "no-store",
+              })
+              if (r.ok) {
+                const d = await r.json()
+                return d.order
+              }
+            } catch {}
+            return null
+          })
+        )
+        const validExtras = extraOrders.filter(Boolean)
+        fetchedList = [...validExtras, ...fetchedList]
+      }
+
+      setOrders(fetchedList)
+    } catch (err) {
+      console.warn("Could not load user orders:", err)
+      setOrders([])
+    } finally {
+      setLoadingOrders(false)
     }
-    fetchOrders()
-    return () => {
-      isMounted = false
-    }
+  }
+
+  useEffect(() => {
+    fetchUserOrders()
   }, [user])
 
   useGSAP(
@@ -825,7 +825,21 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
 
             {tab === "Orders" && (
               <>
-                <h2 className="font-display text-3xl">Orders</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-3xl">Orders</h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchUserOrders()
+                      showToast("Order status refreshed!")
+                    }}
+                    disabled={loadingOrders}
+                    className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-xs font-semibold text-foreground hover:bg-surface-2 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Icon name="refresh" size={13} />
+                    <span>{loadingOrders ? "Refreshing..." : "Refresh Live Status"}</span>
+                  </button>
+                </div>
                 {loadingOrders ? (
                   <div className="rounded-sm border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
                     Loading your bespoke orders...
