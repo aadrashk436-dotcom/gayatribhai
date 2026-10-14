@@ -18,6 +18,11 @@ function subscribe(cb: () => void) {
 export function setTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme
   document.documentElement.style.colorScheme = theme
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark")
+  } else {
+    document.documentElement.classList.remove("dark")
+  }
   try {
     localStorage.setItem("avyr-theme", theme)
   } catch {}
