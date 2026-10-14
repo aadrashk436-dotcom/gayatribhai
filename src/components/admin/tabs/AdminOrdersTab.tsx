@@ -344,8 +344,8 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Step 2: Assign to Shiprocket Button */}
-                          {(ord.status === "Verified" || ord.status === "Pending Verification") && (
+                          {/* Step 2: Assign to Shiprocket Button (Only before courier/AWB assignment) */}
+                          {(ord.status === "Verified" || ord.status === "Pending Verification") && !ord.awb && (
                             <button
                               onClick={() => setAssignCourierModal(ord)}
                               className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1"
@@ -356,15 +356,16 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Cancellation button (allowed ONLY before courier handover) */}
-                          {ord.status !== "Assigned to Courier" &&
+                          {/* Cancellation button: allowed ONLY until shipping/AWB is assigned */}
+                          {!ord.awb &&
+                            ord.status !== "Assigned to Courier" &&
                             ord.status !== "Dispatched" &&
                             ord.status !== "Delivered" &&
                             ord.status !== "Cancelled" && (
                               <button
                                 onClick={() => setCancelOrderModal(ord)}
-                                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-                                title="Cancel order before courier pickup"
+                                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                                title="Cancel order before courier shipping assignment"
                               >
                                 Cancel
                               </button>

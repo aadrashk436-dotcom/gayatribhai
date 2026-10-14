@@ -13,6 +13,7 @@ import {
   Edit3,
   Trash2,
   IndianRupee,
+  Plus,
 } from "lucide-react"
 import { Product, formatINR, ZoomImageModalState } from "../types"
 import { SkeletonProducts } from "../AdminSkeletonLoaders"
@@ -25,6 +26,7 @@ interface AdminProductsTabProps {
   onToggleVisibility: (p: Product) => void
   onOpenDeleteProduct: (p: Product) => void
   onOpenZoom: (zoomState: NonNullable<ZoomImageModalState>) => void
+  onAddNewShirt?: () => void
 }
 
 export function AdminProductsTab({
@@ -35,6 +37,7 @@ export function AdminProductsTab({
   onToggleVisibility,
   onOpenDeleteProduct,
   onOpenZoom,
+  onAddNewShirt,
 }: AdminProductsTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("All")
@@ -79,6 +82,17 @@ export function AdminProductsTab({
               {cat}
             </button>
           ))}
+
+          {onAddNewShirt && (
+            <button
+              type="button"
+              onClick={onAddNewShirt}
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#e6c762] px-3.5 py-1.5 text-xs font-bold text-black hover:brightness-110 shadow-lg shadow-[#d4af37]/20 transition shrink-0 active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>+ Add Shirt</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -95,6 +109,28 @@ export function AdminProductsTab({
       <div className="flex-1 overflow-y-auto admin-scroll pr-1 pb-16">
         {isLoadingProducts ? (
           <SkeletonProducts />
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-white/10 bg-[#14171d]/60">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/20 mb-3">
+              <Search className="h-6 w-6" />
+            </div>
+            <h4 className="font-serif text-lg font-bold text-white">No products found</h4>
+            <p className="text-xs text-zinc-400 mt-1 max-w-sm">
+              {searchQuery || categoryFilter !== "All"
+                ? "Try adjusting your search query or category filter."
+                : "Your catalog is empty. Add your first handcrafted shirt to get started."}
+            </p>
+            {onAddNewShirt && (
+              <button
+                type="button"
+                onClick={onAddNewShirt}
+                className="mt-4 flex items-center gap-2 rounded-xl bg-[#d4af37] px-4 py-2 text-xs font-bold text-black hover:brightness-110 shadow-lg shadow-[#d4af37]/20 transition"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Craft & List New Shirt</span>
+              </button>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {filteredProducts.map((p) => {

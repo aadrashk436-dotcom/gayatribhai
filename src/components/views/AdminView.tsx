@@ -225,8 +225,8 @@ export function AdminView() {
     setIsLoadingSeo(true)
 
     try {
-      // 1. Live Products
-      const fetchProducts = fetch("/api/products")
+      // 1. Live Products (include hidden/drafts for admin management)
+      const fetchProducts = fetch("/api/products?include_hidden=true")
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.products) && data.products.length > 0) {
@@ -480,11 +480,12 @@ export function AdminView() {
     const order = orderList.find((o) => o.id === orderId)
 
     if (
+      order?.awb ||
       order?.status === "Assigned to Courier" ||
       order?.status === "Dispatched" ||
       order?.status === "Delivered"
     ) {
-      showToast("Cannot cancel: Order is already handed over to courier partner. Initiate Return/RTO instead.")
+      showToast("Cannot cancel: Order is already assigned to courier with AWB tracking. Initiate Return/RTO instead.")
       setCancelOrderModal(null)
       return
     }
@@ -1082,6 +1083,7 @@ export function AdminView() {
               onToggleVisibility={handleToggleProductVisibility}
               onOpenDeleteProduct={handleOpenDeleteProduct}
               onOpenZoom={(zoomState) => setZoomImageModal(zoomState)}
+              onAddNewShirt={() => setShowAddShirtModal(true)}
             />
           )}
 
@@ -1231,10 +1233,25 @@ export function AdminView() {
         <EditProductModal
           product={editProductModal}
           onClose={() => setEditProductModal(null)}
-          onSave={(updated) => {
+          onSave={async (updated) => {
             setProductList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
             setEditProductModal(null)
-            showToast(`"${updated.name}" details updated successfully!`)
+            showToast(`Saving "${updated.name}" updates...`)
+            try {
+              const res = await fetch("/api/products", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updated),
+              })
+              if (res.ok) {
+                showToast(`"${updated.name}" details updated & saved to database!`)
+              } else {
+                showToast(`"${updated.name}" updated in view!`)
+              }
+            } catch (err) {
+              console.warn("Could not persist product edits:", err)
+              showToast(`"${updated.name}" updated locally!`)
+            }
           }}
           onOpenZoom={(zoomState) => setZoomImageModal(zoomState)}
           showToast={showToast}

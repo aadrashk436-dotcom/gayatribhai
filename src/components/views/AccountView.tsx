@@ -35,9 +35,89 @@ const TABS: { id: Tab; icon: IconName }[] = [
   { id: "Settings", icon: "settings" },
 ]
 
-const STEPS = ["Placed", "Packed", "Shipped", "On the way", "Delivered"]
+const STEPS = ["Placed", "Verified", "Assigned", "In Transit", "Delivered"]
 
-function OrderCard({ order }: { order: any }) {
+function CancelOrderDialog({
+  order,
+  onClose,
+  onConfirm,
+  isCancelling,
+}: {
+  order: any
+  onClose: () => void
+  onConfirm: () => void
+  isCancelling: boolean
+}) {
+  const orderId = order.orderNumber || order.id || "ORD"
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4"
+      >
+        <div className="flex items-center justify-between border-b border-border pb-3.5">
+          <div className="flex items-center gap-2 text-[#b4321f]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+            <h3 className="font-display text-lg font-bold text-foreground">Cancel Order #{orderId}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground p-1 text-sm font-semibold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Are you sure you wish to cancel this order? Since shipment has not yet been assigned to our courier partner,
+          we will cancel the order immediately and refund any amount charged to your original payment method.
+        </p>
+
+        <div className="rounded-lg border border-border bg-surface-2 p-3 text-xs space-y-1">
+          <p className="font-semibold text-foreground">Order Item: {order.shirtName || order.items?.[0]?.name || "Artisanal Garment"}</p>
+          <p className="text-muted-foreground">Order Total: {money(order.total || 0)}</p>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            disabled={isCancelling}
+            onClick={onClose}
+            className="rounded-full border border-border px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground hover:bg-surface-2 transition"
+          >
+            Keep My Order
+          </button>
+          <button
+            type="button"
+            disabled={isCancelling}
+            onClick={onConfirm}
+            className="rounded-full bg-[#b4321f] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white hover:brightness-110 shadow transition disabled:opacity-50"
+          >
+            {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderCard({
+  order,
+  onOpenCancel,
+}: {
+  order: any
+  onOpenCancel?: (order: any) => void
+}) {
   const items = Array.isArray(order.items) ? order.items : []
   const firstItem = items[0]
   const product =
@@ -56,9 +136,12 @@ function OrderCard({ order }: { order: any }) {
         })
       : "Recently placed")
 
-  const rawStatus = (order.status || "Processing").toLowerCase()
+  const rawStatus = (order.status || "Pending Verification").toLowerCase()
   const isDelivered = rawStatus === "delivered"
   const isCancelled = rawStatus === "cancelled"
+  const isDispatched = rawStatus === "dispatched" || rawStatus === "shipped" || rawStatus === "in transit" || rawStatus === "on the way"
+  const isAssigned = Boolean(order.awb) || rawStatus === "assigned to courier" || rawStatus === "assigned"
+  const isVerified = rawStatus === "verified" || rawStatus === "packed" || rawStatus === "confirmed"
   const orderId = order.orderNumber || order.id || "ORD"
 
   const step =
@@ -66,15 +149,24 @@ function OrderCard({ order }: { order: any }) {
       ? order.step
       : isDelivered
       ? 4
-      : rawStatus === "shipped" || rawStatus === "dispatched" || rawStatus === "on the way"
+      : isDispatched
+      ? 3
+      : isAssigned
       ? 2
-      : rawStatus === "processing" || rawStatus === "verified" || rawStatus === "packed"
+      : isVerified
       ? 1
       : 0
 
-  const statusLabel =
-    order.status ||
-    (step === 4 ? "Delivered" : step === 2 ? "Shipped" : "Processing")
+  let statusLabel = order.status || "Pending Verification"
+  if (isCancelled) statusLabel = "Cancelled"
+  else if (isDelivered) statusLabel = "Delivered"
+  else if (isDispatched) statusLabel = "In Transit"
+  else if (isAssigned) statusLabel = "Courier Assigned"
+  else if (isVerified) statusLabel = "Verified & Approved"
+  else statusLabel = "Order Placed"
+
+  // Cancellation rule: ONLY allowed while shipping is NOT assigned yet (no AWB and not assigned/dispatched/delivered)
+  const canCancel = !order.awb && !isAssigned && !isDispatched && !isDelivered && !isCancelled
 
   const totalPrice = order.total || (product ? product.price * quantity : 0)
 
@@ -91,12 +183,17 @@ function OrderCard({ order }: { order: any }) {
               ? "bg-[#1f7a4a]/12 text-[#1f7a4a]"
               : isCancelled
               ? "bg-[#b4321f]/12 text-[#b4321f]"
-              : "bg-accent/15 text-accent"
+              : isDispatched || isAssigned
+              ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+              : isVerified
+              ? "bg-purple-500/15 text-purple-600 dark:text-purple-400"
+              : "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold"
           }`}
         >
           {statusLabel}
         </span>
       </div>
+
       <div className="mt-4 flex gap-4">
         <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-sm bg-surface-2">
           {product?.images?.[0] ? (
@@ -109,7 +206,7 @@ function OrderCard({ order }: { order: any }) {
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-            {product?.name || "Artisanal Garment"}
+            {order.shirtName || product?.name || "Artisanal Garment"}
           </h4>
           <p className="mt-1 text-sm text-muted-foreground">
             {`${product?.color || "Exclusive"} · Size ${size}${quantity > 1 ? ` · Qty ${quantity}` : ""}`}
@@ -117,11 +214,13 @@ function OrderCard({ order }: { order: any }) {
           <p className="mt-2 text-[15px] font-bold text-foreground">{money(totalPrice)}</p>
         </div>
       </div>
+
+      {/* Progress Track Bar */}
       {!isCancelled && (
         <div className="mt-5">
           <div className="relative h-1 rounded-full bg-border">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+              className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-all duration-500"
               style={{ width: `${(Math.min(step, STEPS.length - 1) / (STEPS.length - 1)) * 100}%` }}
             />
           </div>
@@ -134,22 +233,76 @@ function OrderCard({ order }: { order: any }) {
           </div>
         </div>
       )}
+
+      {/* Courier & AWB Tracking Block (Visible once AWB is assigned) */}
+      {order.awb && !isCancelled && (
+        <div className="mt-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">🚚</span>
+            <div>
+              <p className="text-xs font-semibold text-foreground">
+                {order.courier || order.courierName || "Shiprocket / Blue Dart Express"}
+              </p>
+              <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
+                AWB Tracking: <span className="font-semibold text-foreground">{order.awb}</span>
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 px-3 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 self-start sm:self-auto">
+            <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Courier Dispatched
+          </span>
+        </div>
+      )}
+
+      {/* Cancelled State Notice */}
+      {isCancelled && (
+        <div className="mt-4 rounded-xl border border-[#b4321f]/20 bg-[#b4321f]/5 p-3 flex items-center justify-between text-xs text-[#b4321f]">
+          <span>Order cancelled {order.cancelReason ? `(${order.cancelReason})` : "upon request"}</span>
+          <span className="font-semibold uppercase tracking-wider text-[10px]">Payment Refunded</span>
+        </div>
+      )}
+
+      {/* Bottom Action Footer */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3.5">
         <p className="text-xs text-muted-foreground">
-          {order.courierName ? `Courier: ${order.courierName}` : "Artisanal Packing & Delivery"}
+          {order.awb
+            ? `Tracking #${order.awb}`
+            : order.courier || order.courierName
+            ? `Courier: ${order.courier || order.courierName}`
+            : "Artisanal Packing & Delivery"}
         </p>
-        <button
-          type="button"
-          onClick={() => downloadOrderInvoice(order.orderNumber || order.id)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Download Invoice (PDF)
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* Cancel Button (Visible ONLY until shipping/AWB is assigned) */}
+          {canCancel && onOpenCancel && (
+            <button
+              type="button"
+              onClick={() => onOpenCancel(order)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-100 dark:hover:bg-rose-900/50 active:scale-98"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+              Cancel Order
+            </button>
+          )}
+
+          {/* Download Invoice (PDF) Button */}
+          <button
+            type="button"
+            onClick={() => downloadOrderInvoice(order.orderNumber || order.id)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download Invoice (PDF)
+          </button>
+        </div>
       </div>
     </article>
   )
@@ -288,8 +441,44 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   const [prefs, setPrefs] = useState({ drops: true, orders: true, whatsapp: false })
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [cancelDialogOrder, setCancelDialogOrder] = useState<any | null>(null)
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false)
   const wishlist = useStore((s) => s.wishlist)
   const saved = products.filter((p) => wishlist.includes(p.id))
+
+  const handleConfirmCancelPatronOrder = async () => {
+    if (!cancelDialogOrder) return
+    const targetId = cancelDialogOrder.orderNumber || cancelDialogOrder.id
+    setIsCancellingOrder(true)
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: targetId,
+          status: "Cancelled",
+          cancelReason: "Cancelled by patron from account portal",
+        }),
+      })
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.orderNumber === targetId || o.id === targetId
+              ? { ...o, status: "Cancelled", cancelReason: "Cancelled by patron" }
+              : o
+          )
+        )
+        showToast(`Order #${targetId} cancelled successfully.`)
+      } else {
+        showToast("Unable to cancel order. Please contact atelier concierge.")
+      }
+    } catch {
+      showToast("Error processing cancellation. Please try again.")
+    } finally {
+      setIsCancellingOrder(false)
+      setCancelDialogOrder(null)
+    }
+  }
 
   // Fetch real user orders from API
   useEffect(() => {
@@ -463,7 +652,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                     )}
                   </div>
                   {orders.length > 0 ? (
-                    <OrderCard order={orders[0]} />
+                    <OrderCard order={orders[0]} onOpenCancel={(ord) => setCancelDialogOrder(ord)} />
                   ) : (
                     <div className="rounded-sm border border-dashed border-border p-6 text-center">
                       <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
@@ -515,7 +704,11 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                   </div>
                 ) : orders.length > 0 ? (
                   orders.map((o) => (
-                    <OrderCard key={o.id || o.orderNumber} order={o} />
+                    <OrderCard
+                      key={o.id || o.orderNumber}
+                      order={o}
+                      onOpenCancel={(ord) => setCancelDialogOrder(ord)}
+                    />
                   ))
                 ) : (
                   <div className="rounded-sm border border-dashed border-border p-10 text-center">
@@ -719,6 +912,15 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
             setDialog(null)
             showToast(dialog.id ? "Address updated" : "Address added")
           }}
+        />
+      )}
+
+      {cancelDialogOrder && (
+        <CancelOrderDialog
+          order={cancelDialogOrder}
+          onClose={() => setCancelDialogOrder(null)}
+          onConfirm={handleConfirmCancelPatronOrder}
+          isCancelling={isCancellingOrder}
         />
       )}
     </div>

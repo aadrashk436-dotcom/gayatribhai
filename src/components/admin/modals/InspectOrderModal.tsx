@@ -170,7 +170,7 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {(order.status === "Verified" || order.status === "Pending Verification") && (
+            {(order.status === "Verified" || order.status === "Pending Verification") && !order.awb && (
               <button
                 onClick={() => {
                   onClose()
@@ -183,7 +183,8 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {order.status !== "Assigned to Courier" &&
+            {!order.awb &&
+              order.status !== "Assigned to Courier" &&
               order.status !== "Dispatched" &&
               order.status !== "Delivered" &&
               order.status !== "Cancelled" && (

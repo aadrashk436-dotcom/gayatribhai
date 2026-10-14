@@ -71,12 +71,18 @@ export async function GET(request: Request) {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const sort = searchParams.get("sort");
+    const includeHidden = searchParams.get("include_hidden") === "true" || searchParams.get("admin") === "true";
 
     const stored = readStoredProducts();
     let items = stored || localProducts;
     let source = stored ? "db" : "local";
 
     let filtered = [...items];
+
+    // Unless explicitly requested by admin, filter out hidden/draft products from storefront
+    if (!includeHidden) {
+      filtered = filtered.filter((p) => p.is_visible !== false);
+    }
 
     if (category && category !== "all") {
       filtered = filtered.filter(
@@ -120,26 +126,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Product name and price are required" }, { status: 400 });
     }
 
-    const slug = body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const slug = body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const rawPrice = Number(body.price);
+    const rawMrp = Number(body.mrp || body.price);
+    const priceInPaise = rawPrice < 10000 ? rawPrice * 100 : rawPrice;
+    const mrpInPaise = rawMrp < 10000 ? rawMrp * 100 : rawMrp;
+    const calculatedDiscount = rawMrp > rawPrice ? Math.round(((rawMrp - rawPrice) / rawMrp) * 100) : (Number(body.discount) || 0);
+
     const newProduct = {
       id: body.id || `prod_${Date.now()}`,
       slug,
       name: body.name,
       description: body.description || "",
-      price: Number(body.price) * 100, // paise
-      mrp: Number(body.mrp || body.price) * 100,
-      discount: Number(body.discount || 0),
+      price: priceInPaise,
+      mrp: mrpInPaise,
+      discount: calculatedDiscount,
       category: body.category || "Contemporary",
       sub_category: body.sub_category || body.category || "Contemporary",
       sku: body.sku || `GB-${Date.now().toString().slice(-6)}`,
       color: body.color || "Ivory",
       fabric: body.fabric || "Pure Linen",
       occasion: body.occasion || "Casual",
-      rating: Number(body.rating || 4.5),
-      reviews_count: Number(body.reviews_count || 0),
+      rating: Number(body.rating || 4.8),
+      reviews_count: Number(body.reviews_count || 1),
       badge: body.badge || "New",
-      sizes: body.sizes || ["S", "M", "L", "XL", "XXL"],
-      stock: body.stock || { S: 10, M: 10, L: 10, XL: 10, XXL: 10 },
+      sizes: body.sizes || ["XS", "S", "M", "L", "XL", "XXL"],
+      stock: body.stock || { XS: 4, S: 5, M: 6, L: 6, XL: 5, XXL: 3 },
       images: body.images || [],
       weight: Number(body.weight || 0.35),
       length: Number(body.length || 30),
@@ -225,6 +237,11 @@ export async function PATCH(request: Request) {
 
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 
+        try {
+          const prodJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+          fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
+        } catch {}
+
         const returnProduct = {
           ...data.products[idx],
           price: data.products[idx].price > 10000 ? Math.round(data.products[idx].price / 100) : data.products[idx].price,
@@ -256,6 +273,11 @@ export async function DELETE(request: Request) {
       if (Array.isArray(data.products)) {
         data.products = data.products.filter((p: any) => p.id !== id && p.slug !== id);
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+
+        try {
+          const prodJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+          fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
+        } catch {}
       }
     }
     return NextResponse.json({ success: true, deletedId: id });
