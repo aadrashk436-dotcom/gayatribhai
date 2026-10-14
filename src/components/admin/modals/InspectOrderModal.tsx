@@ -93,36 +93,74 @@ export function InspectOrderModal({
           </div>
         </div>
 
-        {/* Ordered Shirt Breakdown */}
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Ordered Shirt Item</p>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
-                <Image
-                  src={order.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
-                  alt={order.shirtName}
-                  fill
-                  className="object-cover"
-                />
+        {/* Ordered Shirts Breakdown (All Items) */}
+        {(() => {
+          const modalItems = Array.isArray(order.items) && order.items.length > 0
+            ? order.items
+            : [
+                {
+                  productId: order.id,
+                  name: order.shirtName,
+                  sku: order.sku,
+                  size: order.size,
+                  quantity: order.qty || 1,
+                  price: order.price,
+                  image: order.image,
+                  color: "Exclusive",
+                },
+              ]
+
+          const totalItemsQty = modalItems.reduce((acc, it) => acc + (it.quantity || 1), 0)
+
+          return (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Ordered Garments ({modalItems.length} {modalItems.length === 1 ? "design" : "designs"} • {totalItemsQty} total {totalItemsQty === 1 ? "pc" : "pcs"})
+                </p>
+                <span className="text-[10px] text-[#d4af37] font-semibold">Micro-Batch Atelier</span>
               </div>
-              <div>
-                <p className="font-serif text-sm font-bold text-white">{order.shirtName}</p>
-                <p className="text-[10px] font-mono text-zinc-400">SKU: {order.sku}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-zinc-200">
-                    Size: {order.size}
-                  </span>
-                  <span className="text-[10px] text-zinc-400">Qty: {order.qty}</span>
-                </div>
+
+              <div className="divide-y divide-white/5 space-y-2.5">
+                {modalItems.map((item, idx) => (
+                  <div key={`${item.id || item.productId || idx}-${idx}`} className="flex items-center justify-between gap-4 pt-2.5 first:pt-0">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
+                        <Image
+                          src={item.image || order.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                          alt={item.name || order.shirtName}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-serif text-sm font-bold text-white">{item.name || order.shirtName}</p>
+                        <p className="text-[10px] font-mono text-zinc-400">SKU: {item.sku || order.sku}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-zinc-200">
+                            Size: {item.size || order.size}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Qty: {item.quantity || 1}</span>
+                          {item.color && <span className="text-[10px] text-zinc-400">• {item.color}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-serif text-base font-bold text-white">{formatINR((item.price || order.price) * (item.quantity || 1))}</p>
+                      <p className="text-[10px] text-zinc-400">{item.quantity || 1} × {formatINR(item.price || order.price)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Order Financials */}
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Grand Total (incl. Taxes & Shipping)</span>
+                <span className="font-serif text-base font-bold text-[#d4af37]">{formatINR(order.total)}</span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-serif text-base font-bold text-white">{formatINR(order.total)}</p>
-              <p className="text-[10px] text-zinc-400">{order.qty} × {formatINR(order.price)}</p>
-            </div>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* Payment & Logistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

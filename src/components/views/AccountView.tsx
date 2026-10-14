@@ -119,14 +119,24 @@ function OrderCard({
   order: any
   onOpenCancel?: (order: any) => void
 }) {
-  const items = Array.isArray(order.items) ? order.items : []
-  const firstItem = items[0]
-  const product =
-    order.product ||
-    (firstItem ? products.find((p) => p.id === firstItem.productId) : null) ||
-    products[0]
-  const size = order.size || firstItem?.size || "M"
-  const quantity = firstItem?.quantity || 1
+  const items: any[] = Array.isArray(order.items) && order.items.length > 0
+    ? order.items
+    : [
+        {
+          productId: order.productId,
+          name: order.shirtName || "Artisanal Garment",
+          sku: order.sku,
+          size: order.size || "M",
+          quantity: order.qty || 1,
+          price: order.price || order.total || 2100,
+          image: order.image,
+          color: order.color || "Exclusive",
+        },
+      ]
+
+  const totalItemsCount = items.reduce((acc: number, cur: any) => acc + (cur.quantity || cur.qty || 1), 0)
+  const totalPrice = order.total || items.reduce((acc: number, cur: any) => acc + ((cur.price || 0) * (cur.quantity || cur.qty || 1)), 0)
+
   const dateStr =
     order.date ||
     (order.createdAt
@@ -169,8 +179,6 @@ function OrderCard({
   // Cancellation rule: ONLY allowed while shipping is NOT assigned yet (no AWB and not assigned/dispatched/delivered)
   const canCancel = !order.awb && !isAssigned && !isDispatched && !isDelivered && !isCancelled
 
-  const totalPrice = order.total || (product ? product.price * quantity : 0)
-
   return (
     <article className="rounded-sm border border-border bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
@@ -210,24 +218,52 @@ function OrderCard({
         </span>
       </div>
 
-      <div className="mt-4 flex gap-4">
-        <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-sm bg-surface-2">
-          {product?.images?.[0] ? (
-            <Image src={product.images[0]} alt="" fill sizes="72px" className="object-cover" />
-          ) : (
-            <div className="flex size-full items-center justify-center bg-surface-2 text-muted-foreground">
-              <Icon name="package" size={24} />
+      {/* Ordered Items Breakdown */}
+      <div className="mt-4 divide-y divide-border/60 rounded-lg border border-border/50 bg-background/50 p-3">
+        {items.map((it: any, idx: number) => {
+          const itemProd = products.find((p) => p.id === (it.productId || it.id) || p.slug === (it.productId || it.id))
+          const itemImage = it.image || itemProd?.images?.[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"
+          const itemSize = it.size || "M"
+          const itemQty = it.quantity || it.qty || 1
+          const itemPrice = it.price || (itemProd ? itemProd.price : 0)
+          const itemName = it.name || it.shirtName || itemProd?.name || "Artisanal Shirt"
+          const itemColor = it.color || itemProd?.color || "Exclusive"
+
+          return (
+            <div key={`${it.id || it.productId || idx}-${idx}`} className="flex items-center gap-3.5 py-2.5 first:pt-0 last:pb-0">
+              <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-sm bg-surface-2 border border-border/50">
+                <Image src={itemImage} alt="" fill sizes="56px" className="object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="line-clamp-1 text-sm font-semibold text-foreground">
+                  {itemName}
+                </h4>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                    Size: {itemSize}
+                  </span>
+                  <span>Qty: {itemQty}</span>
+                  {itemColor && <span>• {itemColor}</span>}
+                  {it.sku && <span className="font-mono text-[10px] text-muted-foreground/60">({it.sku})</span>}
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-bold text-foreground">{money(itemPrice * itemQty)}</p>
+                {itemQty > 1 && (
+                  <p className="text-[10px] text-muted-foreground">{itemQty} × {money(itemPrice)}</p>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h4 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-            {order.shirtName || product?.name || "Artisanal Garment"}
-          </h4>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {`${product?.color || "Exclusive"} · Size ${size}${quantity > 1 ? ` · Qty ${quantity}` : ""}`}
-          </p>
-          <p className="mt-2 text-[15px] font-bold text-foreground">{money(totalPrice)}</p>
+          )
+        })}
+      </div>
+
+      {/* Financial Summary */}
+      <div className="mt-2.5 flex items-center justify-between text-xs text-muted-foreground px-1">
+        <span>{totalItemsCount} {totalItemsCount === 1 ? "shirt item" : "shirt items"} ordered</span>
+        <div className="text-right">
+          <span className="text-[11px] text-muted-foreground mr-1.5">Order Total:</span>
+          <span className="text-sm font-bold text-foreground">{money(totalPrice)}</span>
         </div>
       </div>
 

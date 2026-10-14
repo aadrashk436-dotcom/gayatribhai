@@ -281,6 +281,11 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                                 Size: {ord.size}
                               </span>
                               <span className="text-[9px] text-zinc-400">Qty: {ord.qty}</span>
+                              {ord.items && ord.items.length > 1 && (
+                                <span className="rounded-full bg-[#d4af37]/20 border border-[#d4af37]/40 px-1.5 py-0.2 text-[9px] font-bold text-[#d4af37]">
+                                  +{ord.items.length - 1} more
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

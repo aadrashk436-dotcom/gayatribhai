@@ -11,9 +11,23 @@ export function formatINR(amount: number) {
   }).format(amount)
 }
 
+export interface OrderItem {
+  productId?: string
+  id?: string
+  name: string
+  sku?: string
+  size: string
+  quantity: number
+  price: number
+  image?: string
+  color?: string
+}
+
 export interface AdminOrder {
   id: string
+  orderNumber?: string
   customer: string
+  customerName?: string
   email: string
   phone: string
   address: string
@@ -25,11 +39,16 @@ export interface AdminOrder {
   qty: number
   price: number
   total: number
+  subtotal?: number
+  discount?: number
+  shipping?: number
   image: string
+  items?: OrderItem[]
+  courierName?: string
   paymentMethod: string
   paymentId: string
-  paymentStatus: "Paid" | "Pending COD"
-  status: "Pending Verification" | "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered" | "Cancelled"
+  paymentStatus: "Paid" | "Pending COD" | "Pending" | string
+  status: "Pending Verification" | "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered" | "Cancelled" | string
   verifiedBy?: string | null
   verifiedAt?: string | null
   courier?: string | null

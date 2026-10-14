@@ -894,6 +894,7 @@ export function CheckoutView({
   const [step, setStep] = useState(1)
   const [complete, setComplete] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
+  const [placedCartItems, setPlacedCartItems] = useState<typeof cart>([])
   const [confirmedOrderId, setConfirmedOrderId] = useState<string>(
     "GB-" + Math.floor(100000 + Math.random() * 900000)
   )
@@ -977,6 +978,7 @@ export function CheckoutView({
           setIsPaying(false)
           return
         }
+        setPlacedCartItems([...cart])
         setCart([])
         setStep(4)
         setComplete(true)
@@ -1057,6 +1059,7 @@ export function CheckoutView({
           } catch (e) {
             console.error("Payment verify notification:", e)
           }
+          setPlacedCartItems([...cart])
           setCart([])
           setStep(4)
           setComplete(true)
@@ -1092,6 +1095,94 @@ export function CheckoutView({
         <p className="copy">
           Thank you for choosing Gayatri Bhai. Your garments are being hand-pressed and packaged in our signature box. We have dispatched tracking details to your registered phone.
         </p>
+
+        {/* Ordered Garments Card */}
+        {placedCartItems.length > 0 && (
+          <div
+            style={{
+              margin: "16px auto",
+              padding: "16px",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: "12px",
+              maxWidth: "440px",
+              textAlign: "left",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "#d4af37",
+                marginBottom: "12px",
+              }}
+            >
+              Garments in this Order ({placedCartItems.length})
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {placedCartItems.map((item, idx) => {
+                const prod = products.find((p) => p.id === item.id)
+                if (!prod) return null
+                return (
+                  <div
+                    key={`${item.id}-${item.size}-${idx}`}
+                    style={{ display: "flex", gap: "12px", alignItems: "center" }}
+                  >
+                    <img
+                      src={prod.images[0]}
+                      alt={prod.name}
+                      style={{
+                        width: "48px",
+                        height: "60px",
+                        objectFit: "cover",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "var(--foreground)",
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {prod.name}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--muted-foreground)",
+                          margin: "2px 0 0",
+                        }}
+                      >
+                        {prod.color} · Size {item.size} · Qty {item.quantity}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          color: "var(--foreground)",
+                          margin: 0,
+                        }}
+                      >
+                        {money(prod.price * item.quantity)}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div
           style={{

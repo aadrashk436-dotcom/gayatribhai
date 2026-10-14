@@ -66,6 +66,45 @@ function normalizeOrder(o: any) {
     }
   }
 
+  const rawItems = Array.isArray(o.items) && o.items.length > 0
+    ? o.items
+    : [
+        {
+          productId: prodId,
+          id: prodId,
+          name: o.shirtName || p?.name || "Artisanal Linen Shirt",
+          sku: o.sku || p?.sku || "GB-ART-01",
+          size: o.size || "M",
+          quantity: o.qty || 1,
+          price: o.price || totalRupees,
+          image:
+            o.image ||
+            p?.images?.[0] ||
+            "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+          color: p?.color || "Exclusive",
+        },
+      ];
+
+  const enrichedItems = rawItems.map((item: any) => {
+    const itemProdId = item.productId || item.id;
+    const itemProd = products.find((prod) => prod.id === itemProdId || prod.slug === itemProdId);
+    return {
+      productId: itemProdId,
+      id: itemProdId,
+      name: item.name || item.shirtName || itemProd?.name || o.shirtName || "Artisanal Linen Shirt",
+      sku: item.sku || itemProd?.sku || o.sku || "GB-ART-01",
+      size: item.size || o.size || "M",
+      quantity: item.quantity || item.qty || 1,
+      price: item.price || itemProd?.price || o.price || totalRupees,
+      image:
+        item.image ||
+        itemProd?.images?.[0] ||
+        o.image ||
+        "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+      color: item.color || itemProd?.color || "Exclusive",
+    };
+  });
+
   return {
     ...o,
     id: o.orderNumber || o.order_number || o.id,
@@ -86,11 +125,15 @@ function normalizeOrder(o: any) {
       pincode: pincodeStr,
       phone: o.phone,
     },
+    items: enrichedItems,
     shirtName: o.shirtName || firstItem.name || p?.name || "Artisanal Linen Shirt",
     sku: o.sku || firstItem.sku || p?.sku || "GB-LUX-01",
     size: o.size || firstItem.size || "M",
-    qty: o.qty || firstItem.quantity || 1,
+    qty: o.qty || enrichedItems.reduce((acc: number, cur: any) => acc + (cur.quantity || 1), 0),
     price: o.price || firstItem.price || p?.price || totalRupees,
+    subtotal: o.subtotal || Math.round(enrichedItems.reduce((acc: number, cur: any) => acc + ((cur.price || 0) * (cur.quantity || 1)), 0)),
+    discount: o.discount || 0,
+    shipping: typeof o.shipping === "number" ? o.shipping : (o.courierRate || 0),
     total: totalRupees,
     totalPaise,
     image:
