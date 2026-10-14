@@ -218,7 +218,7 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {(order.status === "Verified" || order.status === "Pending Verification") && !order.awb && (
+            {order.status === "Verified" && !order.awb && (
               <button
                 onClick={() => {
                   onClose()

@@ -433,46 +433,64 @@ export function AdminView() {
   }
 
   const handleAssignCourier = async (orderId: string, courierName: string) => {
-    const newAwb = `AWB-SR-${Math.floor(1000000000 + Math.random() * 9000000000)}`
-    const courier = courierName || "BlueDart Express Air"
-
-    setOrderList((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-            ...o,
-            status: "Assigned to Courier" as const,
-            courier,
-            awb: newAwb,
-          }
-          : o
-      )
-    )
-
-    if (inspectOrderModal && inspectOrderModal.id === orderId) {
-      setInspectOrderModal((prev) =>
-        prev
-          ? {
-            ...prev,
-            status: "Assigned to Courier",
-            courier,
-            awb: newAwb,
-          }
-          : null
-      )
+    const targetOrder = orderList.find((o) => o.id === orderId)
+    if (targetOrder && targetOrder.status !== "Verified") {
+      showToast("Order must be Verified before assigning to Shiprocket.")
+      return
     }
 
-    setAssignCourierModal(null)
-    showToast(`Shipment Booked! ${courier} AWB: #${newAwb}`)
+    showToast("Connecting to live Shiprocket API & booking courier...")
 
     try {
-      await fetch("/api/orders", {
-        method: "PATCH",
+      const res = await fetch("/api/shipping/shiprocket/assign", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, status: "Assigned to Courier", courier, awb: newAwb }),
+        body: JSON.stringify({
+          orderId,
+          courierName,
+        }),
       })
-    } catch (e) {
-      console.warn("Could not sync with API", e)
+
+      const data = await res.json()
+      if (res.ok && data.assignedOrders?.[0]) {
+        const assigned = data.assignedOrders[0]
+        const finalAwb = assigned.awb
+        const finalCourier = assigned.courier
+
+        setOrderList((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  status: "Assigned to Courier" as const,
+                  courier: finalCourier,
+                  awb: finalAwb,
+                }
+              : o
+          )
+        )
+
+        if (inspectOrderModal && inspectOrderModal.id === orderId) {
+          setInspectOrderModal((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "Assigned to Courier",
+                  courier: finalCourier,
+                  awb: finalAwb,
+                }
+              : null
+          )
+        }
+
+        setAssignCourierModal(null)
+        showToast(`Shipment Booked! ${finalCourier} AWB: #${finalAwb}`)
+      } else {
+        throw new Error(data.error || "Failed to assign Shiprocket courier")
+      }
+    } catch (e: any) {
+      console.warn("Could not sync with Shiprocket API", e)
+      showToast(e.message || "Shiprocket assignment failed.")
     }
   }
 
@@ -663,39 +681,56 @@ export function AdminView() {
       (o) => selectedOrderIds.includes(o.id) && o.status === "Verified"
     )
     if (!eligible.length) {
-      showToast("Selected orders must be 'Verified' before assigning to courier.")
+      showToast("Selected orders must be 'Verified' before assigning to Shiprocket.")
       return
     }
 
     const eligibleIds = eligible.map((o) => o.id)
-    setOrderList((prev) =>
-      prev.map((o) => {
-        if (eligibleIds.includes(o.id)) {
-          return {
-            ...o,
-            status: "Assigned to Courier" as const,
-            courier: "BlueDart Express Air",
-            awb: `AWB-SR-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-          }
-        }
-        return o
-      })
-    )
-    showToast(`Generated Shiprocket AWBs for ${eligible.length} orders!`)
-    setSelectedOrderIds([])
+    showToast(`Connecting to Shiprocket API for ${eligible.length} orders...`)
+
     try {
-      await fetch("/api/orders", {
-        method: "PATCH",
+      const res = await fetch("/api/shipping/shiprocket/assign", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderIds: eligibleIds,
-          status: "Assigned to Courier",
-          courier: "BlueDart Express Air",
-          awb: `AWB-SR-BULK-${Date.now().toString().slice(-6)}`,
         }),
       })
-    } catch (e) {
-      console.warn("Could not sync with API", e)
+
+      const data = await res.json()
+      if (res.ok && Array.isArray(data.assignedOrders)) {
+        const assignedMap = new Map<string, any>()
+        for (const a of data.assignedOrders) {
+          assignedMap.set(a.orderId, a)
+          if (a.orderNumber) assignedMap.set(a.orderNumber, a)
+        }
+
+        setOrderList((prev) =>
+          prev.map((o) => {
+            const match = assignedMap.get(o.id) || (o.orderNumber && assignedMap.get(o.orderNumber))
+            if (match) {
+              return {
+                ...o,
+                status: "Assigned to Courier" as const,
+                courier: match.courier,
+                courierName: match.courier,
+                awb: match.awb,
+                shiprocket_order_id: match.shiprocketOrderId,
+                shiprocket_shipment_id: match.shipmentId,
+              }
+            }
+            return o
+          })
+        )
+
+        showToast(`Generated Shiprocket AWBs for ${data.assignedOrders.length} orders!`)
+        setSelectedOrderIds([])
+      } else {
+        throw new Error(data.error || "Bulk Shiprocket assignment failed")
+      }
+    } catch (e: any) {
+      console.warn("Bulk Shiprocket assignment error:", e)
+      showToast(e.message || "Failed to assign Shiprocket in bulk.")
     }
   }
 

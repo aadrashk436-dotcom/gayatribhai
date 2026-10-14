@@ -1264,7 +1264,7 @@
       "subtotal": 2100,
       "discount": 0,
       "shipping": 0,
-      "courierName": "Blue Dart Express Air",
+      "courierName": "Shadowfax Surface",
       "courierRate": 0,
       "packageSummary": {},
       "paymentMethod": "Razorpay (Online)",
@@ -1274,9 +1274,7 @@
       "status": "Pending Verification",
       "date": "14 Oct, 07:14 pm",
       "createdAt": "2026-10-14T13:44:41.814Z",
-      "courier": "Blue Dart Express Air",
-      "awb": "AWB-SR-9182736450",
-      "updatedAt": "2026-10-14T17:28:30.040Z"
+      "updatedAt": "2026-10-14T18:06:23.247Z"
     },
     {
       "id": "GB-219403",
@@ -1294,8 +1292,15 @@
       },
       "items": [
         {
+          "productId": "69ba28a30b819d3f52ce23a2",
           "id": "69ba28a30b819d3f52ce23a2",
-          "quantity": 1
+          "name": "Azure Leaf Hand-Embroidered Shirt",
+          "sku": "M26/SS/CON/CS/23",
+          "size": "M",
+          "quantity": 1,
+          "price": 2100,
+          "image": "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
+          "color": "Sky Blue"
         }
       ],
       "subtotal": 210000,
