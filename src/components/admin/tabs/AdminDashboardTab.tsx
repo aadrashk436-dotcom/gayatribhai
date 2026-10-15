@@ -9,6 +9,13 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
+  Truck,
+  Ban,
+  Eye,
+  FileText,
+  Receipt,
+  Activity,
+  MapPin,
 } from "lucide-react"
 import { Product, AdminOrder, Customer, formatINR } from "../types"
 import { SkeletonMetrics } from "../AdminSkeletonLoaders"
@@ -19,6 +26,16 @@ interface AdminDashboardTabProps {
   orderList: AdminOrder[]
   customerList: Customer[]
   setActiveTab: (tab: string) => void
+  handleVerifyOrder?: (id: string) => void
+  handleMarkDispatched?: (id: string) => void
+  handleMarkDelivered?: (id: string) => void
+  handleDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
+  handleDownloadInvoice?: (orderId: string, shiprocketOrderId?: string | number) => void
+  handleTrackLiveShipment?: (orderId: string) => void
+  setInspectOrderModal?: (order: AdminOrder | null) => void
+  setAssignCourierModal?: (order: AdminOrder | null) => void
+  setCancelOrderModal?: (order: AdminOrder | null) => void
+  showToast?: (msg: string) => void
 }
 
 export function AdminDashboardTab({
@@ -27,6 +44,16 @@ export function AdminDashboardTab({
   orderList,
   customerList,
   setActiveTab,
+  handleVerifyOrder,
+  handleMarkDispatched,
+  handleMarkDelivered,
+  handleDownloadLabel,
+  handleDownloadInvoice,
+  handleTrackLiveShipment,
+  setInspectOrderModal,
+  setAssignCourierModal,
+  setCancelOrderModal,
+  showToast,
 }: AdminDashboardTabProps) {
   const totalRevenue = useMemo(() => {
     return orderList.reduce((sum, o) => {
@@ -246,16 +273,28 @@ export function AdminDashboardTab({
                   </td>
                 </tr>
               ) : (
-                orderList.slice(0, 5).map((ord) => (
+                orderList.slice(0, 6).map((ord) => (
                 <tr key={ord.id} className="hover:bg-white/[0.02] transition">
-                  <td className="py-3.5 px-3 font-mono font-bold text-[#d4af37]">{ord.id}</td>
                   <td className="py-3.5 px-3">
-                    <p className="font-semibold text-white">{ord.customer}</p>
-                    <p className="text-[10px] text-zinc-400">{ord.city}</p>
+                    <button
+                      onClick={() => setInspectOrderModal ? setInspectOrderModal(ord) : setActiveTab("Orders")}
+                      className="font-mono font-bold text-[#d4af37] hover:underline cursor-pointer"
+                      title="Inspect order details"
+                    >
+                      {ord.id}
+                    </button>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">{ord.date}</p>
                   </td>
                   <td className="py-3.5 px-3">
-                    <p className="text-white truncate max-w-[200px]">{ord.shirtName}</p>
-                    <span className="text-[10px] text-zinc-400">Size: {ord.size} • Qty: {ord.qty}</span>
+                    <p className="font-semibold text-white">{ord.customer}</p>
+                    <p className="text-[10px] text-zinc-400 flex items-center gap-1 mt-0.5">
+                      <MapPin className="h-2.5 w-2.5 text-[#d4af37]" />
+                      <span>{ord.city} (PIN {ord.pincode})</span>
+                    </p>
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <p className="text-white truncate max-w-[180px]" title={ord.shirtName}>{ord.shirtName}</p>
+                    <span className="text-[10px] text-zinc-400 font-mono">Size: {ord.size} • Qty: {ord.qty}</span>
                   </td>
                   <td className="py-3.5 px-3 font-mono font-semibold text-white">{formatINR(ord.total)}</td>
                   <td className="py-3.5 px-3">
@@ -263,27 +302,128 @@ export function AdminDashboardTab({
                       <CheckCircle2 className="h-3 w-3" />
                       {ord.paymentStatus}
                     </span>
+                    <p className="text-[9px] text-zinc-400 mt-1">{ord.paymentMethod}</p>
                   </td>
                   <td className="py-3.5 px-3">
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                         ord.status === "Delivered"
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : ord.status === "Dispatched"
-                          ? "bg-blue-500/20 text-blue-300"
-                          : "bg-amber-500/20 text-amber-300"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                          : ord.status === "Verified"
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : ord.status === "Cancelled"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                       }`}
                     >
                       {ord.status}
                     </span>
+                    {ord.awb && (
+                      <div className="mt-1 space-y-0.5">
+                        <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || "Shiprocket"}</p>
+                        <p className="text-[9px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
+                      </div>
+                    )}
                   </td>
                   <td className="py-3.5 px-3 text-right">
-                    <button
-                      onClick={() => setActiveTab("Orders")}
-                      className="text-zinc-400 hover:text-white font-semibold text-[11px]"
-                    >
-                      Details &rarr;
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      {/* Quick Verify */}
+                      {ord.status === "Pending Verification" && handleVerifyOrder && (
+                        <button
+                          onClick={() => handleVerifyOrder(ord.id)}
+                          className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[10px] font-bold text-black hover:brightness-110 shadow transition"
+                          title="Verify order"
+                        >
+                          Verify
+                        </button>
+                      )}
+
+                      {/* Quick Assign Shiprocket */}
+                      {ord.status === "Verified" && !ord.awb && setAssignCourierModal && (
+                        <button
+                          onClick={() => setAssignCourierModal(ord)}
+                          className="rounded-lg bg-blue-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1"
+                          title="Assign Shiprocket Courier and generate AWB"
+                        >
+                          <Truck className="h-3 w-3" />
+                          <span>Shiprocket</span>
+                        </button>
+                      )}
+
+                      {/* Quick Dispatch */}
+                      {(ord.status === "Assigned to Courier" || (ord.status === "Verified" && ord.awb)) && handleMarkDispatched && (
+                        <button
+                          onClick={() => handleMarkDispatched(ord.id)}
+                          className="rounded-lg bg-sky-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-sky-500 shadow transition flex items-center gap-1"
+                          title="Mark in transit"
+                        >
+                          <Truck className="h-3 w-3" />
+                          <span>In Transit</span>
+                        </button>
+                      )}
+
+                      {/* Quick Deliver */}
+                      {(ord.status === "Dispatched" || ord.status === "Assigned to Courier") && handleMarkDelivered && (
+                        <button
+                          onClick={() => handleMarkDelivered(ord.id)}
+                          className="rounded-lg bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-emerald-500 shadow transition flex items-center gap-1"
+                          title="Mark delivered"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Delivered</span>
+                        </button>
+                      )}
+
+                      {/* Quick Label PDF */}
+                      {ord.awb && handleDownloadLabel && (
+                        <button
+                          onClick={() => handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)}
+                          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-black transition flex items-center gap-1"
+                          title="Download official Shiprocket shipping label (PDF)"
+                        >
+                          <FileText className="h-3 w-3" />
+                          <span>Label</span>
+                        </button>
+                      )}
+
+                      {/* Quick Invoice PDF */}
+                      {ord.awb && handleDownloadInvoice && (
+                        <button
+                          onClick={() => handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)}
+                          className="rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-[10px] font-semibold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1"
+                          title="Download official Shiprocket tax invoice (PDF)"
+                        >
+                          <Receipt className="h-3 w-3" />
+                          <span>Invoice</span>
+                        </button>
+                      )}
+
+                      {/* Quick Track */}
+                      {ord.awb && (
+                        <button
+                          onClick={() => {
+                            if (handleTrackLiveShipment) handleTrackLiveShipment(ord.id)
+                            else if (showToast) showToast(`Tracking AWB #${ord.awb} via Shiprocket API`)
+                          }}
+                          className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center gap-1"
+                          title="Sync live tracking status from Shiprocket API"
+                        >
+                          <Activity className="h-3 w-3" />
+                          <span>Track</span>
+                        </button>
+                      )}
+
+                      {/* Inspect details button */}
+                      <button
+                        onClick={() => setInspectOrderModal ? setInspectOrderModal(ord) : setActiveTab("Orders")}
+                        className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+                        title="View complete order breakdown"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )))}

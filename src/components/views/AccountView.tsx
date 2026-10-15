@@ -655,7 +655,19 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
 
   useEffect(() => {
     fetchUserOrders()
-  }, [user])
+    // Auto-poll orders every 15 seconds to reflect live admin & Shiprocket updates instantly
+    const interval = setInterval(() => {
+      fetchUserOrders()
+    }, 15000)
+
+    const onFocus = () => fetchUserOrders()
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [user, tab])
 
   useGSAP(
     () => {

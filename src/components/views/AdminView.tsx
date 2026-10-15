@@ -1414,6 +1414,16 @@ export function AdminView() {
               orderList={orderList}
               customerList={customerList}
               setActiveTab={setActiveTab}
+              handleVerifyOrder={handleVerifyOrder}
+              handleMarkDispatched={handleMarkDispatched}
+              handleMarkDelivered={handleMarkDelivered}
+              handleDownloadLabel={handleDownloadLabel}
+              handleDownloadInvoice={handleDownloadInvoice}
+              handleTrackLiveShipment={handleTrackLiveShipment}
+              setInspectOrderModal={setInspectOrderModal}
+              setAssignCourierModal={setAssignCourierModal}
+              setCancelOrderModal={setCancelOrderModal}
+              showToast={showToast}
             />
           )}
 
@@ -1465,7 +1475,13 @@ export function AdminView() {
           )}
 
           {activeTab === "Customers" && (
-            <AdminCustomersTab customerList={customerList} formatINR={formatINR} />
+            <AdminCustomersTab
+              customerList={customerList}
+              orderList={orderList}
+              formatINR={formatINR}
+              setInspectOrderModal={setInspectOrderModal}
+              setActiveTab={setActiveTab}
+            />
           )}
 
           {activeTab === "Inventory" && (
@@ -1500,6 +1516,18 @@ export function AdminView() {
               setCheckPincode={setCheckPincode}
               pincodeResult={pincodeResult}
               handlePincodeCheck={handlePincodeCheck}
+              orderList={orderList}
+              handleVerifyOrder={handleVerifyOrder}
+              handleMarkDispatched={handleMarkDispatched}
+              handleMarkDelivered={handleMarkDelivered}
+              handleDownloadLabel={handleDownloadLabel}
+              handleDownloadInvoice={handleDownloadInvoice}
+              handleTrackLiveShipment={handleTrackLiveShipment}
+              setInspectOrderModal={setInspectOrderModal}
+              setAssignCourierModal={setAssignCourierModal}
+              setCancelOrderModal={setCancelOrderModal}
+              showToast={showToast}
+              formatINR={formatINR}
             />
           )}
 
