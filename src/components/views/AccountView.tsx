@@ -582,6 +582,10 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
           )
         )
         showToast(`Order #${targetId} cancelled successfully.`)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("gb_orders_last_updated", String(Date.now()))
+          window.dispatchEvent(new Event("gb-orders-updated"))
+        }
       } else {
         showToast("Unable to cancel order. Please contact atelier concierge.")
       }
@@ -667,17 +671,28 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
 
   useEffect(() => {
     fetchUserOrders()
-    // Auto-poll orders every 15 seconds to reflect live admin & Shiprocket updates instantly
+    // Auto-poll orders every 12 seconds to reflect live admin & Shiprocket updates instantly
     const interval = setInterval(() => {
       fetchUserOrders()
-    }, 15000)
+    }, 12000)
 
     const onFocus = () => fetchUserOrders()
+    const onOrdersUpdated = () => fetchUserOrders()
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === "gb_orders_last_updated" || e.key === "gb_patron_order_ids") {
+        fetchUserOrders()
+      }
+    }
+
     window.addEventListener("focus", onFocus)
+    window.addEventListener("gb-orders-updated", onOrdersUpdated)
+    window.addEventListener("storage", onStorage)
 
     return () => {
       clearInterval(interval)
       window.removeEventListener("focus", onFocus)
+      window.removeEventListener("gb-orders-updated", onOrdersUpdated)
+      window.removeEventListener("storage", onStorage)
     }
   }, [user, tab])
 

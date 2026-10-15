@@ -25,6 +25,8 @@ interface InspectOrderModalProps {
   onVerify: (orderId: string) => void
   onOpenAssignCourier: (order: AdminOrder) => void
   onOpenCancelOrder: (order: AdminOrder) => void
+  onCancelShipmentOnly?: (orderId: string) => void
+  onRefund?: (orderId: string, amount?: number) => void
   onMarkDispatched?: (orderId: string) => void
   onMarkDelivered?: (orderId: string) => void
   onDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
@@ -39,6 +41,8 @@ export function InspectOrderModal({
   onVerify,
   onOpenAssignCourier,
   onOpenCancelOrder,
+  onCancelShipmentOnly,
+  onRefund,
   onMarkDispatched,
   onMarkDelivered,
   onDownloadLabel,
@@ -47,6 +51,18 @@ export function InspectOrderModal({
   showToast,
 }: InspectOrderModalProps) {
   if (!order) return null
+
+  const isPrepaid =
+    order.paymentMethod?.includes("Razorpay") ||
+    order.paymentMethod?.includes("Online") ||
+    order.paymentStatus === "Paid" ||
+    order.paymentStatus === "Refund Pending" ||
+    Boolean(order.razorpayPaymentId)
+
+  const canRefund =
+    isPrepaid &&
+    order.paymentStatus !== "Refunded" &&
+    (order.status === "Cancelled" || order.paymentStatus === "Refund Pending" || order.paymentStatus === "Paid")
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
@@ -71,6 +87,11 @@ export function InspectOrderModal({
               >
                 {order.status}
               </span>
+              {order.paymentStatus === "Refunded" && (
+                <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-bold">
+                  Refunded
+                </span>
+              )}
             </div>
             <p className="text-xs text-zinc-400 mt-1">Placed on {order.date} • Luxury Micro-Batch Fulfillment</p>
           </div>
@@ -192,6 +213,10 @@ export function InspectOrderModal({
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                   order.paymentStatus === "Paid"
                     ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : order.paymentStatus === "Refunded"
+                    ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
+                    : order.paymentStatus === "Refund Pending"
+                    ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
                     : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
                 }`}
               >
@@ -199,6 +224,9 @@ export function InspectOrderModal({
               </span>
             </div>
             <p className="text-[10px] font-mono text-zinc-500 mt-1">ID: {order.paymentId}</p>
+            {order.refundId && (
+              <p className="text-[10px] font-mono text-emerald-400 mt-1">Refund ID: #{order.refundId}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
@@ -273,7 +301,7 @@ export function InspectOrderModal({
 
         {/* Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {order.status === "Pending Verification" && (
               <button
                 onClick={() => onVerify(order.id)}
@@ -317,14 +345,26 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {/* Cancellation button: Available until delivered */}
+            {/* Cancel Shipment Only: Allows resetting AWB without cancelling the patron's order */}
+            {order.awb && order.status !== "Delivered" && order.status !== "Cancelled" && onCancelShipmentOnly && (
+              <button
+                onClick={() => onCancelShipmentOnly(order.id)}
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition cursor-pointer"
+                title="Cancel only the Shiprocket AWB shipment so you can re-assign a new courier"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                <span>Cancel Shipment Only</span>
+              </button>
+            )}
+
+            {/* Cancel Order button: Available until delivered */}
             {order.status !== "Delivered" && order.status !== "Cancelled" && (
               <button
                 onClick={() => {
                   onClose()
                   onOpenCancelOrder(order)
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition cursor-pointer"
                 title={
                   order.awb
                     ? "Cancel courier shipment on Shiprocket and mark order as Cancelled"
@@ -332,7 +372,18 @@ export function InspectOrderModal({
                 }
               >
                 <Ban className="h-3.5 w-3.5" />
-                <span>{order.awb ? "Cancel Shipment (Shiprocket)" : "Cancel Order"}</span>
+                <span>{order.awb ? "Cancel Shipment & Order" : "Cancel Order"}</span>
+              </button>
+            )}
+
+            {/* Live Razorpay Gateway Refund Trigger */}
+            {canRefund && onRefund && (
+              <button
+                onClick={() => onRefund(order.id, order.total)}
+                className="flex items-center gap-1.5 rounded-xl bg-[#d4af37] text-black px-4 py-2 text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-lg cursor-pointer transition"
+                title="Execute direct refund via Razorpay gateway"
+              >
+                <span>💳 Refund {formatINR(order.total)} via Razorpay</span>
               </button>
             )}
           </div>

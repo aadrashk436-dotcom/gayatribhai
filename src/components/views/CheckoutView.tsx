@@ -1031,11 +1031,15 @@ export function CheckoutView({
               if (typeof window !== "undefined") {
                 localStorage.setItem("gb_patron_email", patronEmail)
                 localStorage.setItem("gb_patron_phone", patronPhone)
+                localStorage.setItem("gb_orders_last_updated", String(Date.now()))
                 const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
                 if (!existingIds.includes(orderRes.orderNumber)) {
                   existingIds.unshift(orderRes.orderNumber)
                   localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
                 }
+                window.dispatchEvent(new CustomEvent("gb-orders-updated", { detail: { orderNumber: orderRes.orderNumber } }))
+                window.dispatchEvent(new Event("gb-orders-updated"))
+                window.dispatchEvent(new Event("storage"))
               }
               if (!user) {
                 const newUser = {
@@ -1073,12 +1077,14 @@ export function CheckoutView({
 
       setConfirmedPaymentMethod("Razorpay (Online)")
 
-      // Online Razorpay Flow
-      const loaded = await loadRazorpayScript()
-      if (!loaded) {
-        alert("Payment gateway failed to load. Please try again or select Cash on Delivery.")
-        setIsPaying(false)
-        return
+      // Online Razorpay Flow: Ensure script is ready
+      if (typeof window !== "undefined" && !(window as any).Razorpay) {
+        const loaded = await loadRazorpayScript()
+        if (!loaded && !(window as any).Razorpay) {
+          alert("Payment gateway is taking a moment to connect. Please tap again or choose Cash on Delivery.")
+          setIsPaying(false)
+          return
+        }
       }
 
       let rzpOrderId = ""
@@ -1122,6 +1128,7 @@ export function CheckoutView({
       }
 
       const razorpayKey = returnedKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_Tl6r6m9eEhjxUb"
+      const clean10DigitPhone = patronPhone.replace(/\D/g, "").slice(-10) || "9876543210"
 
       const options = {
         key: razorpayKey,
@@ -1133,7 +1140,7 @@ export function CheckoutView({
         prefill: {
           name: patronName,
           email: patronEmail,
-          contact: patronPhone,
+          contact: clean10DigitPhone,
         },
         theme: {
           color: "#d4af37",
@@ -1149,6 +1156,7 @@ export function CheckoutView({
             if (typeof window !== "undefined") {
               localStorage.setItem("gb_patron_email", patronEmail)
               localStorage.setItem("gb_patron_phone", patronPhone)
+              localStorage.setItem("gb_orders_last_updated", String(Date.now()))
               if (createdOrderNum) {
                 const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
                 if (!existingIds.includes(createdOrderNum)) {
@@ -1156,6 +1164,9 @@ export function CheckoutView({
                   localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
                 }
               }
+              window.dispatchEvent(new CustomEvent("gb-orders-updated", { detail: { orderNumber: createdOrderNum } }))
+              window.dispatchEvent(new Event("gb-orders-updated"))
+              window.dispatchEvent(new Event("storage"))
             }
             if (!user) {
               const newUser = {
@@ -1184,10 +1195,23 @@ export function CheckoutView({
           ondismiss: function () {
             setIsPaying(false)
           },
+          escape: true,
+          backdropclose: false,
         },
       }
 
-      const rzp = new (window as any).Razorpay(options)
+      if (typeof (window as any).Razorpay === "undefined") {
+        await loadRazorpayScript()
+      }
+
+      const RazorpayClass = (window as any).Razorpay
+      if (!RazorpayClass) {
+        alert("Payment gateway is temporarily unavailable. Please place your order via Cash on Delivery.")
+        setIsPaying(false)
+        return
+      }
+
+      const rzp = new RazorpayClass(options)
       rzp.on("payment.failed", function (resp: any) {
         alert(resp.error?.description || "Payment failed. Please try another method.")
         setIsPaying(false)

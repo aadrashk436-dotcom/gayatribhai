@@ -44,10 +44,10 @@ export interface AdminOrder {
   shipping?: number
   image: string
   items?: OrderItem[]
-  courierName?: string
+  courierName?: string | null
   paymentMethod: string
   paymentId: string
-  paymentStatus: "Paid" | "Pending COD" | "Pending" | string
+  paymentStatus: "Paid" | "Pending COD" | "Pending" | "Refunded" | "Refund Pending" | string
   status: "Pending Verification" | "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered" | "Cancelled" | string
   verifiedBy?: string | null
   verifiedAt?: string | null
@@ -55,6 +55,13 @@ export interface AdminOrder {
   awb?: string | null
   shiprocket_order_id?: number | string | null
   shiprocket_shipment_id?: number | string | null
+  razorpayPaymentId?: string | null
+  razorpayOrderId?: string | null
+  refundId?: string | null
+  refundAmount?: number | null
+  refundReason?: string | null
+  refundedAt?: string | null
+  shipmentCancelledAt?: string | null
   date: string
   cancelReason?: string | null
 }

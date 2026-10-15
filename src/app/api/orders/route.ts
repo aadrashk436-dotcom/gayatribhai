@@ -238,10 +238,12 @@ export async function GET(request: Request) {
 
       const userOrders = orders.filter((o: any) => {
         const orderEmail = (o.customerEmail || o.email || o.shippingAddress?.email || "").trim().toLowerCase();
-        const emailMatch = Boolean(cleanEmail && orderEmail && (orderEmail === cleanEmail || cleanEmail.includes(orderEmail) || orderEmail.includes(cleanEmail)));
+        const isGenericFallback = orderEmail === "care@gayatribhai.com";
+        const emailMatch = Boolean(cleanEmail && orderEmail && !isGenericFallback && orderEmail === cleanEmail);
 
         const rawPhone = (o.customerPhone || o.phone || o.shippingAddress?.phone || "").replace(/\D/g, "").slice(-10);
-        const phoneMatch = Boolean(cleanPhoneDigits && rawPhone.length >= 10 && rawPhone === cleanPhoneDigits);
+        const isGenericPhone = rawPhone === "9876543210";
+        const phoneMatch = Boolean(cleanPhoneDigits && rawPhone.length >= 10 && !isGenericPhone && rawPhone === cleanPhoneDigits);
 
         const userIdMatch = Boolean(userId && o.userId && o.userId === userId);
 

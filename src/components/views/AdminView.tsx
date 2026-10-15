@@ -375,11 +375,24 @@ export function AdminView() {
     const onFocus = () => {
       refreshOrders()
     }
+    const onOrdersUpdated = () => {
+      refreshOrders()
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === "gb_orders_last_updated" || e.key === "gb_patron_order_ids") {
+        refreshOrders()
+      }
+    }
+
     window.addEventListener("focus", onFocus)
+    window.addEventListener("gb-orders-updated", onOrdersUpdated)
+    window.addEventListener("storage", onStorage)
 
     return () => {
       clearInterval(timer)
       window.removeEventListener("focus", onFocus)
+      window.removeEventListener("gb-orders-updated", onOrdersUpdated)
+      window.removeEventListener("storage", onStorage)
     }
   }, [refreshOrders])
 
@@ -643,6 +656,86 @@ export function AdminView() {
     } catch (e: any) {
       console.warn("Shiprocket cancellation note:", e)
       showToast(e.message || "Order cancelled locally. Shiprocket API note logged.")
+    }
+  }
+
+  const handleCancelShipmentOnly = async (orderId: string, reason?: string) => {
+    const order = orderList.find((o) => o.id === orderId || o.orderNumber === orderId)
+    if (!order?.awb) {
+      showToast("Order does not have an active shipment to cancel.")
+      return
+    }
+    showToast(`Cancelling Shiprocket shipment for AWB #${order.awb}...`)
+    try {
+      const res = await fetch("/api/shipping/shiprocket/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          shipmentOnly: true,
+          reason: reason || "Shipment cancelled by Admin (order retained for re-shipping)",
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showToast(data.message || `Shipment #${order.awb} cancelled on Shiprocket! Order is ready to re-assign.`)
+        setOrderList((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId
+              ? { ...o, status: "Verified" as const, awb: null, courier: null, courierName: null }
+              : o
+          )
+        )
+        if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
+          setInspectOrderModal((prev) =>
+            prev ? { ...prev, status: "Verified", awb: null, courier: null, courierName: null } : null
+          )
+        }
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
+      } else {
+        throw new Error(data.error || "Failed to cancel shipment on Shiprocket")
+      }
+    } catch (err: any) {
+      console.error("Cancel shipment error:", err)
+      showToast(err.message || "Failed to cancel shipment")
+    }
+  }
+
+  const handleRefundOrder = async (orderId: string, amount?: number, reason?: string) => {
+    showToast(`Processing Razorpay refund for Order #${orderId}...`)
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          reason: reason || "Admin authorized refund for cancelled order",
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showToast(data.message || `Refund processed successfully for Order #${orderId}!`)
+        setOrderList((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId
+              ? { ...o, paymentStatus: "Refunded" as const, refundId: data.refundId }
+              : o
+          )
+        )
+        if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
+          setInspectOrderModal((prev) =>
+            prev ? { ...prev, paymentStatus: "Refunded", refundId: data.refundId } : null
+          )
+        }
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
+      } else {
+        throw new Error(data.error || "Failed to initiate refund")
+      }
+    } catch (err: any) {
+      console.error("Refund error:", err)
+      showToast(err.message || "Failed to process refund via Razorpay")
     }
   }
 
@@ -1756,6 +1849,8 @@ export function AdminView() {
           onVerify={handleVerifyOrder}
           onOpenAssignCourier={(order) => setAssignCourierModal(order)}
           onOpenCancelOrder={(order) => setCancelOrderModal(order)}
+          onCancelShipmentOnly={handleCancelShipmentOnly}
+          onRefund={handleRefundOrder}
           onMarkDispatched={handleMarkDispatched}
           onMarkDelivered={handleMarkDelivered}
           onDownloadLabel={handleDownloadLabel}

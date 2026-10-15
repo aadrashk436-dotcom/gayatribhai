@@ -96,6 +96,34 @@ export async function apiCalculateShipping(deliveryPincode: string, items: Array
 }
 
 // ─── Checkout & Razorpay ───
+export function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if ((window as any).Razorpay) return resolve(true);
+
+    const existingScript = document.querySelector(
+      'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+    );
+    if (existingScript) {
+      if ((window as any).Razorpay) return resolve(true);
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      setTimeout(() => resolve(Boolean((window as any).Razorpay)), 1500);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      console.error("Failed to load Razorpay checkout script");
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+}
+
 export async function apiCreateOrder(
   items: Array<{ productId: string; quantity: number; size: string }>,
   address: any,
@@ -335,22 +363,5 @@ export function apiGetCurrentToken(): string | null {
   return null;
 }
 
-// ─── Dynamic Razorpay SDK Loader ───
-export function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined") {
-      resolve(false);
-      return;
-    }
-    if ((window as any).Razorpay) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
+
 

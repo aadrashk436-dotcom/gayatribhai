@@ -80,6 +80,7 @@ export default function RootLayout({
     <html lang="en" className={`${manrope.variable} ${fraunces.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

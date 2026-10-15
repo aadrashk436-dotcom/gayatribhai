@@ -32,7 +32,7 @@ function writeDb(data: any) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, orderIds, reason } = body;
+    const { orderId, orderIds, reason, shipmentOnly } = body;
 
     const targetIds: string[] = Array.isArray(orderIds)
       ? orderIds
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     const cancelReason =
-      reason || "Shipment and order cancelled by Store Admin via Shiprocket";
+      reason || (shipmentOnly ? "Shipment cancelled by Admin (order retained for re-shipping)" : "Shipment and order cancelled by Store Admin via Shiprocket");
 
     const cancelledResults: any[] = [];
 
@@ -82,8 +82,8 @@ export async function POST(request: Request) {
         }
       }
 
-      // 2. Cancel on Shiprocket by Order ID if present
-      if (order.shiprocket_order_id) {
+      // 2. If full order cancellation, cancel on Shiprocket by Order ID
+      if (!shipmentOnly && order.shiprocket_order_id) {
         try {
           const orderRes = await cancelShiprocketOrder([order.shiprocket_order_id]);
           if (orderRes && !orderRes.error) {
@@ -94,27 +94,58 @@ export async function POST(request: Request) {
         }
       }
 
-      // 3. Update order in database
-      order.status = "Cancelled";
-      order.cancelReason = cancelReason;
-      order.cancelledAt = new Date().toISOString();
-      order.updatedAt = new Date().toISOString();
-      order.shiprocketCancelled = srShipmentCancelled || srOrderCancelled;
+      if (shipmentOnly) {
+        // Reset shipment details but keep order active for re-assignment
+        order.status = "Verified";
+        order.previousAwb = order.awb;
+        order.awb = null;
+        order.courier = null;
+        order.courierName = null;
+        order.shipmentCancelledAt = new Date().toISOString();
+        order.shipmentCancelReason = cancelReason;
+        order.updatedAt = new Date().toISOString();
 
-      cancelledResults.push({
-        orderId: order.id,
-        orderNumber: order.orderNumber || order.id,
-        status: "Cancelled",
-        awb: order.awb || null,
-        shiprocketCancelled: order.shiprocketCancelled,
-      });
+        cancelledResults.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber || order.id,
+          status: "Verified",
+          shipmentCancelled: true,
+          message: "Shipment cancelled. Order reverted to Verified status.",
+        });
+      } else {
+        // Full order cancellation
+        order.status = "Cancelled";
+        order.cancelReason = cancelReason;
+        order.cancelledAt = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
+        order.shiprocketCancelled = srShipmentCancelled || srOrderCancelled;
+
+        // If online order was paid, mark as Refund Pending for admin action
+        const isOnlinePaid =
+          order.paymentStatus === "Paid" &&
+          (order.paymentMethod?.includes("Razorpay") || order.paymentMethod?.includes("Online") || order.razorpayPaymentId);
+        if (isOnlinePaid && order.paymentStatus !== "Refunded") {
+          order.paymentStatus = "Refund Pending";
+        }
+
+        cancelledResults.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber || order.id,
+          status: "Cancelled",
+          paymentStatus: order.paymentStatus,
+          awb: order.awb || null,
+          shiprocketCancelled: order.shiprocketCancelled,
+        });
+      }
     }
 
     writeDb(db);
 
     return NextResponse.json({
       success: true,
-      message: `Successfully cancelled ${cancelledResults.length} order(s) & Shiprocket shipment(s)!`,
+      message: shipmentOnly
+        ? `Successfully cancelled shipment on Shiprocket for ${cancelledResults.length} order(s). Ready to re-assign!`
+        : `Successfully cancelled ${cancelledResults.length} order(s) & Shiprocket shipment(s)!`,
       cancelledOrders: cancelledResults,
       count: cancelledResults.length,
     });

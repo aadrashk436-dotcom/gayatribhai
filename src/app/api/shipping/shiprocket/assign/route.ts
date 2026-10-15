@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     const targetIds: string[] = Array.isArray(orderIds)
       ? orderIds
       : orderId
-      ? [String(orderId)]
-      : [];
+        ? [String(orderId)]
+        : [];
 
     if (!targetIds.length) {
       return NextResponse.json(
@@ -140,13 +140,13 @@ export async function POST(request: Request) {
       const rawItems = Array.isArray(order.items) && order.items.length > 0
         ? order.items
         : [
-            {
-              name: order.shirtName || "Artisanal Luxury Shirt",
-              sku: order.sku || "GB-ART-01",
-              quantity: order.qty || 1,
-              price: order.price || 2100,
-            },
-          ];
+          {
+            name: order.shirtName || "Artisanal Luxury Shirt",
+            sku: order.sku || "GB-ART-01",
+            quantity: order.qty || 1,
+            price: order.price || 2100,
+          },
+        ];
 
       const orderItems = rawItems.map((it: any) => ({
         name: it.name || it.shirtName || "Artisanal Luxury Shirt",
@@ -224,14 +224,14 @@ export async function POST(request: Request) {
           try {
             const labelRes = await generateShiprocketLabel(shipmentId);
             if (labelRes?.label_url) labelUrl = labelRes.label_url;
-          } catch {}
+          } catch { }
         }
 
         if (shiprocketOrderId && !invoiceUrl) {
           try {
             const invRes = await generateShiprocketInvoice(shiprocketOrderId);
             if (invRes?.invoice_url) invoiceUrl = invRes.invoice_url;
-          } catch {}
+          } catch { }
         }
       } catch (liveErr) {
         console.warn("Live Shiprocket API execution note:", liveErr);
