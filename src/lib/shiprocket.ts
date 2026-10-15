@@ -267,3 +267,81 @@ export async function cancelShiprocketShipmentAWBs(awbs: string[]): Promise<any>
     body: JSON.stringify({ awbs: cleanAwbs }),
   });
 }
+
+/**
+ * Fully cancel a shipment and/or order in Shiprocket matching Triotech pattern.
+ * Cancels both the courier AWB (if assigned) and the Shiprocket Order itself.
+ */
+export async function cancelShiprocketComplete({
+  orderNumber,
+  shiprocketOrderId,
+  awbNumber,
+}: {
+  orderNumber?: string;
+  shiprocketOrderId?: number | string;
+  awbNumber?: string;
+} = {}): Promise<{
+  awbCancelled: boolean;
+  orderCancelled: boolean;
+  shiprocketOrderIds: string[];
+  errors: string[];
+}> {
+  const result = {
+    awbCancelled: false,
+    orderCancelled: false,
+    shiprocketOrderIds: [] as string[],
+    errors: [] as string[],
+  };
+
+  try {
+    // 1. Cancel AWB if assigned and not a test placeholder
+    if (awbNumber && !awbNumber.startsWith("SR-") && awbNumber.length > 5) {
+      try {
+        await cancelShiprocketShipmentAWBs([awbNumber]);
+        result.awbCancelled = true;
+      } catch (awbErr: any) {
+        console.warn("Shiprocket AWB cancel notice:", awbErr?.message || awbErr);
+        result.errors.push(`AWB cancel: ${awbErr?.message || awbErr}`);
+      }
+    }
+
+    // 2. Identify all Shiprocket order IDs to cancel
+    const idsToCancel = new Set<string>();
+    if (shiprocketOrderId) {
+      idsToCancel.add(String(shiprocketOrderId));
+    }
+
+    // Also search Shiprocket by channel_order_id if orderNumber is provided
+    if (orderNumber) {
+      try {
+        const searchData = await shiprocketFetch(
+          `/orders?filter_by=channel_order_id&filter_value=${encodeURIComponent(orderNumber)}`
+        );
+        const found = searchData?.data || [];
+        for (const o of found) {
+          if (o?.id) idsToCancel.add(String(o.id));
+        }
+      } catch (searchErr: any) {
+        console.warn("Shiprocket order search notice:", searchErr?.message || searchErr);
+      }
+    }
+
+    // 3. Cancel the Shiprocket order(s)
+    if (idsToCancel.size > 0) {
+      const idsArray = Array.from(idsToCancel);
+      result.shiprocketOrderIds = idsArray;
+      try {
+        await cancelShiprocketOrder(idsArray);
+        result.orderCancelled = true;
+      } catch (cancelErr: any) {
+        console.warn("Shiprocket order cancel notice:", cancelErr?.message || cancelErr);
+        result.errors.push(`Order cancel: ${cancelErr?.message || cancelErr}`);
+      }
+    }
+  } catch (err: any) {
+    console.warn("cancelShiprocketComplete error:", err?.message || err);
+    result.errors.push(err?.message || String(err));
+  }
+
+  return result;
+}

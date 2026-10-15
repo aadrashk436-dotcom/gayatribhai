@@ -132,14 +132,27 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
               <Truck className="h-4.5 w-4.5" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-bold text-white">Assign Shiprocket Courier</h3>
+              <h3 className="font-serif text-lg font-bold text-white">
+                {order.awb ? "Re-assign Shiprocket Courier" : "Assign Shiprocket Courier"}
+              </h3>
               <p className="text-xs text-zinc-400">
                 Order #{order.orderNumber || order.id} • {order.customer}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition">✕</button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition cursor-pointer">✕</button>
         </div>
+
+        {order.awb && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200/90 leading-relaxed space-y-1">
+            <p className="font-bold text-amber-300">
+              Active Shipment: {order.courier || order.courierName || "Assigned"} (AWB: #{order.awb})
+            </p>
+            <p className="text-[11px] text-zinc-300">
+              Assigning a new courier will automatically cancel the current Shiprocket consignment and book a fresh AWB with your selected partner.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -232,7 +245,7 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
             ) : (
               <>
                 <Check className="h-3.5 w-3.5" />
-                <span>Generate AWB & Book</span>
+                <span>{order.awb ? "Re-assign & Book New Courier" : "Generate AWB & Book"}</span>
               </>
             )}
           </button>

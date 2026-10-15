@@ -16,6 +16,7 @@ import {
   FileText,
   Receipt,
   Activity,
+  RotateCcw,
 } from "lucide-react"
 import { AdminOrder, formatINR } from "../types"
 
@@ -325,10 +326,24 @@ export function InspectOrderModal({
               </button>
             )}
 
+            {order.awb && order.status !== "Cancelled" && order.status !== "Delivered" && (
+              <button
+                onClick={() => {
+                  onClose()
+                  onOpenAssignCourier(order)
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 px-3.5 py-2 text-xs font-bold text-blue-300 hover:bg-blue-500 hover:text-white shadow-lg cursor-pointer transition"
+                title={`Re-assign courier or change carrier from ${order.courier || "current courier"}`}
+              >
+                <Truck className="h-3.5 w-3.5" />
+                <span>Re-assign Courier</span>
+              </button>
+            )}
+
             {order.status === "Assigned to Courier" && onMarkDispatched && (
               <button
                 onClick={() => onMarkDispatched(order.id)}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500 shadow-lg"
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500 shadow-lg cursor-pointer"
               >
                 <Truck className="h-3.5 w-3.5" />
                 <span>Mark In Transit</span>
@@ -338,7 +353,7 @@ export function InspectOrderModal({
             {(order.status === "Assigned to Courier" || order.status === "Dispatched") && onMarkDelivered && (
               <button
                 onClick={() => onMarkDelivered(order.id)}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 shadow-lg"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 shadow-lg cursor-pointer"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>Mark Delivered</span>
@@ -348,12 +363,20 @@ export function InspectOrderModal({
             {/* Cancel Shipment Only: Allows resetting AWB without cancelling the patron's order */}
             {order.awb && order.status !== "Delivered" && order.status !== "Cancelled" && onCancelShipmentOnly && (
               <button
-                onClick={() => onCancelShipmentOnly(order.id)}
-                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition cursor-pointer"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Are you sure you want to cancel the shipment for Order #${order.id} in Shiprocket? Courier AWB #${order.awb} will be cancelled and order will return to Verified status.`
+                    )
+                  ) {
+                    onCancelShipmentOnly(order.id)
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition cursor-pointer"
                 title="Cancel only the Shiprocket AWB shipment so you can re-assign a new courier"
               >
-                <Truck className="h-3.5 w-3.5" />
-                <span>Cancel Shipment Only</span>
+                <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                <span>Cancel Shipment</span>
               </button>
             )}
 

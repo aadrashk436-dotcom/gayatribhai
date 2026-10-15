@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { cancelShiprocketOrder, cancelShiprocketShipmentAWBs } from "@/lib/shiprocket";
+import { cancelShiprocketComplete } from "@/lib/shiprocket";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -67,50 +67,41 @@ export async function POST(request: Request) {
     const cancelledResults: any[] = [];
 
     for (const order of matchedOrders) {
-      let srShipmentCancelled = false;
-      let srOrderCancelled = false;
+      const orderNum = order.orderNumber || order.id;
+      let srCancelResult: any = null;
 
-      // 1. Cancel on Shiprocket if AWB exists
-      if (order.awb && !String(order.awb).startsWith("AWB-SR-")) {
-        try {
-          const awbRes = await cancelShiprocketShipmentAWBs([order.awb]);
-          if (awbRes && !awbRes.error) {
-            srShipmentCancelled = true;
-          }
-        } catch (srErr) {
-          console.warn("Shiprocket AWB cancel note:", srErr);
-        }
-      }
-
-      // 2. If full order cancellation, cancel on Shiprocket by Order ID
-      if (!shipmentOnly && order.shiprocket_order_id) {
-        try {
-          const orderRes = await cancelShiprocketOrder([order.shiprocket_order_id]);
-          if (orderRes && !orderRes.error) {
-            srOrderCancelled = true;
-          }
-        } catch (srErr) {
-          console.warn("Shiprocket order cancel note:", srErr);
-        }
+      try {
+        srCancelResult = await cancelShiprocketComplete({
+          orderNumber: orderNum,
+          shiprocketOrderId: order.shiprocket_order_id,
+          awbNumber: order.awb,
+        });
+      } catch (srErr) {
+        console.warn("Shiprocket cancel error:", srErr);
       }
 
       if (shipmentOnly) {
-        // Reset shipment details but keep order active for re-assignment
+        // Reset shipment details but keep order active for re-assignment (Triotech pattern)
         order.status = "Verified";
         order.previousAwb = order.awb;
         order.awb = null;
         order.courier = null;
         order.courierName = null;
+        order.shiprocket_shipment_id = null;
+        order.shiprocket_order_id = null;
+        order.shiprocket_label_url = null;
+        order.shiprocket_invoice_url = null;
         order.shipmentCancelledAt = new Date().toISOString();
         order.shipmentCancelReason = cancelReason;
         order.updatedAt = new Date().toISOString();
 
         cancelledResults.push({
           orderId: order.id,
-          orderNumber: order.orderNumber || order.id,
+          orderNumber: orderNum,
           status: "Verified",
           shipmentCancelled: true,
-          message: "Shipment cancelled. Order reverted to Verified status.",
+          message: "Shipment cancelled on Shiprocket. Order reverted to Verified status. Ready to re-assign!",
+          shiprocketResult: srCancelResult,
         });
       } else {
         // Full order cancellation
@@ -118,7 +109,7 @@ export async function POST(request: Request) {
         order.cancelReason = cancelReason;
         order.cancelledAt = new Date().toISOString();
         order.updatedAt = new Date().toISOString();
-        order.shiprocketCancelled = srShipmentCancelled || srOrderCancelled;
+        order.shiprocketCancelled = Boolean(srCancelResult?.awbCancelled || srCancelResult?.orderCancelled);
 
         // If online order was paid, mark as Refund Pending for admin action
         const isOnlinePaid =
@@ -130,11 +121,12 @@ export async function POST(request: Request) {
 
         cancelledResults.push({
           orderId: order.id,
-          orderNumber: order.orderNumber || order.id,
+          orderNumber: orderNum,
           status: "Cancelled",
           paymentStatus: order.paymentStatus,
           awb: order.awb || null,
           shiprocketCancelled: order.shiprocketCancelled,
+          shiprocketResult: srCancelResult,
         });
       }
     }

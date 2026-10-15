@@ -11,6 +11,7 @@ import {
   MapPin,
   ExternalLink,
   Package,
+  RotateCcw,
 } from "lucide-react"
 import { AdminOrder, formatINR as defaultFormatINR } from "../types"
 
@@ -34,6 +35,7 @@ interface AdminShippingTabProps {
   handleDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
   handleDownloadInvoice?: (orderId: string, shiprocketOrderId?: string | number) => void
   handleTrackLiveShipment?: (orderId: string) => void
+  handleCancelShipmentOnly?: (orderId: string) => void
   setInspectOrderModal?: (order: AdminOrder | null) => void
   setAssignCourierModal?: (order: AdminOrder | null) => void
   setCancelOrderModal?: (order: AdminOrder | null) => void
@@ -53,6 +55,7 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
   handleDownloadLabel,
   handleDownloadInvoice,
   handleTrackLiveShipment,
+  handleCancelShipmentOnly,
   setInspectOrderModal,
   setAssignCourierModal,
   setCancelOrderModal,
@@ -312,6 +315,18 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                           </button>
                         )}
 
+                        {/* Re-assign Courier Button (For orders already with AWB) */}
+                        {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && setAssignCourierModal && (
+                          <button
+                            onClick={() => setAssignCourierModal(ord)}
+                            className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[10px] font-semibold text-blue-300 hover:bg-blue-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                            title={`Re-assign courier or change carrier from ${ord.courier || "current courier"}`}
+                          >
+                            <Truck className="h-3 w-3" />
+                            <span>Re-assign</span>
+                          </button>
+                        )}
+
                         {/* Step 3: Dispatch / In Transit */}
                         {(ord.status === "Assigned to Courier" || (ord.status === "Verified" && ord.awb)) && handleMarkDispatched && (
                           <button
@@ -375,12 +390,32 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                           </button>
                         )}
 
-                        {/* Cancel Shipment button */}
+                        {/* Cancel Shipment Button (Triotech exact pattern: cancels AWB and reverts to Verified for re-shipping) */}
+                        {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && handleCancelShipmentOnly && (
+                          <button
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to cancel the shipment for Order #${ord.id} in Shiprocket? Courier AWB #${ord.awb} will be cancelled and order will return to Verified status.`
+                                )
+                              ) {
+                                handleCancelShipmentOnly(ord.id)
+                              }
+                            }}
+                            className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
+                            title="Cancel shipment in Shiprocket and release courier AWB"
+                          >
+                            <RotateCcw className="h-3 w-3 text-amber-400" />
+                            <span>Cancel Shipment</span>
+                          </button>
+                        )}
+
+                        {/* Full Cancel Order button */}
                         {ord.status !== "Cancelled" && ord.status !== "Delivered" && setCancelOrderModal && (
                           <button
                             onClick={() => setCancelOrderModal(ord)}
-                            className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-                            title={ord.awb ? "Cancel courier shipment on Shiprocket" : "Cancel order"}
+                            className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition cursor-pointer"
+                            title={ord.awb ? "Cancel courier shipment on Shiprocket and mark order as Cancelled" : "Cancel order"}
                           >
                             <Ban className="h-3 w-3" />
                           </button>

@@ -1769,6 +1769,7 @@ export function AdminView() {
               handleDownloadLabel={handleDownloadLabel}
               handleDownloadInvoice={handleDownloadInvoice}
               handleTrackLiveShipment={handleTrackLiveShipment}
+              handleCancelShipmentOnly={handleCancelShipmentOnly}
               setInspectOrderModal={setInspectOrderModal}
               setAssignCourierModal={setAssignCourierModal}
               setCancelOrderModal={setCancelOrderModal}

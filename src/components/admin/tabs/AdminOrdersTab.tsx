@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Download,
   Undo2,
+  RotateCcw,
 } from "lucide-react"
 import { AdminOrder, ZoomImageModalState } from "../types"
 import { SkeletonOrdersTable } from "../AdminSkeletonLoaders"
@@ -284,15 +285,23 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
               </button>
             )}
 
-            {/* Bulk Cancel Shipments Only: resets AWB and leaves orders in Verified status for re-shipping */}
+            {/* Bulk Cancel Shipments: resets AWB and leaves orders in Verified status for re-shipping (Triotech pattern) */}
             {selectedWithAwbCount > 0 && handleBulkCancelShipmentsOnly && (
               <button
-                onClick={handleBulkCancelShipmentsOnly}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Are you sure you want to cancel Shiprocket shipments for ${selectedWithAwbCount} selected orders? Courier AWBs will be cancelled and orders will return to Verified status.`
+                    )
+                  ) {
+                    handleBulkCancelShipmentsOnly()
+                  }
+                }}
                 className="flex items-center gap-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition cursor-pointer"
-                title="Cancel only the Shiprocket shipments, retaining customer orders to re-ship"
+                title={`Cancel Shiprocket shipments & AWBs for ${selectedWithAwbCount} orders (reverts to Verified)`}
               >
-                <Undo2 className="h-3.5 w-3.5" />
-                <span>Cancel Shipments Only ({selectedWithAwbCount})</span>
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Cancel Shipping ({selectedWithAwbCount})</span>
               </button>
             )}
 
@@ -543,6 +552,18 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
+                          {/* Re-assign Courier Button (Available when order already has an AWB) */}
+                          {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && (
+                            <button
+                              onClick={() => setAssignCourierModal(ord)}
+                              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-300 hover:bg-blue-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                              title={`Re-assign courier or change carrier from ${ord.courier || "current courier"}`}
+                            >
+                              <Truck className="h-3 w-3" />
+                              <span>Re-assign</span>
+                            </button>
+                          )}
+
                           {/* Step 3: Mark Dispatched / In Transit */}
                           {(ord.status === "Assigned to Courier" || (ord.status === "Verified" && ord.awb)) && handleMarkDispatched && (
                             <button
@@ -609,15 +630,23 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Cancel Shipment Only Button (if AWB assigned and not delivered/cancelled) */}
+                          {/* Cancel Shipment Button (Triotech exact pattern: cancels AWB and resets order to Verified for re-shipping) */}
                           {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && handleCancelShipmentOnly && (
                             <button
-                              onClick={() => handleCancelShipmentOnly(ord.id)}
-                              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
-                              title="Cancel only Shiprocket shipment (order remains Verified to re-ship)"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    `Are you sure you want to cancel the shipment for Order #${ord.id} in Shiprocket? Courier AWB #${ord.awb} will be cancelled and order will return to Verified status.`
+                                  )
+                                ) {
+                                  handleCancelShipmentOnly(ord.id)
+                                }
+                              }}
+                              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
+                              title="Cancel shipment in Shiprocket and release courier AWB"
                             >
-                              <Undo2 className="h-3 w-3" />
-                              <span>Cancel Ship</span>
+                              <RotateCcw className="h-3 w-3 text-amber-400" />
+                              <span>Cancel Shipment</span>
                             </button>
                           )}
 

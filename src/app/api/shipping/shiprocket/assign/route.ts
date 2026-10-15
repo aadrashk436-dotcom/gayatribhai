@@ -10,6 +10,7 @@ import {
   getShiprocketOrderDetails,
   generateShiprocketLabel,
   generateShiprocketInvoice,
+  cancelShiprocketShipmentAWBs,
 } from "@/lib/shiprocket";
 
 function getDbPath() {
@@ -163,39 +164,94 @@ export async function POST(request: Request) {
       );
       const subTotal = itemsSum > 0 ? itemsSum : (order.total || 2199);
 
-      let shiprocketOrderId = order.shiprocket_order_id || null;
-      let shipmentId = order.shiprocket_shipment_id || null;
-      let awbCode = order.awb || "";
+      const isReassign = Boolean(body.reassign) || (Boolean(order.awb) && Boolean(courierName || courierId));
+
+      let shiprocketOrderId = isReassign ? null : (order.shiprocket_order_id || null);
+      let shipmentId = isReassign ? null : (order.shiprocket_shipment_id || null);
+      let awbCode = isReassign ? "" : (order.awb || "");
       let finalCourierName = courierName || order.courier || "Shiprocket Express Partner";
-      let labelUrl = order.shiprocket_label_url || null;
-      let invoiceUrl = order.shiprocket_invoice_url || null;
+      let labelUrl = isReassign ? null : (order.shiprocket_label_url || null);
+      let invoiceUrl = isReassign ? null : (order.shiprocket_invoice_url || null);
 
       try {
+        // If re-assigning, first cancel previous AWB on Shiprocket
+        if (isReassign && order.awb && !String(order.awb).startsWith("AWB-SR-")) {
+          try {
+            await cancelShiprocketShipmentAWBs([order.awb]);
+          } catch (cancelOldErr) {
+            console.warn("Notice cancelling old AWB before reassign:", cancelOldErr);
+          }
+        }
+
         // Step 1: Create or fetch adhoc order in live Shiprocket if not already created
         if (!shiprocketOrderId || !shipmentId) {
-          const srRes = await createShiprocketOrder({
-            order_id: orderNum,
-            order_date: new Date().toISOString().slice(0, 16).replace("T", " "),
-            pickup_location: "Primary",
-            billing_customer_name: firstName,
-            billing_last_name: lastName,
-            billing_address: street.length >= 3 ? street : `${street} Street`,
-            billing_address_2: area,
-            billing_city: city,
-            billing_pincode: pincode,
-            billing_state: state,
-            billing_country: "India",
-            billing_email: email,
-            billing_phone: phone,
-            shipping_is_billing: true,
-            order_items: orderItems,
-            payment_method: isCod ? "COD" : "Prepaid",
-            sub_total: subTotal,
-            length: 25,
-            breadth: 20,
-            height: 5,
-            weight: 0.5,
-          });
+          const runOrderId = isReassign
+            ? `${orderNum}-R${Date.now().toString().slice(-4)}`
+            : orderNum;
+
+          let srRes: any = null;
+          try {
+            srRes = await createShiprocketOrder({
+              order_id: runOrderId,
+              order_date: new Date().toISOString().slice(0, 16).replace("T", " "),
+              pickup_location: "Primary",
+              billing_customer_name: firstName,
+              billing_last_name: lastName,
+              billing_address: street.length >= 3 ? street : `${street} Street`,
+              billing_address_2: area,
+              billing_city: city,
+              billing_pincode: pincode,
+              billing_state: state,
+              billing_country: "India",
+              billing_email: email,
+              billing_phone: phone,
+              shipping_is_billing: true,
+              order_items: orderItems,
+              payment_method: isCod ? "COD" : "Prepaid",
+              sub_total: subTotal,
+              length: 25,
+              breadth: 20,
+              height: 5,
+              weight: 0.5,
+            });
+          } catch (createErr: any) {
+            console.warn("Primary order creation note:", createErr?.message || createErr);
+          }
+
+          // Fallback if duplicate order ID in Shiprocket
+          if (!srRes?.order_id && !srRes?.shipment_id) {
+            try {
+              const retryId = `${orderNum}-${Date.now().toString().slice(-6)}`;
+              const retryRes = await createShiprocketOrder({
+                order_id: retryId,
+                order_date: new Date().toISOString().slice(0, 16).replace("T", " "),
+                pickup_location: "Primary",
+                billing_customer_name: firstName,
+                billing_last_name: lastName,
+                billing_address: street.length >= 3 ? street : `${street} Street`,
+                billing_address_2: area,
+                billing_city: city,
+                billing_pincode: pincode,
+                billing_state: state,
+                billing_country: "India",
+                billing_email: email,
+                billing_phone: phone,
+                shipping_is_billing: true,
+                order_items: orderItems,
+                payment_method: isCod ? "COD" : "Prepaid",
+                sub_total: subTotal,
+                length: 25,
+                breadth: 20,
+                height: 5,
+                weight: 0.5,
+              });
+              if (retryRes?.order_id || retryRes?.shipment_id) {
+                srRes = retryRes;
+              }
+            } catch (retryErr) {
+              console.warn("Retry order creation note:", retryErr);
+            }
+          }
 
           if (srRes && (srRes.order_id || srRes.shipment_id)) {
             shiprocketOrderId = srRes.order_id || shiprocketOrderId;
