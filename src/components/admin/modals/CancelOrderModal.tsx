@@ -8,29 +8,48 @@ interface CancelOrderModalProps {
   order: AdminOrder | null
   onClose: () => void
   onConfirm: (orderId: string, reason: string) => Promise<void> | void
+  onCancelShipmentOnly?: (orderId: string, reason?: string) => Promise<void> | void
 }
 
-export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModalProps) {
+export function CancelOrderModal({ order, onClose, onConfirm, onCancelShipmentOnly }: CancelOrderModalProps) {
   const [cancelReasonText, setCancelReasonText] = useState("Patron requested cancellation")
   const [customReason, setCustomReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submittingAction, setSubmittingAction] = useState<"all" | "shipmentOnly" | null>(null)
 
   if (!order) return null
 
-  const handleConfirm = async () => {
-    setIsSubmitting(true)
-    const finalReason =
-      cancelReasonText === "Other custom reason"
-        ? customReason || "Cancelled by Store Admin"
-        : cancelReasonText
+  const getReason = () =>
+    cancelReasonText === "Other custom reason"
+      ? customReason || "Cancelled by Store Admin"
+      : cancelReasonText
 
+  const handleConfirmFull = async () => {
+    setIsSubmitting(true)
+    setSubmittingAction("all")
     try {
-      await onConfirm(order.id, finalReason)
+      await onConfirm(order.id, getReason())
       onClose()
     } catch {
-      // Parent toast shows error
+      // Handled by parent
     } finally {
       setIsSubmitting(false)
+      setSubmittingAction(null)
+    }
+  }
+
+  const handleConfirmShipmentOnly = async () => {
+    if (!onCancelShipmentOnly) return
+    setIsSubmitting(true)
+    setSubmittingAction("shipmentOnly")
+    try {
+      await onCancelShipmentOnly(order.id, getReason())
+      onClose()
+    } catch {
+      // Handled by parent
+    } finally {
+      setIsSubmitting(false)
+      setSubmittingAction(null)
     }
   }
 
@@ -44,12 +63,12 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
             </div>
             <div>
               <h3 className="font-serif text-lg font-bold text-white">
-                {order.awb ? `Cancel Shipment & Order #${order.id}` : `Cancel Order #${order.id}`}
+                {order.awb ? `Cancel Shipment / Order #${order.id}` : `Cancel Order #${order.id}`}
               </h3>
               <p className="text-xs text-zinc-400">{order.customer}</p>
             </div>
           </div>
-          <button onClick={onClose} disabled={isSubmitting} className="text-zinc-400 hover:text-white transition">✕</button>
+          <button onClick={onClose} disabled={isSubmitting} className="text-zinc-400 hover:text-white transition cursor-pointer">✕</button>
         </div>
 
         {order.awb ? (
@@ -59,7 +78,7 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
               <span>Active Shiprocket Shipment (AWB: #{order.awb})</span>
             </div>
             <p className="text-zinc-300 leading-relaxed">
-              Confirming cancellation will instantly call <strong className="text-white">Shiprocket&apos;s API</strong> to cancel the courier pickup & shipment, and mark this order as <strong className="text-rose-400 font-bold">Cancelled</strong> in the atelier database.
+              You can cancel <strong className="text-white">only the courier shipment</strong> to re-assign a new courier, or cancel <strong className="text-rose-400 font-bold">both order & shipment</strong>.
             </p>
           </div>
         ) : (
@@ -97,7 +116,7 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-white/10">
           <button
             onClick={onClose}
             disabled={isSubmitting}
@@ -105,18 +124,37 @@ export function CancelOrderModal({ order, onClose, onConfirm }: CancelOrderModal
           >
             Keep Order
           </button>
+
+          {order.awb && onCancelShipmentOnly && (
+            <button
+              onClick={handleConfirmShipmentOnly}
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500 hover:text-black px-4 py-2 text-xs font-bold text-amber-300 disabled:opacity-50 cursor-pointer transition shadow"
+              title="Cancel only the AWB shipment and retain order for re-assigning"
+            >
+              {submittingAction === "shipmentOnly" ? (
+                <>
+                  <span className="size-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <span>Cancelling AWB...</span>
+                </>
+              ) : (
+                <span>Cancel Shipment Only</span>
+              )}
+            </button>
+          )}
+
           <button
-            onClick={handleConfirm}
+            onClick={handleConfirmFull}
             disabled={isSubmitting}
             className="flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg disabled:opacity-60 cursor-pointer transition"
           >
-            {isSubmitting ? (
+            {submittingAction === "all" ? (
               <>
                 <span className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Cancelling on Shiprocket...</span>
+                <span>Cancelling Order...</span>
               </>
             ) : (
-              <span>{order.awb ? "Cancel Shipment on Shiprocket" : "Confirm Cancellation"}</span>
+              <span>{order.awb ? "Cancel Entire Order" : "Confirm Cancellation"}</span>
             )}
           </button>
         </div>

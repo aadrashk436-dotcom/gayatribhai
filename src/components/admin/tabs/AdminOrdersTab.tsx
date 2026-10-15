@@ -12,6 +12,9 @@ import {
   Receipt,
   Activity,
   RotateCw,
+  RefreshCw,
+  Download,
+  Undo2,
 } from "lucide-react"
 import { AdminOrder, ZoomImageModalState } from "../types"
 import { SkeletonOrdersTable } from "../AdminSkeletonLoaders"
@@ -23,6 +26,10 @@ interface AdminOrdersTabProps {
   setSearchQuery: (q: string) => void
   orderStatusFilter: string
   setOrderStatusFilter: (status: string) => void
+  orderPaymentFilter?: string
+  setOrderPaymentFilter?: (filter: string) => void
+  orderSortBy?: string
+  setOrderSortBy?: (sort: string) => void
   selectedOrderIds: string[]
   setSelectedOrderIds: (ids: string[]) => void
   isLoadingOrders: boolean
@@ -31,8 +38,10 @@ interface AdminOrdersTabProps {
   handleBulkVerify: () => void
   handleBulkAssignShiprocket: () => void
   handleBulkCancel: () => void
+  handleBulkCancelShipmentsOnly?: () => void
   handleBulkDownloadLabels?: () => void
   handleBulkDownloadInvoices?: () => void
+  handleBulkDownloadLabelsAndInvoices?: () => void
   handleBulkSyncTracking?: () => void
   handleVerifyOrder: (id: string) => void
   handleMarkDispatched?: (id: string) => void
@@ -40,9 +49,11 @@ interface AdminOrdersTabProps {
   handleDownloadLabel?: (orderId: string, shipmentId?: string | number) => void
   handleDownloadInvoice?: (orderId: string, shiprocketOrderId?: string | number) => void
   handleTrackLiveShipment?: (orderId: string) => void
+  handleCancelShipmentOnly?: (orderId: string) => void
   setInspectOrderModal: (order: AdminOrder | null) => void
   setAssignCourierModal: (order: AdminOrder | null) => void
   setCancelOrderModal: (order: AdminOrder | null) => void
+  setRefundOrderModal?: (order: AdminOrder | null) => void
   setZoomImageModal: (state: ZoomImageModalState | null) => void
   showToast: (msg: string) => void
   formatINR: (val: number) => string
@@ -56,6 +67,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   setSearchQuery,
   orderStatusFilter,
   setOrderStatusFilter,
+  orderPaymentFilter = "All",
+  setOrderPaymentFilter,
+  orderSortBy = "date_desc",
+  setOrderSortBy,
   selectedOrderIds,
   setSelectedOrderIds,
   isLoadingOrders,
@@ -64,8 +79,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   handleBulkVerify,
   handleBulkAssignShiprocket,
   handleBulkCancel,
+  handleBulkCancelShipmentsOnly,
   handleBulkDownloadLabels,
   handleBulkDownloadInvoices,
+  handleBulkDownloadLabelsAndInvoices,
   handleBulkSyncTracking,
   handleVerifyOrder,
   handleMarkDispatched,
@@ -73,9 +90,11 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   handleDownloadLabel,
   handleDownloadInvoice,
   handleTrackLiveShipment,
+  handleCancelShipmentOnly,
   setInspectOrderModal,
   setAssignCourierModal,
   setCancelOrderModal,
+  setRefundOrderModal,
   setZoomImageModal,
   showToast,
   formatINR,
@@ -87,33 +106,67 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
   return (
     <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
-      {/* Search & Status Filter Bar (STICKY / FIXED AT TOP) */}
-      <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="Search by order ID, patron, phone, city..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
-            />
+      {/* Search, Filter & Status Controls Bar */}
+      <div className="shrink-0 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Input & Refresh */}
+          <div className="flex items-center gap-2 flex-1 max-w-xl">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Search by order ID, customer, phone, AWB, SKU, payment ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
+              />
+            </div>
+            {handleRefreshOrders && (
+              <button
+                onClick={handleRefreshOrders}
+                disabled={isLoadingOrders}
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs font-semibold text-zinc-300 hover:text-[#d4af37] hover:border-[#d4af37]/40 transition shrink-0 cursor-pointer disabled:opacity-50"
+                title="Refresh live orders from database"
+              >
+                <RotateCw className={`h-3.5 w-3.5 ${isLoadingOrders ? "animate-spin text-[#d4af37]" : ""}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            )}
           </div>
-          {handleRefreshOrders && (
-            <button
-              onClick={handleRefreshOrders}
-              disabled={isLoadingOrders}
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs font-semibold text-zinc-300 hover:text-[#d4af37] hover:border-[#d4af37]/40 transition shrink-0 cursor-pointer disabled:opacity-50"
-              title="Refresh live orders from database"
-            >
-              <RotateCw className={`h-3.5 w-3.5 ${isLoadingOrders ? "animate-spin text-[#d4af37]" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          )}
+
+          {/* Secondary Filters: Payment Method & Sorting */}
+          <div className="flex items-center gap-2 shrink-0">
+            {setOrderPaymentFilter && (
+              <select
+                value={orderPaymentFilter}
+                onChange={(e) => setOrderPaymentFilter(e.target.value)}
+                className="rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none cursor-pointer"
+                title="Filter by payment method"
+              >
+                <option value="All">All Payments</option>
+                <option value="Online">Online (Razorpay)</option>
+                <option value="COD">Cash on Delivery</option>
+              </select>
+            )}
+
+            {setOrderSortBy && (
+              <select
+                value={orderSortBy}
+                onChange={(e) => setOrderSortBy(e.target.value)}
+                className="rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none cursor-pointer"
+                title="Sort order listing"
+              >
+                <option value="date_desc">Newest First</option>
+                <option value="date_asc">Oldest First</option>
+                <option value="amount_desc">Amount: High to Low</option>
+                <option value="amount_asc">Amount: Low to High</option>
+              </select>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-t border-white/5 pt-2">
           {[
             { name: "All", count: orderList.length },
             { name: "Pending Verification", count: orderList.filter((o) => o.status === "Pending Verification").length },
@@ -122,11 +175,15 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
             { name: "Dispatched", count: orderList.filter((o) => o.status === "Dispatched").length },
             { name: "Delivered", count: orderList.filter((o) => o.status === "Delivered").length },
             { name: "Cancelled", count: orderList.filter((o) => o.status === "Cancelled").length },
+            {
+              name: "Refunds",
+              count: orderList.filter((o) => o.paymentStatus === "Refunded" || o.paymentStatus === "Refund Pending" || o.status === "Cancelled").length,
+            },
           ].map((st) => (
             <button
               key={st.name}
               onClick={() => setOrderStatusFilter(st.name)}
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
                 orderStatusFilter === st.name
                   ? "bg-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20"
                   : "border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
@@ -163,7 +220,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleBulkVerify}
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition cursor-pointer"
               title="Approve all selected pending orders"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
@@ -172,18 +229,30 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
             <button
               onClick={handleBulkAssignShiprocket}
-              className="flex items-center gap-1.5 rounded-xl bg-[#d4af37] px-3.5 py-1.5 text-xs font-bold text-black hover:brightness-110 transition shadow"
+              className="flex items-center gap-1.5 rounded-xl bg-[#d4af37] px-3.5 py-1.5 text-xs font-bold text-black hover:brightness-110 transition shadow cursor-pointer"
               title="Generate Shiprocket AWBs for all selected orders"
             >
               <Truck className="h-3.5 w-3.5" />
               <span>Assign Shiprocket</span>
             </button>
 
+            {/* Bulk 1-Click Labels & Invoices: Downloads both in one click */}
+            {selectedWithAwbCount > 0 && handleBulkDownloadLabelsAndInvoices && (
+              <button
+                onClick={handleBulkDownloadLabelsAndInvoices}
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500/25 to-[#d4af37]/25 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-white hover:brightness-125 transition cursor-pointer"
+                title={`1-Click: Download both official labels & tax invoices for ${selectedWithAwbCount} orders`}
+              >
+                <Download className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span>1-Click Labels & Invoices ({selectedWithAwbCount})</span>
+              </button>
+            )}
+
             {/* Bulk Download Labels: only active for assigned orders with AWBs */}
             {selectedWithAwbCount > 0 && handleBulkDownloadLabels && (
               <button
                 onClick={handleBulkDownloadLabels}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-600 hover:text-white transition"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-600 hover:text-white transition cursor-pointer"
                 title={`Download official Shiprocket shipping labels for ${selectedWithAwbCount} assigned orders`}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -195,7 +264,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
             {selectedWithAwbCount > 0 && handleBulkDownloadInvoices && (
               <button
                 onClick={handleBulkDownloadInvoices}
-                className="flex items-center gap-1.5 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition"
+                className="flex items-center gap-1.5 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition cursor-pointer"
                 title={`Download official Shiprocket tax invoices for ${selectedWithAwbCount} assigned orders`}
               >
                 <Receipt className="h-3.5 w-3.5" />
@@ -207,7 +276,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
             {selectedWithAwbCount > 0 && handleBulkSyncTracking && (
               <button
                 onClick={handleBulkSyncTracking}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition"
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition cursor-pointer"
                 title="Sync live tracking status with Shiprocket API"
               >
                 <Activity className="h-3.5 w-3.5" />
@@ -215,18 +284,30 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
               </button>
             )}
 
+            {/* Bulk Cancel Shipments Only: resets AWB and leaves orders in Verified status for re-shipping */}
+            {selectedWithAwbCount > 0 && handleBulkCancelShipmentsOnly && (
+              <button
+                onClick={handleBulkCancelShipmentsOnly}
+                className="flex items-center gap-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition cursor-pointer"
+                title="Cancel only the Shiprocket shipments, retaining customer orders to re-ship"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                <span>Cancel Shipments Only ({selectedWithAwbCount})</span>
+              </button>
+            )}
+
             <button
               onClick={handleBulkCancel}
-              className="flex items-center gap-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition"
-              title="Cancel selected orders"
+              className="flex items-center gap-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition cursor-pointer"
+              title="Cancel entire orders and shipments"
             >
               <Ban className="h-3.5 w-3.5" />
-              <span>Bulk Cancel</span>
+              <span>Bulk Cancel Orders</span>
             </button>
 
             <button
               onClick={() => setSelectedOrderIds([])}
-              className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition"
+              className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition cursor-pointer"
             >
               Deselect
             </button>
@@ -268,7 +349,11 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                   <td colSpan={7} className="py-16 text-center text-zinc-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <p className="font-semibold text-white text-sm">No orders found</p>
-                      <p className="text-xs text-zinc-500">Live store orders will appear here automatically when placed.</p>
+                      <p className="text-xs text-zinc-500">
+                        {searchQuery || orderStatusFilter !== "All" || orderPaymentFilter !== "All"
+                          ? "Try adjusting your search query, status tab, or payment filter."
+                          : "Live store orders will appear here automatically when placed."}
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -277,6 +362,18 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
               <tbody className="divide-y divide-white/5">
                 {filteredOrders.map((ord) => {
                   const isSelected = selectedOrderIds.includes(ord.id)
+                  const isPrepaid =
+                    ord.paymentMethod?.includes("Razorpay") ||
+                    ord.paymentMethod?.includes("Online") ||
+                    ord.paymentStatus === "Paid" ||
+                    ord.paymentStatus === "Refund Pending" ||
+                    Boolean(ord.razorpayPaymentId)
+
+                  const canRefund =
+                    isPrepaid &&
+                    ord.paymentStatus !== "Refunded" &&
+                    (ord.status === "Cancelled" || ord.paymentStatus === "Refund Pending" || ord.paymentStatus === "Paid")
+
                   return (
                     <tr
                       key={ord.id}
@@ -296,7 +393,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                       <td className="py-3.5 px-3">
                         <button
                           onClick={() => setInspectOrderModal(ord)}
-                          className="font-mono text-sm font-bold text-[#d4af37] hover:underline flex items-center gap-1"
+                          className="font-mono text-sm font-bold text-[#d4af37] hover:underline flex items-center gap-1 cursor-pointer"
                         >
                           {ord.id}
                         </button>
@@ -371,6 +468,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             ord.paymentStatus === "Paid"
                               ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : ord.paymentStatus === "Refunded"
+                              ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                              : ord.paymentStatus === "Refund Pending"
+                              ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                               : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
                           }`}
                         >
@@ -378,7 +479,10 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {ord.paymentStatus}
                         </span>
                         <p className="text-[10px] text-zinc-400 mt-1">{ord.paymentMethod}</p>
-                        <p className="text-[9px] font-mono text-zinc-500">{ord.paymentId}</p>
+                        <p className="text-[9px] font-mono text-zinc-500">{ord.razorpayPaymentId || ord.paymentId}</p>
+                        {ord.refundId && (
+                          <p className="text-[9px] font-mono text-emerald-400 mt-0.5">Refund: #{ord.refundId}</p>
+                        )}
                       </td>
 
                       {/* Status & Logistics */}
@@ -401,7 +505,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
                         {ord.awb && (
                           <div className="mt-1.5 space-y-0.5">
-                            <p className="text-[10px] font-semibold text-zinc-300">{ord.courier}</p>
+                            <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || ord.courierName}</p>
                             <p className="text-[9px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
                           </div>
                         )}
@@ -415,12 +519,12 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
                       {/* Actions */}
                       <td className="py-3.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end flex-wrap gap-1.5">
                           {/* Step 1: Admin Verification Button */}
                           {ord.status === "Pending Verification" && (
                             <button
                               onClick={() => handleVerifyOrder(ord.id)}
-                              className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition"
+                              className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition cursor-pointer"
                               title="Verify patron details and approve order"
                             >
                               Verify
@@ -443,7 +547,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {(ord.status === "Assigned to Courier" || (ord.status === "Verified" && ord.awb)) && handleMarkDispatched && (
                             <button
                               onClick={() => handleMarkDispatched(ord.id)}
-                              className="rounded-lg bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-500 shadow transition flex items-center gap-1"
+                              className="rounded-lg bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-500 shadow transition flex items-center gap-1 cursor-pointer"
                               title="Mark courier picked up and in transit"
                             >
                               <Truck className="h-3 w-3" />
@@ -455,7 +559,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {(ord.status === "Dispatched" || ord.status === "Assigned to Courier") && handleMarkDelivered && (
                             <button
                               onClick={() => handleMarkDelivered(ord.id)}
-                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 shadow transition flex items-center gap-1"
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 shadow transition flex items-center gap-1 cursor-pointer"
                               title="Mark order as Delivered & collect COD payment"
                             >
                               <CheckCircle2 className="h-3 w-3" />
@@ -467,7 +571,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {ord.awb && handleDownloadLabel && (
                             <button
                               onClick={() => handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)}
-                              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-black transition flex items-center gap-1"
+                              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
                               title="Download official Shiprocket shipping label (PDF)"
                             >
                               <FileText className="h-3 w-3" />
@@ -479,7 +583,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {ord.awb && handleDownloadInvoice && (
                             <button
                               onClick={() => handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)}
-                              className="rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-[11px] font-semibold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1"
+                              className="rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-[11px] font-semibold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1 cursor-pointer"
                               title="Download official Shiprocket tax invoice (PDF)"
                             >
                               <Receipt className="h-3 w-3" />
@@ -497,7 +601,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                                   showToast(`Tracking AWB #${ord.awb} via Shiprocket API (${ord.status})`)
                                 }
                               }}
-                              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center gap-1"
+                              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
                               title="Sync live status instantly from Shiprocket API"
                             >
                               <Activity className="h-3 w-3" />
@@ -505,11 +609,23 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Cancellation button: Admin can cancel undispatched orders or cancel active shipments on Shiprocket */}
+                          {/* Cancel Shipment Only Button (if AWB assigned and not delivered/cancelled) */}
+                          {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && handleCancelShipmentOnly && (
+                            <button
+                              onClick={() => handleCancelShipmentOnly(ord.id)}
+                              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
+                              title="Cancel only Shiprocket shipment (order remains Verified to re-ship)"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Cancel Ship</span>
+                            </button>
+                          )}
+
+                          {/* Full Cancellation button: Admin can cancel undispatched orders or cancel active shipments on Shiprocket */}
                           {ord.status !== "Cancelled" && ord.status !== "Delivered" && (
                             <button
                               onClick={() => setCancelOrderModal(ord)}
-                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition"
+                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition cursor-pointer"
                               title={
                                 ord.awb
                                   ? "Cancel shipment on Shiprocket and mark order as Cancelled"
@@ -520,10 +636,22 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
+                          {/* Direct Razorpay Refund Button (for cancelled or refund pending orders) */}
+                          {canRefund && setRefundOrderModal && (
+                            <button
+                              onClick={() => setRefundOrderModal(ord)}
+                              className="rounded-lg bg-[#d4af37] px-2 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition flex items-center gap-1 cursor-pointer"
+                              title={`Execute Razorpay refund for Order #${ord.id}`}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              <span>Refund</span>
+                            </button>
+                          )}
+
                           {/* Inspect Order Details */}
                           <button
                             onClick={() => setInspectOrderModal(ord)}
-                            className="rounded-lg border border-white/10 bg-white/5 p-1 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+                            className="rounded-lg border border-white/10 bg-white/5 p-1 text-zinc-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
                             title="View complete address and product items"
                           >
                             <Eye className="h-3.5 w-3.5" />

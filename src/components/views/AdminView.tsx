@@ -62,6 +62,7 @@ import { AddCouponModal } from "../admin/modals/AddCouponModal"
 import { BannerModal } from "../admin/modals/BannerModal"
 import { BlogModal } from "../admin/modals/BlogModal"
 import { DeleteBlogModal } from "../admin/modals/DeleteBlogModal"
+import { RefundOrderModal } from "../admin/modals/RefundOrderModal"
 
 export function AdminView() {
   const router = useRouter()
@@ -119,6 +120,8 @@ export function AdminView() {
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("")
   const [orderStatusFilter, setOrderStatusFilter] = useState("All")
+  const [orderPaymentFilter, setOrderPaymentFilter] = useState("All")
+  const [orderSortBy, setOrderSortBy] = useState("date_desc")
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [inventorySearch, setInventorySearch] = useState("")
   const [inventoryStockFilter, setInventoryStockFilter] = useState<"all" | "low" | "out">("all")
@@ -127,6 +130,7 @@ export function AdminView() {
   const [inspectOrderModal, setInspectOrderModal] = useState<AdminOrder | null>(null)
   const [assignCourierModal, setAssignCourierModal] = useState<AdminOrder | null>(null)
   const [cancelOrderModal, setCancelOrderModal] = useState<AdminOrder | null>(null)
+  const [refundOrderModal, setRefundOrderModal] = useState<AdminOrder | null>(null)
 
   // Modals: Products (Add, Full Edit, Quick Price Edit, Delete)
   const [showAddShirtModal, setShowAddShirtModal] = useState(false)
@@ -1087,6 +1091,32 @@ export function AdminView() {
     }
   }
 
+  const handleBulkCancelShipmentsOnly = async () => {
+    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
+    if (!eligible.length) {
+      showToast("Cannot cancel shipments: Selected orders do not have active AWBs assigned.")
+      return
+    }
+    showToast(`Cancelling Shiprocket shipments for ${eligible.length} orders...`)
+    for (const ord of eligible) {
+      await handleCancelShipmentOnly(ord.id)
+    }
+    setSelectedOrderIds([])
+  }
+
+  const handleBulkDownloadLabelsAndInvoices = async () => {
+    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
+    if (!eligible.length) {
+      showToast("Cannot download: Selected orders have no Shiprocket AWBs assigned yet.")
+      return
+    }
+    showToast(`Downloading labels & invoices for ${eligible.length} assigned orders...`)
+    for (const ord of eligible) {
+      await handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)
+      await handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)
+    }
+  }
+
   const exportOrdersCSV = () => {
     const headers = "Order ID,Customer,Phone,City,Pincode,Shirt,Size,Total,Payment,Status\n"
     const rows = orderList
@@ -1385,12 +1415,16 @@ export function AdminView() {
   // ══════════════ MEMOIZED DERIVED VALUES ══════════════
   const filteredOrders = useMemo(() => {
     const q = (searchQuery || "").trim().toLowerCase()
-    return orderList.filter((o) => {
+    const filtered = orderList.filter((o) => {
       const safeId = (o.id || o.orderNumber || "").toLowerCase()
       const safeCustomer = (o.customer || o.customerName || "").toLowerCase()
       const safeCity = (o.city || "").toLowerCase()
       const safePhone = (o.phone || (o as any).customerPhone || "").toLowerCase()
       const safeShirtName = (o.shirtName || "").toLowerCase()
+      const safeSku = ((o as any).sku || "").toLowerCase()
+      const safeAwb = (o.awb || "").toLowerCase()
+      const safePaymentId = (o.razorpayPaymentId || (o as any).paymentId || "").toLowerCase()
+      const safeRefundId = (o.refundId || "").toLowerCase()
 
       const matchesSearch =
         !q ||
@@ -1398,14 +1432,50 @@ export function AdminView() {
         safeCustomer.includes(q) ||
         safeCity.includes(q) ||
         safePhone.includes(q) ||
-        safeShirtName.includes(q)
+        safeShirtName.includes(q) ||
+        safeSku.includes(q) ||
+        safeAwb.includes(q) ||
+        safePaymentId.includes(q) ||
+        safeRefundId.includes(q)
 
-      const matchesStatus =
-        orderStatusFilter === "All" || o.status === orderStatusFilter
+      let matchesStatus = true
+      if (orderStatusFilter === "Refunds") {
+        matchesStatus =
+          o.paymentStatus === "Refunded" ||
+          o.paymentStatus === "Refund Pending" ||
+          o.status === "Cancelled"
+      } else if (orderStatusFilter !== "All") {
+        matchesStatus = o.status === orderStatusFilter
+      }
 
-      return matchesSearch && matchesStatus
+      let matchesPayment = true
+      const methodStr = (o.paymentMethod || "").toLowerCase()
+      if (orderPaymentFilter === "Online") {
+        matchesPayment =
+          methodStr.includes("online") ||
+          methodStr.includes("razorpay") ||
+          methodStr.includes("prepaid") ||
+          Boolean(o.razorpayPaymentId)
+      } else if (orderPaymentFilter === "COD") {
+        matchesPayment = methodStr.includes("cod") || methodStr.includes("cash")
+      }
+
+      return matchesSearch && matchesStatus && matchesPayment
     })
-  }, [orderList, searchQuery, orderStatusFilter])
+
+    return filtered.sort((a, b) => {
+      if (orderSortBy === "date_asc") {
+        return new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime()
+      }
+      if (orderSortBy === "amount_desc") {
+        return (b.total || 0) - (a.total || 0)
+      }
+      if (orderSortBy === "amount_asc") {
+        return (a.total || 0) - (b.total || 0)
+      }
+      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+    })
+  }, [orderList, searchQuery, orderStatusFilter, orderPaymentFilter, orderSortBy])
 
   const lowStockCount = useMemo(() => {
     return productList.filter((p) => {
@@ -1615,6 +1685,10 @@ export function AdminView() {
               setSearchQuery={setSearchQuery}
               orderStatusFilter={orderStatusFilter}
               setOrderStatusFilter={setOrderStatusFilter}
+              orderPaymentFilter={orderPaymentFilter}
+              setOrderPaymentFilter={setOrderPaymentFilter}
+              orderSortBy={orderSortBy}
+              setOrderSortBy={setOrderSortBy}
               selectedOrderIds={selectedOrderIds}
               setSelectedOrderIds={setSelectedOrderIds}
               isLoadingOrders={isLoadingOrders}
@@ -1623,8 +1697,10 @@ export function AdminView() {
               handleBulkVerify={handleBulkVerify}
               handleBulkAssignShiprocket={handleBulkAssignShiprocket}
               handleBulkCancel={handleBulkCancel}
+              handleBulkCancelShipmentsOnly={handleBulkCancelShipmentsOnly}
               handleBulkDownloadLabels={handleBulkDownloadLabels}
               handleBulkDownloadInvoices={handleBulkDownloadInvoices}
+              handleBulkDownloadLabelsAndInvoices={handleBulkDownloadLabelsAndInvoices}
               handleBulkSyncTracking={handleBulkSyncTracking}
               handleVerifyOrder={handleVerifyOrder}
               handleMarkDispatched={handleMarkDispatched}
@@ -1632,9 +1708,11 @@ export function AdminView() {
               handleDownloadLabel={handleDownloadLabel}
               handleDownloadInvoice={handleDownloadInvoice}
               handleTrackLiveShipment={handleTrackLiveShipment}
+              handleCancelShipmentOnly={handleCancelShipmentOnly}
               setInspectOrderModal={setInspectOrderModal}
               setAssignCourierModal={setAssignCourierModal}
               setCancelOrderModal={setCancelOrderModal}
+              setRefundOrderModal={setRefundOrderModal}
               setZoomImageModal={setZoomImageModal}
               showToast={showToast}
               formatINR={formatINR}
@@ -1878,6 +1956,20 @@ export function AdminView() {
           onClose={() => setCancelOrderModal(null)}
           onConfirm={(orderId, reason) => {
             handleConfirmCancelOrder(orderId, reason)
+          }}
+          onCancelShipmentOnly={(orderId, reason) => {
+            handleCancelShipmentOnly(orderId, reason)
+          }}
+        />
+      )}
+
+      {/* 8b. Refund Order Modal */}
+      {refundOrderModal && (
+        <RefundOrderModal
+          order={refundOrderModal}
+          onClose={() => setRefundOrderModal(null)}
+          onConfirmRefund={async (orderId, amount, reason) => {
+            await handleRefundOrder(orderId, amount, reason)
           }}
         />
       )}
