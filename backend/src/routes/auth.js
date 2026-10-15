@@ -178,15 +178,50 @@ router.post("/google", async (req, res) => {
     const { email, name, avatar } = req.body;
     if (!email) return res.status(400).json({ error: "Email is required for Google login" });
     const cleanEmail = email.toLowerCase().trim();
-    const token = jwt.sign({ id: `cust_${Date.now()}`, email: cleanEmail }, process.env.JWT_SECRET || "gb_secret_2026", { expiresIn: "30d" });
-    const customer = {
-      id: `cust_${Date.now()}`,
-      name: (name || cleanEmail.split("@")[0]).trim(),
-      email: cleanEmail,
-      avatar: avatar || "",
-      tier: "Silver",
-      points: 250,
-    };
+    const cleanName = (name || cleanEmail.split("@")[0]).trim();
+    const cleanAvatar =
+      avatar ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=0a0a0a,d4af37,18181b`;
+
+    let customer = null;
+    try {
+      const { data: existing } = await supabase.from("customers").select("*").eq("email", cleanEmail).single();
+      if (existing) {
+        customer = existing;
+      } else {
+        const { data: created } = await supabase
+          .from("customers")
+          .insert({
+            id: `cust_${Date.now()}`,
+            name: cleanName,
+            email: cleanEmail,
+            avatar: cleanAvatar,
+            tier: "Silver",
+            points: 250,
+            auth_provider: "google",
+            created_at: new Date().toISOString(),
+          })
+          .select("*")
+          .single();
+        customer = created;
+      }
+    } catch (dbErr) {
+      console.warn("Express Google auth DB warning:", dbErr);
+    }
+
+    if (!customer) {
+      customer = {
+        id: `cust_${Date.now()}`,
+        name: cleanName,
+        email: cleanEmail,
+        avatar: cleanAvatar,
+        tier: "Silver",
+        points: 250,
+        auth_provider: "google",
+      };
+    }
+
+    const token = jwt.sign({ id: customer.id, email: cleanEmail }, process.env.JWT_SECRET || "gb_secret_2026", { expiresIn: "30d" });
     res.json({ success: true, token, customer, message: "Welcome to Gayatri Bhai!" });
   } catch (err) {
     res.status(500).json({ error: err.message || "Google authentication failed" });

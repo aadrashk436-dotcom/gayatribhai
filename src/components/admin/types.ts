@@ -70,7 +70,14 @@ export interface Customer {
   points: number
   joined: string
   avatar: string
+  initials?: string
+  authProvider?: "google" | "email" | "otp" | string
+  authProviders?: string[]
+  role?: string
+  isAdmin?: boolean
+  createdAt?: string
 }
+
 
 export interface Coupon {
   id: string

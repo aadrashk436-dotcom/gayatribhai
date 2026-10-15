@@ -1215,6 +1215,38 @@
       "points": 250,
       "authProvider": "otp",
       "createdAt": "2026-10-14T10:07:59.935Z"
+    },
+    {
+      "id": "cust_1792070983167",
+      "name": "Test Google User",
+      "email": "testgoogle@gmail.com",
+      "phone": "",
+      "avatar": "",
+      "googleId": "",
+      "tier": "Silver",
+      "points": 0,
+      "authProvider": "google",
+      "authProviders": [
+        "google"
+      ],
+      "createdAt": "2026-10-15T13:29:43.167Z"
+    },
+    {
+      "id": "cust_1792071935516",
+      "name": "Rahul Verma",
+      "email": "rahul.verma@gmail.com",
+      "phone": "",
+      "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=Rahul%20Verma&backgroundColor=0a0a0a,d4af37,18181b",
+      "googleId": "",
+      "tier": "Silver",
+      "points": 250,
+      "authProvider": "google",
+      "authProviders": [
+        "google"
+      ],
+      "role": "customer",
+      "isAdmin": false,
+      "createdAt": "2026-10-15T13:45:35.517Z"
     }
   ],
   "addresses": [],

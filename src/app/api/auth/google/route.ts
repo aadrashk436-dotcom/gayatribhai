@@ -84,10 +84,17 @@ export async function POST(request: Request) {
     const cleanEmail = email.toLowerCase().trim();
     const cleanName = name.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
 
-    const SUPABASE_URL = process.env.SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
-    const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qnhtnbzeyqbrzjguhgsy.supabase.co";
+    const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     const dbPath = getDbPath();
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      try {
+        fs.mkdirSync(dbDir, { recursive: true });
+      } catch {}
+    }
+
     let db: any = { customers: [] };
     if (fs.existsSync(dbPath)) {
       try {
@@ -100,6 +107,11 @@ export async function POST(request: Request) {
     db.customers = db.customers || [];
     let customer = db.customers.find((c: any) => c.email?.toLowerCase().trim() === cleanEmail);
     let isNewUser = false;
+
+    // Guaranteed avatar fallback
+    const effectiveAvatar =
+      avatar ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=0a0a0a,d4af37,18181b`;
 
     // Fallback: check Supabase if not found in local db.json
     if (!customer && SUPABASE_URL && SUPABASE_KEY) {
@@ -133,12 +145,14 @@ export async function POST(request: Request) {
         name: cleanName,
         email: cleanEmail,
         phone: "",
-        avatar,
+        avatar: effectiveAvatar,
         googleId,
         tier: "Silver",
-        points: 0,
+        points: 250,
         authProvider: "google",
         authProviders: ["google"],
+        role: "customer",
+        isAdmin: false,
         createdAt: new Date().toISOString(),
       };
       db.customers.push(customer);
@@ -148,14 +162,17 @@ export async function POST(request: Request) {
       if (!customer.name && cleanName) {
         customer.name = cleanName;
       }
-      if (avatar && !customer.avatar) {
-        customer.avatar = avatar;
+      if ((!customer.avatar || customer.avatar.length < 5) && effectiveAvatar) {
+        customer.avatar = effectiveAvatar;
       }
       if (googleId && !customer.googleId) {
         customer.googleId = googleId;
       }
+      if (!customer.authProvider) {
+        customer.authProvider = "google";
+      }
       if (!customer.authProviders) {
-        customer.authProviders = customer.authProvider ? [customer.authProvider] : ["email"];
+        customer.authProviders = customer.authProvider ? [customer.authProvider] : ["google"];
       }
       if (!customer.authProviders.includes("google")) {
         customer.authProviders.push("google");
@@ -194,8 +211,8 @@ export async function POST(request: Request) {
             phone: customer.phone || "",
             avatar: customer.avatar || "",
             tier: customer.tier || "Silver",
-            points: customer.points ?? 0,
-            auth_provider: customer.authProvider || "google",
+            points: customer.points ?? 250,
+            auth_provider: "google",
           }),
         });
       } catch {
