@@ -391,18 +391,18 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                         )}
 
                         {/* Cancel Shipment Button (Triotech exact pattern: cancels AWB and reverts to Verified for re-shipping) */}
-                        {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && handleCancelShipmentOnly && (
+                        {Boolean((ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) || ord.shiprocket_shipment_id || ord.status === "Assigned to Courier") && ord.status !== "Delivered" && handleCancelShipmentOnly && (
                           <button
                             onClick={() => {
                               if (
                                 window.confirm(
-                                  `Are you sure you want to cancel the shipment for Order #${ord.id} in Shiprocket? Courier AWB #${ord.awb} will be cancelled and order will return to Verified status.`
+                                  `Are you sure you want to cancel the shipment for Order #${ord.orderNumber || ord.id} in Shiprocket? Courier AWB #${ord.awb || ""} will be cancelled and order will return to Verified status.`
                                 )
                               ) {
                                 handleCancelShipmentOnly(ord.id)
                               }
                             }}
-                            className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
+                            className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer shadow-sm"
                             title="Cancel shipment in Shiprocket and release courier AWB"
                           >
                             <RotateCcw className="h-3 w-3 text-amber-400" />

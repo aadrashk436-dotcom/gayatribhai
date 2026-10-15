@@ -540,8 +540,8 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Step 2: Assign to Shiprocket Button (Available for all active unassigned orders) */}
-                          {!ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && (
+                          {/* Step 2: Assign to Shiprocket Button (Available for orders without active shipment) */}
+                          {!Boolean((ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) || ord.shiprocket_shipment_id || ord.status === "Assigned to Courier" || ord.status === "Dispatched") && ord.status !== "Cancelled" && ord.status !== "Delivered" && (
                             <button
                               onClick={() => setAssignCourierModal(ord)}
                               className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1 cursor-pointer"
@@ -552,8 +552,8 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Re-assign Courier Button (Available when order already has an AWB) */}
-                          {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && (
+                          {/* Re-assign Courier Button (Available when order has an active shipment/AWB) */}
+                          {Boolean((ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) || ord.shiprocket_shipment_id || ord.status === "Assigned to Courier") && ord.status !== "Delivered" && (
                             <button
                               onClick={() => setAssignCourierModal(ord)}
                               className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-semibold text-blue-300 hover:bg-blue-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
@@ -589,7 +589,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           )}
 
                           {/* Shiprocket Shipping Label (PDF): ONLY shown & selectable once assigned with AWB */}
-                          {ord.awb && handleDownloadLabel && (
+                          {Boolean(ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) && handleDownloadLabel && (
                             <button
                               onClick={() => handleDownloadLabel(ord.id, ord.shiprocket_shipment_id || undefined)}
                               className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
@@ -601,7 +601,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           )}
 
                           {/* Shiprocket Tax Invoice (PDF): ONLY shown & selectable once assigned with AWB */}
-                          {ord.awb && handleDownloadInvoice && (
+                          {Boolean(ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) && handleDownloadInvoice && (
                             <button
                               onClick={() => handleDownloadInvoice(ord.id, ord.shiprocket_order_id || undefined)}
                               className="rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-[11px] font-semibold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition flex items-center gap-1 cursor-pointer"
@@ -613,7 +613,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           )}
 
                           {/* Live Shiprocket Tracking & Status Synchronization button */}
-                          {ord.awb && (
+                          {Boolean(ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) && (
                             <button
                               onClick={() => {
                                 if (handleTrackLiveShipment) {
@@ -630,19 +630,19 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Cancel Shipment Button (Triotech exact pattern: cancels AWB and resets order to Verified for re-shipping) */}
-                          {ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && handleCancelShipmentOnly && (
+                          {/* Cancel Shipment Button (Triotech exact pattern: cancels AWB on Shiprocket and resets order to Verified for re-shipping) */}
+                          {Boolean((ord.awb && ord.awb !== "null" && String(ord.awb).length > 3) || ord.shiprocket_shipment_id || ord.status === "Assigned to Courier") && ord.status !== "Delivered" && handleCancelShipmentOnly && (
                             <button
                               onClick={() => {
                                 if (
                                   window.confirm(
-                                    `Are you sure you want to cancel the shipment for Order #${ord.id} in Shiprocket? Courier AWB #${ord.awb} will be cancelled and order will return to Verified status.`
+                                    `Are you sure you want to cancel the shipment for Order #${ord.orderNumber || ord.id} in Shiprocket? Courier AWB #${ord.awb || ""} will be cancelled and order will return to Verified status.`
                                   )
                                 ) {
                                   handleCancelShipmentOnly(ord.id)
                                 }
                               }}
-                              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer"
+                              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition flex items-center gap-1 cursor-pointer shadow-sm"
                               title="Cancel shipment in Shiprocket and release courier AWB"
                             >
                               <RotateCcw className="h-3 w-3 text-amber-400" />

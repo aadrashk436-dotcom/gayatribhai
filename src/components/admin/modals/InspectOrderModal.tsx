@@ -361,12 +361,12 @@ export function InspectOrderModal({
             )}
 
             {/* Cancel Shipment Only: Allows resetting AWB without cancelling the patron's order */}
-            {order.awb && order.status !== "Delivered" && order.status !== "Cancelled" && onCancelShipmentOnly && (
+            {Boolean((order.awb && order.awb !== "null" && String(order.awb).length > 3) || order.shiprocket_shipment_id || order.status === "Assigned to Courier") && order.status !== "Delivered" && onCancelShipmentOnly && (
               <button
                 onClick={() => {
                   if (
                     window.confirm(
-                      `Are you sure you want to cancel the shipment for Order #${order.id} in Shiprocket? Courier AWB #${order.awb} will be cancelled and order will return to Verified status.`
+                      `Are you sure you want to cancel the shipment for Order #${order.orderNumber || order.id} in Shiprocket? Courier AWB #${order.awb || ""} will be cancelled and order will return to Verified status.`
                     )
                   ) {
                     onCancelShipmentOnly(order.id)
