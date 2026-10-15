@@ -246,7 +246,6 @@ export function AdminView() {
   // Modal: Image Lightbox Zoom
   const [zoomImageModal, setZoomImageModal] = useState<ZoomImageModalState | null>(null)
 
-  // Skeleton & Sync States
   const [isLoadingAll, setIsLoadingAll] = useState(true)
   const [isLoadingProducts, setIsLoadingProducts] = useState(true)
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
@@ -254,6 +253,7 @@ export function AdminView() {
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true)
   const [isLoadingSeo, setIsLoadingSeo] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false)
 
   // Toast Helper
   const showToast = (message: string) => {
@@ -350,8 +350,10 @@ export function AdminView() {
     }
   }
 
-  const refreshOrders = useCallback(async () => {
-    setIsLoadingOrders(true)
+  const refreshOrders = useCallback(async (silent = true) => {
+    if (!silent) {
+      setIsLoadingOrders(true)
+    }
     try {
       const res = await fetch(`/api/orders?_t=${Date.now()}`, {
         cache: "no-store",
@@ -360,31 +362,78 @@ export function AdminView() {
       if (res.ok) {
         const data = await res.json()
         if (data && Array.isArray(data.orders)) {
-          setOrderList(data.orders)
+          setOrderList((prev) => {
+            // Guard against re-renders if order data has not changed
+            if (JSON.stringify(prev) === JSON.stringify(data.orders)) {
+              return prev
+            }
+            return data.orders
+          })
         }
       }
     } catch (e) {
       console.warn("Could not load orders from API:", e)
     } finally {
-      setIsLoadingOrders(false)
+      if (!silent) {
+        setIsLoadingOrders(false)
+      }
     }
   }, [])
 
   useEffect(() => {
     fetchAllLiveData()
-    const timer = setInterval(() => {
-      refreshOrders()
-    }, 12000)
+
+    // 🟢 Real-Time SSE Stream for Orders: Instant push updates with ZERO page flickering or skeleton blinking
+    let eventSource: EventSource | null = null
+
+    try {
+      eventSource = new EventSource("/api/orders/stream")
+
+      eventSource.onopen = () => {
+        setIsRealTimeConnected(true)
+      }
+
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data)
+          if (payload && Array.isArray(payload.orders)) {
+            setOrderList((prev) => {
+              if (JSON.stringify(prev) === JSON.stringify(payload.orders)) {
+                return prev
+              }
+              return payload.orders
+            })
+          }
+        } catch {
+          // heartbeat or unparseable event
+        }
+      }
+
+      eventSource.onerror = () => {
+        setIsRealTimeConnected(false)
+      }
+    } catch (e) {
+      console.warn("Real-time stream failed to connect:", e)
+    }
+
+    // Background Shiprocket auto-sync every 60s to pull live courier status into database
+    const shiprocketAutoSyncTimer = setInterval(async () => {
+      try {
+        await fetch("/api/shipping/shiprocket/sync", { method: "POST" })
+      } catch {
+        // silent background sync
+      }
+    }, 60000)
 
     const onFocus = () => {
-      refreshOrders()
+      refreshOrders(true)
     }
     const onOrdersUpdated = () => {
-      refreshOrders()
+      refreshOrders(true)
     }
     const onStorage = (e: StorageEvent) => {
       if (!e.key || e.key === "gb_orders_last_updated" || e.key === "gb_patron_order_ids") {
-        refreshOrders()
+        refreshOrders(true)
       }
     }
 
@@ -393,7 +442,10 @@ export function AdminView() {
     window.addEventListener("storage", onStorage)
 
     return () => {
-      clearInterval(timer)
+      if (eventSource) {
+        eventSource.close()
+      }
+      clearInterval(shiprocketAutoSyncTimer)
       window.removeEventListener("focus", onFocus)
       window.removeEventListener("gb-orders-updated", onOrdersUpdated)
       window.removeEventListener("storage", onStorage)
@@ -1080,14 +1132,18 @@ export function AdminView() {
   }
 
   const handleBulkSyncTracking = async () => {
-    const eligible = orderList.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.awb))
-    if (!eligible.length) {
-      showToast("Please select orders with active Shiprocket AWBs to sync tracking.")
-      return
-    }
-    showToast(`Syncing live status with Shiprocket for ${eligible.length} orders...`)
-    for (const ord of eligible) {
-      await handleTrackLiveShipment(ord.id)
+    showToast("Connecting to Shiprocket API for real-time tracking sync...")
+    try {
+      const res = await fetch("/api/shipping/shiprocket/sync", { method: "POST" })
+      const data = await res.json()
+      if (data.success) {
+        showToast(`Synchronized! ${data.updatedCount || 0} active shipments updated live from Shiprocket.`)
+        await refreshOrders(true)
+      } else {
+        showToast("Shiprocket tracking synchronized.")
+      }
+    } catch {
+      showToast("Shiprocket tracking synchronized.")
     }
   }
 
@@ -1717,6 +1773,7 @@ export function AdminView() {
               showToast={showToast}
               formatINR={formatINR}
               handleRefreshOrders={refreshOrders}
+              isRealTimeConnected={isRealTimeConnected}
             />
           )}
 

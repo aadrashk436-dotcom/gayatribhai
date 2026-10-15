@@ -59,7 +59,8 @@ interface AdminOrdersTabProps {
   setZoomImageModal: (state: ZoomImageModalState | null) => void
   showToast: (msg: string) => void
   formatINR: (val: number) => string
-  handleRefreshOrders?: () => void
+  handleRefreshOrders?: (silent?: boolean) => void
+  isRealTimeConnected?: boolean
 }
 
 export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
@@ -101,6 +102,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   showToast,
   formatINR,
   handleRefreshOrders,
+  isRealTimeConnected = true,
 }) => {
   const selectedWithAwbCount = filteredOrders.filter(
     (o) => selectedOrderIds.includes(o.id) && Boolean(o.awb)
@@ -111,7 +113,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
       {/* Search, Filter & Status Controls Bar */}
       <div className="shrink-0 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search Input & Refresh */}
+          {/* Search Input, Refresh & Live Stream Indicator */}
           <div className="flex items-center gap-2 flex-1 max-w-xl">
             <div className="relative w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -123,9 +125,21 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                 className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
               />
             </div>
+
+            {/* Real-time Stream Live Badge */}
+            {isRealTimeConnected && (
+              <div
+                className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-2 text-xs font-semibold text-emerald-400 shrink-0 select-none shadow-sm"
+                title="Live Real-time SSE / WebSocket event stream active. Order statuses and tracking update automatically without reloading."
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-[11px] font-mono tracking-tight">Live Stream</span>
+              </div>
+            )}
+
             {handleRefreshOrders && (
               <button
-                onClick={handleRefreshOrders}
+                onClick={() => handleRefreshOrders(false)}
                 disabled={isLoadingOrders}
                 className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs font-semibold text-zinc-300 hover:text-[#d4af37] hover:border-[#d4af37]/40 transition shrink-0 cursor-pointer disabled:opacity-50"
                 title="Refresh live orders from database"
@@ -351,7 +365,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                 <th className="py-3.5 px-3 text-right">Fulfillment Actions</th>
               </tr>
             </thead>
-            {isLoadingOrders ? (
+            {isLoadingOrders && orderList.length === 0 ? (
               <SkeletonOrdersTable />
             ) : filteredOrders.length === 0 ? (
               <tbody className="divide-y divide-white/5">
@@ -583,6 +597,21 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || ord.courierName}</p>
                             <p className="text-[9px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
                           </div>
+                        )}
+
+                        {/* Shiprocket Real-Time Status Badge */}
+                        {ord.shiprocketStatus && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="inline-flex items-center gap-1 rounded bg-sky-950/80 border border-sky-500/30 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300 font-mono shadow-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                              SR: {ord.shiprocketStatus}
+                            </span>
+                          </div>
+                        )}
+                        {ord.currentStatusText && ord.currentStatusText !== ord.shiprocketStatus && (
+                          <p className="text-[9px] text-zinc-400 mt-0.5 line-clamp-1 italic" title={ord.currentStatusText}>
+                            {ord.currentStatusText}
+                          </p>
                         )}
 
                         {ord.cancelReason && (

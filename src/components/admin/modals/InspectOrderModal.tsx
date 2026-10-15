@@ -335,10 +335,32 @@ export function InspectOrderModal({
                     AWB: {order.awb}
                   </span>
                 </div>
-                <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Pickup Scheduled & Live Tracking Active
-                </p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Live Tracking Active
+                    </p>
+                    {order.etd && (
+                      <span className="text-[10px] text-zinc-400">
+                        Est: <strong className="text-zinc-200">{order.etd}</strong>
+                      </span>
+                    )}
+                  </div>
+                  {order.shiprocketStatus && (
+                    <div className="flex items-center gap-1.5 bg-sky-950/60 border border-sky-500/30 px-2 py-1 rounded-lg">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                      <span className="text-[10px] font-mono font-bold text-sky-300 uppercase">
+                        Shiprocket: {order.shiprocketStatus}
+                      </span>
+                    </div>
+                  )}
+                  {order.currentStatusText && order.currentStatusText !== order.shiprocketStatus && (
+                    <p className="text-[10px] text-zinc-300 italic px-1">
+                      {order.currentStatusText}
+                    </p>
+                  )}
+                </div>
 
                 {/* Official Shiprocket Downloads: STRICTLY visible only when AWB is assigned */}
                 <div className="pt-2 border-t border-white/10 flex flex-wrap gap-2">

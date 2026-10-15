@@ -1437,12 +1437,12 @@
       "paymentId": "pay_test_1792074124760",
       "paymentStatus": "Refunded",
       "razorpayOrderId": "order_ToDP8w8oinYA1i",
-      "status": "Assigned to Courier",
+      "status": "Cancelled",
       "date": "15 Oct, 07:52 pm",
       "createdAt": "2026-10-15T14:22:04.736Z",
       "razorpayPaymentId": "pay_test_1792074124760",
       "paidAt": "2026-10-15T14:22:06.863Z",
-      "updatedAt": "2026-10-15T16:24:40.292Z",
+      "updatedAt": "2026-10-15T17:23:12.067Z",
       "verified": true,
       "verifiedAt": "2026-10-15T15:01:45.738Z",
       "verifiedBy": "Gayatri Puri (Admin)",
@@ -1456,7 +1456,9 @@
       "refundAmount": 7999,
       "refundReason": "Order cancelled upon patron request",
       "refundedAt": "2026-10-15T21:40:00.000Z",
-      "refundId": "rfnd_RzP98421035"
+      "refundId": "rfnd_RzP98421035",
+      "currentStatusText": "AWB cancelled by user",
+      "etd": "2026-10-17 00:00:00"
     },
     {
       "id": "GB-065976",

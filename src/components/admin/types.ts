@@ -62,6 +62,9 @@ export interface AdminOrder {
   refundReason?: string | null
   refundedAt?: string | null
   shipmentCancelledAt?: string | null
+  shiprocketStatus?: string | null
+  currentStatusText?: string | null
+  etd?: string | null
   date: string
   cancelReason?: string | null
 }
