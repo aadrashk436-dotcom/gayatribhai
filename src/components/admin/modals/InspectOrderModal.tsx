@@ -17,6 +17,7 @@ import {
   Receipt,
   Activity,
   RotateCcw,
+  Copy,
 } from "lucide-react"
 import { AdminOrder, formatINR } from "../types"
 
@@ -66,13 +67,13 @@ export function InspectOrderModal({
     (order.status === "Cancelled" || order.paymentStatus === "Refund Pending" || order.paymentStatus === "Paid")
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#14171d] p-6 shadow-2xl space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-white/10 pb-4">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl my-auto max-h-[92vh] flex flex-col rounded-2xl border border-white/10 bg-[#14171d] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Sticky Top Header: ALWAYS completely visible, never cut off! */}
+        <div className="shrink-0 flex items-center justify-between border-b border-white/10 px-5 sm:px-6 py-4 bg-[#111419]/95 backdrop-blur z-10">
           <div>
-            <div className="flex items-center gap-2.5">
-              <h3 className="font-serif text-xl font-bold text-white">Order #{order.id}</h3>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-white">Order #{order.id}</h3>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                   order.status === "Delivered"
@@ -98,21 +99,24 @@ export function InspectOrderModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:text-white hover:bg-white/5 transition"
+            className="rounded-lg p-2 text-zinc-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            title="Close inspection"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Customer & Address */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Patron Details</p>
-            <p className="text-sm font-bold text-white">{order.customer}</p>
-            <p className="text-xs text-zinc-300 flex items-center gap-1.5">
-              <Phone className="h-3 w-3 text-[#d4af37]" />
-              <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a>
-            </p>
+        {/* Scrollable Modal Body: smoothly scrolls, never cuts off header or footer! */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Customer & Address */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Patron Details</p>
+              <p className="text-sm font-bold text-white">{order.customer}</p>
+              <p className="text-xs text-zinc-300 flex items-center gap-1.5">
+                <Phone className="h-3 w-3 text-[#d4af37]" />
+                <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a>
+              </p>
             <p className="text-xs text-zinc-400 flex items-center gap-1.5">
               <Mail className="h-3 w-3 text-zinc-400" />
               <a href={`mailto:${order.email}`} className="hover:underline">{order.email}</a>
@@ -206,29 +210,120 @@ export function InspectOrderModal({
 
         {/* Payment & Logistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Payment Information</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-300">{order.paymentMethod}</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  order.paymentStatus === "Paid"
-                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                    : order.paymentStatus === "Refunded"
-                    ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
-                    : order.paymentStatus === "Refund Pending"
-                    ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
-                    : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
-                }`}
-              >
-                {order.paymentStatus}
-              </span>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Payment Information</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-200">{order.paymentMethod}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    order.paymentStatus === "Paid"
+                      ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                      : order.paymentStatus === "Refunded"
+                      ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
+                      : order.paymentStatus === "Refund Pending"
+                      ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
+                      : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                  }`}
+                >
+                  {order.paymentStatus}
+                </span>
+              </div>
+
+              {/* Razorpay Payment ID with 1-Click Copy */}
+              {(order.razorpayPaymentId || order.paymentId) && (
+                <div className="flex items-center justify-between gap-2 text-xs bg-indigo-950/40 p-2 rounded-lg border border-indigo-500/20">
+                  <span className="text-indigo-300 font-bold text-[10px]">Payment ID:</span>
+                  <div className="flex items-center gap-1.5 font-mono font-bold text-indigo-200">
+                    <span className="select-all text-[10px] truncate max-w-[150px]">
+                      {order.razorpayPaymentId || order.paymentId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idToCopy = order.razorpayPaymentId || order.paymentId || ""
+                        navigator.clipboard.writeText(idToCopy)
+                        showToast(`Copied Payment ID: ${idToCopy}`)
+                      }}
+                      className="text-zinc-400 hover:text-white p-0.5 rounded cursor-pointer transition"
+                      title="Copy Payment ID"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Razorpay Order ID */}
+              {order.razorpayOrderId && (
+                <div className="flex items-center justify-between text-[10px] text-zinc-400 px-1 font-mono">
+                  <span>Razorpay Order ID:</span>
+                  <span className="text-zinc-300 select-all truncate max-w-[150px]">{order.razorpayOrderId}</span>
+                </div>
+              )}
+
+              {/* Razorpay Refund ID Display (Triotech exact luxury styling) */}
+              {order.refundId && (
+                <div className="mt-2.5 p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold flex items-center gap-1.5 uppercase text-[10px] tracking-wider text-rose-400">
+                      <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+                      Razorpay Refund Issued
+                    </span>
+                    <span className="text-[10px] text-rose-300 font-bold bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
+                      Refunded
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-xs font-mono bg-[#0d0f12] px-2.5 py-1.5 rounded-lg border border-rose-500/30">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="text-zinc-400 text-[10px]">Refund ID:</span>
+                      <span className="font-bold text-rose-200 select-all truncate text-[11px]">
+                        {order.refundId}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.refundId!)
+                        showToast(`Copied Refund ID: ${order.refundId}`)
+                      }}
+                      className="text-zinc-400 hover:text-rose-200 p-1 hover:bg-rose-500/10 rounded transition-colors shrink-0 cursor-pointer"
+                      title="Copy Razorpay Refund ID"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {order.refundAmount && (
+                    <div className="flex items-center justify-between text-[11px] px-1 font-semibold text-rose-300">
+                      <span>Amount Refunded:</span>
+                      <span>{formatINR(order.refundAmount)}</span>
+                    </div>
+                  )}
+                  {order.refundReason && (
+                    <p className="text-[10px] text-zinc-400 italic px-1">
+                      Reason: {order.refundReason}
+                    </p>
+                  )}
+                  {order.refundedAt && (
+                    <p className="text-[9px] text-zinc-500 px-1">
+                      Processed: {new Date(order.refundedAt).toLocaleString("en-IN")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Warning box if Cancelled and Paid, but NOT refunded yet */}
+              {order.status === "Cancelled" && (order.razorpayPaymentId || order.paymentMethod?.includes("Razorpay") || order.paymentMethod?.includes("Online")) && order.paymentStatus !== "Refunded" && (
+                <div className="mt-2 p-2.5 rounded-xl bg-amber-950/50 border border-amber-500/40 space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <span>Refund Pending</span>
+                  </div>
+                  <p className="text-[10px] text-amber-200/90 leading-tight">
+                    Order is cancelled. Razorpay online payment has not been refunded yet. Use the refund button below to authorize live payout.
+                  </p>
+                </div>
+              )}
             </div>
-            <p className="text-[10px] font-mono text-zinc-500 mt-1">ID: {order.paymentId}</p>
-            {order.refundId && (
-              <p className="text-[10px] font-mono text-emerald-400 mt-1">Refund ID: #{order.refundId}</p>
-            )}
-          </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Shiprocket Logistics</p>
@@ -299,9 +394,10 @@ export function InspectOrderModal({
             )}
           </div>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
+        {/* Sticky Bottom Actions Footer: ALWAYS visible, never cut off! */}
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 sm:px-6 py-3.5 bg-[#111419]/95 backdrop-blur z-10">
           <div className="flex flex-wrap items-center gap-2">
             {order.status === "Pending Verification" && (
               <button

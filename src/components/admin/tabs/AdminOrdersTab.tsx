@@ -16,6 +16,7 @@ import {
   Download,
   Undo2,
   RotateCcw,
+  Copy,
 } from "lucide-react"
 import { AdminOrder, ZoomImageModalState } from "../types"
 import { SkeletonOrdersTable } from "../AdminSkeletonLoaders"
@@ -473,24 +474,89 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
                       {/* Payment */}
                       <td className="py-3.5 px-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            ord.paymentStatus === "Paid"
-                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                              : ord.paymentStatus === "Refunded"
-                              ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                              : ord.paymentStatus === "Refund Pending"
-                              ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                              : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                          }`}
-                        >
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          {ord.paymentStatus}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              ord.paymentStatus === "Paid"
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                : ord.paymentStatus === "Refunded"
+                                ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                                : ord.paymentStatus === "Refund Pending"
+                                ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                                : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                            }`}
+                          >
+                            <CheckCircle2 className="h-2.5 w-2.5" />
+                            {ord.paymentStatus}
+                          </span>
+
+                          {/* Quick manual refund trigger if cancelled and not refunded yet */}
+                          {ord.status === "Cancelled" && (ord.razorpayPaymentId || ord.paymentMethod?.includes("Razorpay") || ord.paymentMethod?.includes("Online")) && ord.paymentStatus !== "Refunded" && setRefundOrderModal && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setRefundOrderModal(ord)
+                              }}
+                              className="inline-flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/50 text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded transition cursor-pointer animate-pulse hover:animate-none"
+                              title="Order Cancelled: Authorize Razorpay Refund"
+                            >
+                              <RotateCcw className="h-2.5 w-2.5 text-amber-400" />
+                              <span>Refund</span>
+                            </button>
+                          )}
+                        </div>
+
                         <p className="text-[10px] text-zinc-400 mt-1">{ord.paymentMethod}</p>
-                        <p className="text-[9px] font-mono text-zinc-500">{ord.razorpayPaymentId || ord.paymentId}</p>
+
+                        {/* Razorpay Payment ID with 1-Click Copy */}
+                        {(ord.razorpayPaymentId || ord.paymentId) && (
+                          <div className="mt-1 flex items-center gap-1 group/pay">
+                            <span
+                              className="font-mono text-[9px] font-bold text-indigo-300 bg-indigo-950/80 border border-indigo-500/30 px-1.5 py-0.5 rounded select-all"
+                              title={`Razorpay Payment ID: ${ord.razorpayPaymentId || ord.paymentId}`}
+                            >
+                              {ord.razorpayPaymentId || ord.paymentId}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const idToCopy = ord.razorpayPaymentId || ord.paymentId || ""
+                                navigator.clipboard.writeText(idToCopy)
+                                if (showToast) showToast(`Copied Payment ID: ${idToCopy}`)
+                              }}
+                              className="text-zinc-500 hover:text-indigo-300 p-0.5 transition cursor-pointer"
+                              title="Copy Payment ID"
+                            >
+                              <Copy className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Razorpay Refund ID Display with 1-Click Copy (Triotech exact luxury styling) */}
                         {ord.refundId && (
-                          <p className="text-[9px] font-mono text-emerald-400 mt-0.5">Refund: #{ord.refundId}</p>
+                          <div className="mt-1 flex items-center gap-1 group/rfnd">
+                            <span
+                              className="font-mono text-[9px] font-bold text-rose-300 bg-rose-950/90 border border-rose-500/40 px-1.5 py-0.5 rounded select-all flex items-center gap-1 shadow-sm"
+                              title={`Razorpay Refund ID: ${ord.refundId}`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                              REFUND: {ord.refundId}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigator.clipboard.writeText(ord.refundId!)
+                                if (showToast) showToast(`Copied Refund ID: ${ord.refundId}`)
+                              }}
+                              className="text-zinc-500 hover:text-rose-300 p-0.5 transition cursor-pointer"
+                              title="Copy Razorpay Refund ID"
+                            >
+                              <Copy className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
                         )}
                       </td>
 

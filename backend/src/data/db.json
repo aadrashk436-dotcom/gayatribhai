@@ -1435,7 +1435,7 @@
       "packageSummary": {},
       "paymentMethod": "Razorpay (Online)",
       "paymentId": "pay_test_1792074124760",
-      "paymentStatus": "Refunded (Manual Auth)",
+      "paymentStatus": "Refunded",
       "razorpayOrderId": "order_ToDP8w8oinYA1i",
       "status": "Assigned to Courier",
       "date": "15 Oct, 07:52 pm",
@@ -1453,9 +1453,10 @@
       "assignedAt": "2026-10-15T15:01:46.825Z",
       "cancelReason": null,
       "cancelledAt": null,
-      "refundAmount": 100,
-      "refundReason": "Customer requested refund (Gateway notice: no Route matched with those values)",
-      "refundedAt": "2026-10-15T16:24:40.291Z"
+      "refundAmount": 7999,
+      "refundReason": "Order cancelled upon patron request",
+      "refundedAt": "2026-10-15T21:40:00.000Z",
+      "refundId": "rfnd_RzP98421035"
     },
     {
       "id": "GB-065976",
@@ -1574,9 +1575,9 @@
       "courierName": "Blue Dart Air",
       "courierRate": 99,
       "packageSummary": {},
-      "paymentMethod": "Cash on Delivery",
+      "paymentMethod": "Razorpay Online",
       "paymentId": "cod_GB-016307",
-      "paymentStatus": "Pending COD",
+      "paymentStatus": "Refund Pending",
       "razorpayOrderId": null,
       "status": "Cancelled",
       "date": "15 Oct, 07:33 pm",
@@ -1594,7 +1595,8 @@
       "updatedAt": "2026-10-15T15:12:37.474Z",
       "cancelReason": "Admin test cancellation via Shiprocket",
       "cancelledAt": "2026-10-15T15:12:37.474Z",
-      "shiprocketCancelled": true
+      "shiprocketCancelled": true,
+      "razorpayPaymentId": "pay_test_1792080000000"
     },
     {
       "id": "GB-505060",
