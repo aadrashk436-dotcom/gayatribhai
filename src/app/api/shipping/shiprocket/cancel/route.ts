@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -29,11 +32,17 @@ function writeDb(data: any) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, reason } = body;
+    const { orderId, orderIds, reason } = body;
 
-    if (!orderId) {
+    const targetIds: string[] = Array.isArray(orderIds)
+      ? orderIds
+      : orderId
+      ? [String(orderId)]
+      : [];
+
+    if (!targetIds.length) {
       return NextResponse.json(
-        { error: "Order ID is required to cancel shipment." },
+        { error: "Order ID or orderIds is required to cancel shipment." },
         { status: 400 }
       );
     }
@@ -41,55 +50,73 @@ export async function POST(request: Request) {
     const db = readDb();
     const orders: any[] = db.orders || [];
 
-    const order = orders.find(
+    const targetIdStrs = targetIds.map((t: any) => String(t).trim().toUpperCase());
+    const matchedOrders = orders.filter(
       (o) =>
-        String(o.id).toUpperCase() === String(orderId).toUpperCase() ||
-        String(o.orderNumber).toUpperCase() === String(orderId).toUpperCase()
+        targetIdStrs.includes(String(o.id || "").trim().toUpperCase()) ||
+        targetIdStrs.includes(String(o.orderNumber || "").trim().toUpperCase())
     );
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    if (!matchedOrders.length) {
+      return NextResponse.json({ error: "Order(s) not found." }, { status: 404 });
     }
 
-    let srCancelled = false;
+    const cancelReason =
+      reason || "Shipment and order cancelled by Store Admin via Shiprocket";
 
-    // 1. Cancel on Shiprocket if AWB exists
-    if (order.awb) {
-      try {
-        const awbRes = await cancelShiprocketShipmentAWBs([order.awb]);
-        if (awbRes && !awbRes.error) {
-          srCancelled = true;
+    const cancelledResults: any[] = [];
+
+    for (const order of matchedOrders) {
+      let srShipmentCancelled = false;
+      let srOrderCancelled = false;
+
+      // 1. Cancel on Shiprocket if AWB exists
+      if (order.awb && !String(order.awb).startsWith("AWB-SR-")) {
+        try {
+          const awbRes = await cancelShiprocketShipmentAWBs([order.awb]);
+          if (awbRes && !awbRes.error) {
+            srShipmentCancelled = true;
+          }
+        } catch (srErr) {
+          console.warn("Shiprocket AWB cancel note:", srErr);
         }
-      } catch (srErr) {
-        console.warn("Shiprocket AWB cancel note:", srErr);
       }
-    }
 
-    // 2. Cancel on Shiprocket by Order ID if present
-    if (order.shiprocket_order_id) {
-      try {
-        const orderRes = await cancelShiprocketOrder([order.shiprocket_order_id]);
-        if (orderRes && !orderRes.error) {
-          srCancelled = true;
+      // 2. Cancel on Shiprocket by Order ID if present
+      if (order.shiprocket_order_id) {
+        try {
+          const orderRes = await cancelShiprocketOrder([order.shiprocket_order_id]);
+          if (orderRes && !orderRes.error) {
+            srOrderCancelled = true;
+          }
+        } catch (srErr) {
+          console.warn("Shiprocket order cancel note:", srErr);
         }
-      } catch (srErr) {
-        console.warn("Shiprocket order cancel note:", srErr);
       }
-    }
 
-    // 3. Update order in database
-    order.status = "Cancelled";
-    order.cancelReason = reason || "Shipment cancelled by Store Admin via Shiprocket";
-    order.cancelledAt = new Date().toISOString();
-    order.updatedAt = new Date().toISOString();
+      // 3. Update order in database
+      order.status = "Cancelled";
+      order.cancelReason = cancelReason;
+      order.cancelledAt = new Date().toISOString();
+      order.updatedAt = new Date().toISOString();
+      order.shiprocketCancelled = srShipmentCancelled || srOrderCancelled;
+
+      cancelledResults.push({
+        orderId: order.id,
+        orderNumber: order.orderNumber || order.id,
+        status: "Cancelled",
+        awb: order.awb || null,
+        shiprocketCancelled: order.shiprocketCancelled,
+      });
+    }
 
     writeDb(db);
 
     return NextResponse.json({
       success: true,
-      message: `Order #${order.orderNumber || order.id} and Shiprocket shipment have been cancelled.`,
-      shiprocketCancelled: srCancelled,
-      order,
+      message: `Successfully cancelled ${cancelledResults.length} order(s) & Shiprocket shipment(s)!`,
+      cancelledOrders: cancelledResults,
+      count: cancelledResults.length,
     });
   } catch (err: any) {
     console.error("Shiprocket shipment cancel error:", err);

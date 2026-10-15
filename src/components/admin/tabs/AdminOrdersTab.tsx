@@ -427,11 +427,11 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </button>
                           )}
 
-                          {/* Step 2: Assign to Shiprocket Button (Enabled ONLY AFTER admin verifies order) */}
-                          {ord.status === "Verified" && !ord.awb && (
+                          {/* Step 2: Assign to Shiprocket Button (Available for all active unassigned orders) */}
+                          {!ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && (
                             <button
                               onClick={() => setAssignCourierModal(ord)}
-                              className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1"
+                              className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1 cursor-pointer"
                               title="Assign Shiprocket Courier and generate AWB"
                             >
                               <Truck className="h-3 w-3" />

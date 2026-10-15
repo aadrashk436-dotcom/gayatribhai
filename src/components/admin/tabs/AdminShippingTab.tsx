@@ -300,11 +300,11 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                           </button>
                         )}
 
-                        {/* Step 2: Assign Courier (Only for verified orders without AWB) */}
-                        {ord.status === "Verified" && !ord.awb && setAssignCourierModal && (
+                        {/* Step 2: Assign Courier (For all active orders without AWB) */}
+                        {!ord.awb && ord.status !== "Cancelled" && ord.status !== "Delivered" && setAssignCourierModal && (
                           <button
                             onClick={() => setAssignCourierModal(ord)}
-                            className="rounded-lg bg-blue-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1"
+                            className="rounded-lg bg-blue-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-blue-500 shadow transition flex items-center gap-1 cursor-pointer"
                             title="Assign Shiprocket Courier Partner and generate AWB"
                           >
                             <Truck className="h-3 w-3" />

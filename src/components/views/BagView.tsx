@@ -37,7 +37,7 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
           setProductList(data.products)
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   const detailed = cart

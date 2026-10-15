@@ -284,13 +284,13 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {order.status === "Verified" && !order.awb && (
+            {!order.awb && order.status !== "Cancelled" && order.status !== "Delivered" && (
               <button
                 onClick={() => {
                   onClose()
                   onOpenAssignCourier(order)
                 }}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-500 shadow-lg"
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-500 shadow-lg cursor-pointer"
               >
                 <Truck className="h-3.5 w-3.5" />
                 <span>Assign Shiprocket</span>

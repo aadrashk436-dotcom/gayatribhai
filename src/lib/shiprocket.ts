@@ -97,16 +97,106 @@ export async function createShiprocketOrder(payload: ShiprocketOrderPayload): Pr
 }
 
 /**
- * Assigns AWB and courier to a created Shiprocket shipment
+ * Get full order details from Shiprocket by Shiprocket Order ID
  */
-export async function assignShiprocketAWB(shipmentId: number | string, courierId?: number | string): Promise<any> {
-  const body: Record<string, any> = { shipment_id: shipmentId };
-  if (courierId) body.courier_id = courierId;
+export async function getShiprocketOrderDetails(orderId: number | string): Promise<any> {
+  return shiprocketFetch(`/orders/show/${encodeURIComponent(String(orderId))}`, {
+    method: "GET",
+  });
+}
 
-  return shiprocketFetch("/courier/assign/awb", {
+/**
+ * Get available serviceable couriers for a destination pincode
+ */
+export async function getShiprocketServiceability(
+  deliveryPincode: number | string,
+  isCod: boolean = false,
+  weight: number = 0.5,
+  pickupPincode: number | string = "395002"
+): Promise<any> {
+  const pin = String(deliveryPincode).replace(/\D/g, "");
+  const pPin = String(pickupPincode).replace(/\D/g, "") || "395002";
+  const codParam = isCod ? 1 : 0;
+  return shiprocketFetch(
+    `/courier/serviceability/?pickup_postcode=${pPin}&delivery_postcode=${pin}&weight=${weight}&cod=${codParam}`,
+    { method: "GET" }
+  );
+}
+
+/**
+ * Assigns AWB and courier to a created Shiprocket shipment.
+ * Robustly parses AWB even if Shiprocket responds with "AWB is already assigned".
+ */
+export async function assignShiprocketAWB(
+  shipmentId: number | string,
+  courierId?: number | string,
+  shiprocketOrderId?: number | string
+): Promise<{
+  success: boolean;
+  awb_code?: string;
+  courier_name?: string;
+  courier_company_id?: number | string;
+  raw?: any;
+}> {
+  const body: Record<string, any> = { shipment_id: Number(shipmentId) || shipmentId };
+  if (courierId) body.courier_id = Number(courierId) || courierId;
+
+  const awbRes = await shiprocketFetch("/courier/assign/awb", {
     method: "POST",
     body: JSON.stringify(body),
   });
+
+  // 1. Direct success
+  if (awbRes?.response?.data?.awb_code) {
+    return {
+      success: true,
+      awb_code: awbRes.response.data.awb_code,
+      courier_name: awbRes.response.data.courier_name || "Shiprocket Express Partner",
+      courier_company_id: awbRes.response.data.courier_company_id || courierId,
+      raw: awbRes,
+    };
+  }
+
+  // 2. Check if already assigned in error message (e.g. "AWB is already assigned with awb - 14112364702148 and status - AWB ASSIGNED")
+  const errorMsg =
+    awbRes?.response?.data?.awb_assign_error ||
+    awbRes?.message ||
+    JSON.stringify(awbRes);
+  const match = errorMsg.match(/with awb\s*-\s*([A-Za-z0-9]+)/i);
+  if (match && match[1]) {
+    return {
+      success: true,
+      awb_code: match[1],
+      courier_name: awbRes?.response?.data?.courier_name || "Shiprocket Express Partner",
+      courier_company_id: awbRes?.response?.data?.courier_id || courierId,
+      raw: awbRes,
+    };
+  }
+
+  // 3. Fallback: inspect order via orders/show endpoint if shiprocketOrderId provided
+  if (shiprocketOrderId) {
+    try {
+      const orderData = await getShiprocketOrderDetails(shiprocketOrderId);
+      const shipments = orderData?.data?.shipments;
+      const sh = Array.isArray(shipments) ? shipments[0] : shipments;
+      if (sh?.awb) {
+        return {
+          success: true,
+          awb_code: sh.awb,
+          courier_name: sh.courier || "Shiprocket Express Partner",
+          courier_company_id: sh.courier_id || courierId,
+          raw: orderData,
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback query order details error:", e);
+    }
+  }
+
+  return {
+    success: false,
+    raw: awbRes,
+  };
 }
 
 /**
@@ -115,7 +205,7 @@ export async function assignShiprocketAWB(shipmentId: number | string, courierId
 export async function scheduleShiprocketPickup(shipmentId: number | string): Promise<any> {
   return shiprocketFetch("/courier/generate/pickup", {
     method: "POST",
-    body: JSON.stringify({ shipment_id: [shipmentId] }),
+    body: JSON.stringify({ shipment_id: [Number(shipmentId) || shipmentId] }),
   });
 }
 
@@ -155,12 +245,14 @@ export async function trackShiprocketShipment(shipmentId: number | string): Prom
 }
 
 /**
- * Cancel order on Shiprocket
+ * Cancel order on Shiprocket by Order IDs
  */
 export async function cancelShiprocketOrder(orderIds: (number | string)[]): Promise<any> {
+  const cleanIds = orderIds.map((id) => Number(id) || id).filter(Boolean);
+  if (!cleanIds.length) return { message: "No order IDs provided" };
   return shiprocketFetch("/orders/cancel", {
     method: "POST",
-    body: JSON.stringify({ ids: orderIds }),
+    body: JSON.stringify({ ids: cleanIds }),
   });
 }
 
@@ -168,9 +260,10 @@ export async function cancelShiprocketOrder(orderIds: (number | string)[]): Prom
  * Cancel shipment by AWB on Shiprocket
  */
 export async function cancelShiprocketShipmentAWBs(awbs: string[]): Promise<any> {
+  const cleanAwbs = awbs.map((a) => String(a).trim()).filter(Boolean);
+  if (!cleanAwbs.length) return { message: "No AWBs provided" };
   return shiprocketFetch("/orders/cancel/shipment/awbs", {
     method: "POST",
-    body: JSON.stringify({ awbs }),
+    body: JSON.stringify({ awbs: cleanAwbs }),
   });
 }
-

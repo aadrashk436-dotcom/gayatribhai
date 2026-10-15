@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { products } from "@/products";
+import { cancelShiprocketOrder, cancelShiprocketShipmentAWBs } from "@/lib/shiprocket";
 
 // Order persistence helper
 function getOrdersFilePath() {
@@ -303,31 +304,30 @@ export async function PATCH(request: Request) {
 
     const targetIdStrs = targetIds.map((t: any) => String(t).trim().toUpperCase());
 
-    // Strict Cancellation Rule (applies equally to COD and Online orders):
-    // Orders CANNOT be cancelled if shipment has already been assigned with courier/AWB or already dispatched/delivered.
+    // When status is Cancelled, cancel active Shiprocket shipment & order as well
     if (status === "Cancelled" || status === "CANCELLED") {
-      const lockedOrders = orders
-        .filter((o: any) => {
-          const m =
-            targetIdStrs.includes(String(o.id || "").trim().toUpperCase()) ||
-            targetIdStrs.includes(String(o.orderNumber || "").trim().toUpperCase());
-          return m;
-        })
-        .filter((o: any) => {
-          const hasAwb = Boolean(o.awb);
-          const s = (o.status || "").toLowerCase();
-          const isDispatched = s === "dispatched" || s === "shipped" || s === "assigned to courier" || s === "delivered";
-          return hasAwb || isDispatched;
-        });
-
-      if (lockedOrders.length > 0) {
-        return NextResponse.json(
-          {
-            error: "Order cannot be cancelled because courier shipment / AWB has already been assigned.",
-            lockedOrderIds: lockedOrders.map((o: any) => o.id || o.orderNumber),
-          },
-          { status: 400 }
+      const ordersToCancel = orders.filter((o: any) => {
+        return (
+          targetIdStrs.includes(String(o.id || "").trim().toUpperCase()) ||
+          targetIdStrs.includes(String(o.orderNumber || "").trim().toUpperCase())
         );
+      });
+
+      for (const ord of ordersToCancel) {
+        if (ord.awb && !String(ord.awb).startsWith("AWB-SR-")) {
+          try {
+            await cancelShiprocketShipmentAWBs([ord.awb]);
+          } catch (e) {
+            console.warn("Shiprocket AWB cancel note:", e);
+          }
+        }
+        if (ord.shiprocket_order_id) {
+          try {
+            await cancelShiprocketOrder([ord.shiprocket_order_id]);
+          } catch (e) {
+            console.warn("Shiprocket order cancel note:", e);
+          }
+        }
       }
     }
 

@@ -521,7 +521,7 @@ export function AdminView() {
     }
   }
 
-  const handleAssignCourier = async (orderId: string, courierName: string) => {
+  const handleAssignCourier = async (orderId: string, courierName: string, courierId?: number | string) => {
     showToast("Connecting to live Shiprocket API & booking courier...")
 
     try {
@@ -531,6 +531,7 @@ export function AdminView() {
         body: JSON.stringify({
           orderId,
           courierName,
+          courierId,
         }),
       })
 
@@ -542,31 +543,39 @@ export function AdminView() {
 
         setOrderList((prev) =>
           prev.map((o) =>
-            o.id === orderId
+            o.id === orderId || o.orderNumber === orderId
               ? {
                   ...o,
                   status: "Assigned to Courier" as const,
                   courier: finalCourier,
+                  courierName: finalCourier,
                   awb: finalAwb,
+                  shiprocket_order_id: assigned.shiprocketOrderId,
+                  shiprocket_shipment_id: assigned.shipmentId,
                 }
               : o
           )
         )
 
-        if (inspectOrderModal && inspectOrderModal.id === orderId) {
+        if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
           setInspectOrderModal((prev) =>
             prev
               ? {
                   ...prev,
                   status: "Assigned to Courier",
                   courier: finalCourier,
+                  courierName: finalCourier,
                   awb: finalAwb,
+                  shiprocket_order_id: assigned.shiprocketOrderId,
+                  shiprocket_shipment_id: assigned.shipmentId,
                 }
               : null
           )
         }
 
         setAssignCourierModal(null)
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
         showToast(`Shipment Booked! ${finalCourier} AWB: #${finalAwb}`)
       } else {
         throw new Error(data.error || "Failed to assign Shiprocket courier")
@@ -608,43 +617,32 @@ export function AdminView() {
     }
 
     setCancelOrderModal(null)
+    showToast(`Cancelling order #${orderId} & Shiprocket shipment...`)
 
-    if (hasAwb) {
-      showToast(`Cancelling Shiprocket shipment & order #${orderId}...`)
-      try {
-        const res = await fetch("/api/shipping/shiprocket/cancel", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId,
-            reason: cancelReason,
-          }),
-        })
-        const data = await res.json()
-        if (res.ok) {
-          showToast(`Shipment #${order?.awb} cancelled on Shiprocket successfully!`)
-        } else {
-          throw new Error(data.error || "Failed to cancel shipment on Shiprocket")
-        }
-      } catch (e: any) {
-        console.warn("Shiprocket cancellation note:", e)
-        showToast(e.message || "Local order cancelled. Shiprocket cancel failed.")
+    try {
+      const res = await fetch("/api/shipping/shiprocket/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          reason: cancelReason,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showToast(
+          hasAwb
+            ? `Shipment #${order?.awb} & order cancelled on Shiprocket successfully!`
+            : `Order #${orderId} has been cancelled successfully.`
+        )
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
+      } else {
+        throw new Error(data.error || "Failed to cancel shipment on Shiprocket")
       }
-    } else {
-      showToast(`Order #${orderId} has been cancelled.`)
-      try {
-        await fetch("/api/orders", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId,
-            status: "Cancelled",
-            cancelReason,
-          }),
-        })
-      } catch (e) {
-        console.warn("Could not sync with API", e)
-      }
+    } catch (e: any) {
+      console.warn("Shiprocket cancellation note:", e)
+      showToast(e.message || "Order cancelled locally. Shiprocket API note logged.")
     }
   }
 
@@ -837,37 +835,39 @@ export function AdminView() {
     const eligible = orderList.filter(
       (o) =>
         selectedOrderIds.includes(o.id) &&
-        o.status !== "Assigned to Courier" &&
-        o.status !== "Dispatched" &&
         o.status !== "Delivered" &&
         o.status !== "Cancelled"
     )
     if (!eligible.length) {
-      showToast("Cannot cancel: Selected orders are already in courier custody or already cancelled.")
+      showToast("Cannot cancel: Selected orders are already delivered or cancelled.")
       return
     }
     const eligibleIds = eligible.map((o) => o.id)
     setOrderList((prev) =>
       prev.map((o) =>
         eligibleIds.includes(o.id)
-          ? { ...o, status: "Cancelled" as const, cancelReason: "Bulk cancelled by Store Admin" }
+          ? { ...o, status: "Cancelled" as const, cancelReason: "Bulk cancelled by Store Admin via Shiprocket" }
           : o
       )
     )
-    showToast(`Cancelled ${eligible.length} orders successfully.`)
+    showToast(`Cancelling ${eligible.length} orders & Shiprocket shipments...`)
     setSelectedOrderIds([])
     try {
-      await fetch("/api/orders", {
-        method: "PATCH",
+      const res = await fetch("/api/shipping/shiprocket/cancel", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderIds: eligibleIds,
-          status: "Cancelled",
-          cancelReason: "Bulk cancelled by Store Admin",
+          reason: "Bulk cancelled by Store Admin via Shiprocket",
         }),
       })
+      if (res.ok) {
+        showToast(`Successfully cancelled ${eligible.length} orders & Shiprocket shipments!`)
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
+      }
     } catch (e) {
-      console.warn("Could not sync with API", e)
+      console.warn("Could not sync with Shiprocket cancel API", e)
     }
   }
 
@@ -1770,8 +1770,8 @@ export function AdminView() {
         <AssignCourierModal
           order={assignCourierModal}
           onClose={() => setAssignCourierModal(null)}
-          onAssign={(orderId, courierName) => {
-            handleAssignCourier(orderId, courierName)
+          onAssign={(orderId, courierName, courierId) => {
+            handleAssignCourier(orderId, courierName, courierId)
           }}
         />
       )}
