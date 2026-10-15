@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { products } from "../../products"
 import type { CartItem, Product, View } from "../../types"
@@ -24,10 +24,26 @@ export function BagView({ cart: propCart, setCart: propSetCart, openProduct, go 
   // Use store cart if available, fallback to propCart
   const cart = store.cart ?? propCart
 
+  const [productList, setProductList] = useState<Product[]>(products)
+
+  useEffect(() => {
+    fetch(`/api/products?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          setProductList(data.products)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const detailed = cart
     .map((item) => ({
       ...item,
-      product: products.find((p) => p.id === item.id)!,
+      product: productList.find((p) => p.id === item.id || p.slug === item.id)!,
     }))
     .filter((x) => Boolean(x.product))
 

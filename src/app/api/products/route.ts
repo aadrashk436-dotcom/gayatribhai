@@ -1,5 +1,13 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
-import { products as localProducts } from "@/products";
+import {
+  getStoredProducts,
+  getStoredProductBySlug,
+  getStoredProductById,
+  normalizeStoredProduct,
+} from "@/lib/serverProducts";
 import fs from "fs";
 import path from "path";
 
@@ -10,55 +18,31 @@ function getProductsFilePath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
 }
 
-function readStoredProducts() {
-  try {
-    const dbFilePath = path.join(process.cwd(), "backend", "src", "data", "db.json");
-    if (fs.existsSync(dbFilePath)) {
-      const data = JSON.parse(fs.readFileSync(dbFilePath, "utf8"));
-      if (Array.isArray(data.products) && data.products.length > 0) {
-        return data.products.map((p: any) => ({
-          ...p,
-          price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
-          mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
-          reviews: p.reviews_count || p.reviews || 0,
-        }));
-      }
-    }
-    const productsJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
-    if (fs.existsSync(productsJsonPath)) {
-      const prodData = JSON.parse(fs.readFileSync(productsJsonPath, "utf8"));
-      if (Array.isArray(prodData) && prodData.length > 0) {
-        return prodData.map((p: any) => ({
-          ...p,
-          price: p.price > 10000 ? Math.round(p.price / 100) : p.price,
-          mrp: p.mrp > 10000 ? Math.round(p.mrp / 100) : p.mrp,
-          reviews: p.reviews_count || p.reviews || 0,
-        }));
-      }
-    }
-  } catch (err) {
-    console.warn("Could not read stored products:", err);
-  }
-  return null;
-}
-
 function saveProductToDb(newProduct: any) {
   try {
     const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
     if (fs.existsSync(dbPath)) {
       const data = JSON.parse(fs.readFileSync(dbPath, "utf8"));
       data.products = data.products || [];
-      const existingIdx = data.products.findIndex((p: any) => p.id === newProduct.id || p.slug === newProduct.slug);
+      const existingIdx = data.products.findIndex(
+        (p: any) => p.id === newProduct.id || p.slug === newProduct.slug
+      );
       if (existingIdx >= 0) {
-        data.products[existingIdx] = { ...data.products[existingIdx], ...newProduct, updated_at: new Date().toISOString() };
+        data.products[existingIdx] = {
+          ...data.products[existingIdx],
+          ...newProduct,
+          updated_at: new Date().toISOString(),
+        };
       } else {
         data.products.unshift(newProduct);
       }
       fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
 
       // Also keep backend/src/data/products.json synchronized
-      const prodJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
-      fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
+      try {
+        const prodJsonPath = path.join(process.cwd(), "backend", "src", "data", "products.json");
+        fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
+      } catch {}
     }
   } catch (err) {
     console.warn("Could not save product to file:", err);
@@ -68,23 +52,61 @@ function saveProductToDb(newProduct: any) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const slug = searchParams.get("slug");
+    const id = searchParams.get("id");
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const sort = searchParams.get("sort");
-    const includeHidden = searchParams.get("include_hidden") === "true" || searchParams.get("admin") === "true";
+    const includeHidden =
+      searchParams.get("include_hidden") === "true" || searchParams.get("admin") === "true";
 
-    const stored = readStoredProducts();
-    let items = stored || localProducts;
-    let source = stored ? "db" : "local";
-
-    let filtered = [...items];
-
-    // Unless explicitly requested by admin, filter out hidden/draft products from storefront
-    if (!includeHidden) {
-      filtered = filtered.filter((p) => p.is_visible !== false);
+    // 1. Single product lookup by slug
+    if (slug) {
+      const product = getStoredProductBySlug(slug, includeHidden);
+      if (!product) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          {
+            status: 404,
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate",
+            },
+          }
+        );
+      }
+      return NextResponse.json(product, {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      });
     }
 
-    if (category && category !== "all") {
+    // 2. Single product lookup by id
+    if (id) {
+      const product = getStoredProductById(id, includeHidden);
+      if (!product) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          {
+            status: 404,
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate",
+            },
+          }
+        );
+      }
+      return NextResponse.json(product, {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      });
+    }
+
+    // 3. Multi-product listing
+    const allProducts = getStoredProducts(includeHidden);
+    let filtered = [...allProducts];
+
+    if (category && category !== "all" && category !== "All Shirts") {
       filtered = filtered.filter(
         (p) => p.category?.toLowerCase() === category.toLowerCase()
       );
@@ -100,17 +122,24 @@ export async function GET(request: Request) {
       );
     }
 
-    if (sort === "price_asc") {
+    if (sort === "price_asc" || sort === "Price: Low to High") {
       filtered.sort((a, b) => a.price - b.price);
-    } else if (sort === "price_desc") {
+    } else if (sort === "price_desc" || sort === "Price: High to Low") {
       filtered.sort((a, b) => b.price - a.price);
     }
 
-    return NextResponse.json({
-      products: filtered,
-      total: filtered.length,
-      source,
-    });
+    return NextResponse.json(
+      {
+        products: filtered,
+        total: filtered.length,
+        source: "db",
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to fetch products" },
@@ -126,12 +155,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Product name and price are required" }, { status: 400 });
     }
 
-    const slug = body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug =
+      body.slug ||
+      body.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
     const rawPrice = Number(body.price);
     const rawMrp = Number(body.mrp || body.price);
-    const priceInPaise = rawPrice < 10000 ? rawPrice * 100 : rawPrice;
-    const mrpInPaise = rawMrp < 10000 ? rawMrp * 100 : rawMrp;
-    const calculatedDiscount = rawMrp > rawPrice ? Math.round(((rawMrp - rawPrice) / rawMrp) * 100) : (Number(body.discount) || 0);
+    // Convert to paise for internal db storage if provided in rupees (< 50000)
+    const priceInPaise = rawPrice < 50000 ? Math.round(rawPrice * 100) : rawPrice;
+    const mrpInPaise = rawMrp < 50000 ? Math.round(rawMrp * 100) : rawMrp;
+    const calculatedDiscount =
+      rawMrp > rawPrice
+        ? Math.round(((rawMrp - rawPrice) / rawMrp) * 100)
+        : Number(body.discount) || 0;
 
     const newProduct = {
       id: body.id || `prod_${Date.now()}`,
@@ -145,20 +184,22 @@ export async function POST(request: Request) {
       sub_category: body.sub_category || body.category || "Contemporary",
       sku: body.sku || `GB-${Date.now().toString().slice(-6)}`,
       color: body.color || "Ivory",
-      fabric: body.fabric || "Pure Linen",
-      occasion: body.occasion || "Casual",
+      fabric: body.fabric || "100% Pure Organic French Linen",
+      occasion: body.occasion || "Resort wear, sunset gatherings",
       rating: Number(body.rating || 4.8),
       reviews_count: Number(body.reviews_count || 1),
       badge: body.badge || "New",
       sizes: body.sizes || ["XS", "S", "M", "L", "XL", "XXL"],
       stock: body.stock || { XS: 4, S: 5, M: 6, L: 6, XL: 5, XXL: 3 },
-      images: body.images || [],
+      images: Array.isArray(body.images) && body.images.length > 0 ? body.images : ["/assets/site_banners/slide1_desktop.jpg"],
       weight: Number(body.weight || 0.35),
       length: Number(body.length || 30),
       breadth: Number(body.breadth || 25),
       height: Number(body.height || 4),
-      is_visible: true,
+      is_visible: body.is_visible !== false,
       is_in_stock: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     if (SUPABASE_URL && SUPABASE_KEY) {
@@ -176,7 +217,7 @@ export async function POST(request: Request) {
         if (res.ok) {
           const created = await res.json();
           saveProductToDb(created[0] || newProduct);
-          return NextResponse.json({ success: true, product: created[0] || newProduct });
+          return NextResponse.json({ success: true, product: normalizeStoredProduct(created[0] || newProduct) });
         }
       } catch (err: any) {
         console.warn("Supabase insert error:", err.message);
@@ -184,7 +225,16 @@ export async function POST(request: Request) {
     }
 
     saveProductToDb(newProduct);
-    return NextResponse.json({ success: true, product: newProduct, note: "Saved to local atelier database" });
+    return NextResponse.json(
+      {
+        success: true,
+        product: normalizeStoredProduct(newProduct),
+        note: "Saved to local atelier database",
+      },
+      {
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to create product" }, { status: 500 });
   }
@@ -206,16 +256,16 @@ export async function PATCH(request: Request) {
       if (idx >= 0) {
         const normalizedUpdates: any = { ...updates };
 
-        // Normalize price to paise in db.json if provided in rupees (< 10000)
+        // Normalize price to paise in db.json if provided in rupees (< 50000)
         if (normalizedUpdates.price !== undefined) {
           const numPrice = Number(normalizedUpdates.price);
-          normalizedUpdates.price = numPrice < 10000 ? numPrice * 100 : numPrice;
+          normalizedUpdates.price = numPrice < 50000 ? Math.round(numPrice * 100) : numPrice;
         }
 
-        // Normalize mrp to paise in db.json if provided in rupees (< 10000)
+        // Normalize mrp to paise in db.json if provided in rupees (< 50000)
         if (normalizedUpdates.mrp !== undefined) {
           const numMrp = Number(normalizedUpdates.mrp);
-          normalizedUpdates.mrp = numMrp < 10000 ? numMrp * 100 : numMrp;
+          normalizedUpdates.mrp = numMrp < 50000 ? Math.round(numMrp * 100) : numMrp;
         }
 
         // Auto-calculate discount percentage if price and mrp are present
@@ -242,13 +292,12 @@ export async function PATCH(request: Request) {
           fs.writeFileSync(prodJsonPath, JSON.stringify(data.products, null, 2), "utf8");
         } catch {}
 
-        const returnProduct = {
-          ...data.products[idx],
-          price: data.products[idx].price > 10000 ? Math.round(data.products[idx].price / 100) : data.products[idx].price,
-          mrp: data.products[idx].mrp > 10000 ? Math.round(data.products[idx].mrp / 100) : data.products[idx].mrp,
-        };
+        const returnProduct = normalizeStoredProduct(data.products[idx]);
 
-        return NextResponse.json({ success: true, product: returnProduct });
+        return NextResponse.json(
+          { success: true, product: returnProduct },
+          { headers: { "Cache-Control": "no-store" } }
+        );
       }
     }
     return NextResponse.json({ success: true, updated: updates, note: "Updated" });
@@ -280,7 +329,10 @@ export async function DELETE(request: Request) {
         } catch {}
       }
     }
-    return NextResponse.json({ success: true, deletedId: id });
+    return NextResponse.json(
+      { success: true, deletedId: id },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to delete product" }, { status: 500 });
   }

@@ -30,18 +30,37 @@ export function HomeView({ openProduct, go, wishlist, toggleWish, addToCart, onO
   useReveal(root)
   const [items, setItems] = useState<Product[]>(products)
 
-  useEffect(() => {
-    let isMounted = true
-    fetch("/api/products")
+  const loadProducts = () => {
+    fetch(`/api/products?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((r) => r.json())
       .then((data) => {
-        if (data.products?.length && isMounted) {
+        if (Array.isArray(data.products) && data.products.length > 0) {
           setItems(data.products)
         }
       })
       .catch((err) => console.warn("API products fallback:", err))
+  }
+
+  useEffect(() => {
+    loadProducts()
+
+    const onProductsUpdate = () => loadProducts()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_products_last_update") loadProducts()
+    }
+    const onFocus = () => loadProducts()
+
+    window.addEventListener("gb-products-updated", onProductsUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
     return () => {
-      isMounted = false
+      window.removeEventListener("gb-products-updated", onProductsUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
     }
   }, [])
 

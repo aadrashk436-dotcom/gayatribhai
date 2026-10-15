@@ -24,18 +24,37 @@ export function ShopView({
 }: ShopViewProps) {
   const [productList, setProductList] = useState<Product[]>(products)
 
-  useEffect(() => {
-    let isMounted = true
-    fetch("/api/products")
+  const loadProducts = () => {
+    fetch(`/api/products?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((r) => r.json())
       .then((data) => {
-        if (data.products?.length && isMounted) {
+        if (Array.isArray(data.products) && data.products.length > 0) {
           setProductList(data.products)
         }
       })
       .catch((err) => console.warn("ShopView API products fallback:", err))
+  }
+
+  useEffect(() => {
+    loadProducts()
+
+    const onProductsUpdate = () => loadProducts()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_products_last_update") loadProducts()
+    }
+    const onFocus = () => loadProducts()
+
+    window.addEventListener("gb-products-updated", onProductsUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
     return () => {
-      isMounted = false
+      window.removeEventListener("gb-products-updated", onProductsUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
     }
   }, [])
 
@@ -386,7 +405,7 @@ export function ShopView({
       <div className="catalog-bar">
         <div className="catalog-count-wrap">
           <span>
-            Showing <strong>{list.length}</strong> of {products.length} shirts
+            Showing <strong>{list.length}</strong> of {productList.length} shirts
           </span>
           <div className="catalog-count-right-group">
             {hasActiveFilters && (

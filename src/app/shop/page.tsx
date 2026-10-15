@@ -1,5 +1,8 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import type { Metadata } from "next"
-import { products } from "@/lib/products"
+import { getStoredProducts } from "@/lib/serverProducts"
 import ShopClient from "./ShopClient"
 
 const BASE_URL = "https://gayatribhai.vercel.app"
@@ -36,6 +39,7 @@ export const metadata: Metadata = {
 }
 
 export default function ShopPage() {
+  const products = getStoredProducts(false)
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",

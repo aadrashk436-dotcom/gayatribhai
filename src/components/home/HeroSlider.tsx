@@ -124,23 +124,72 @@ export default function HeroSlider() {
   const paused = useRef(false)
   const pointerStart = useRef<{ x: number; y: number } | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    fetch("/api/banners")
+  const loadBanners = useCallback(() => {
+    fetch(`/api/banners?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((r) => r.json())
       .then((data) => {
-        if (mounted && Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data) && data.length > 0) {
           const activeOnly = data.filter((b: any) => b.is_active !== false)
           if (activeOnly.length > 0) {
-            setSlides(activeOnly)
+            const normalized: Slide[] = activeOnly.map((b: any, idx: number) => {
+              const rawLines = b.lines
+              let lines: [string, string] = ["Woven", "by hand."]
+              if (Array.isArray(rawLines) && rawLines.length >= 2) {
+                lines = [String(rawLines[0]), String(rawLines[1])]
+              } else if (Array.isArray(rawLines) && rawLines.length === 1) {
+                lines = [String(rawLines[0]), ""]
+              } else if (typeof rawLines === "string") {
+                const parts = rawLines.split("\n")
+                lines = [parts[0] || "", parts[1] || ""]
+              } else if (b.title) {
+                lines = [b.title, b.subtitle || ""]
+              }
+
+              return {
+                id: b.id || `slide-${idx}`,
+                kicker: b.kicker || b.title || "Summer Atelier '26",
+                lines,
+                cta: b.cta || "Shop collection",
+                desktop: b.desktop || b.image_desktop || "/assets/site_banners/slide1_desktop.jpg",
+                mobile: b.mobile || b.image_mobile || "/assets/site_banners/slide1_mobile.jpg",
+                alt: b.alt || b.kicker || "Handcrafted French linen shirt",
+                tone: b.tone === "dark" ? "dark" : "light",
+                link: b.link || "/shop",
+                desktopPos: b.desktopPos || "75% top",
+                mobilePos: b.mobilePos || "center 12%",
+              }
+            })
+            setSlides(normalized)
+            setActive(0)
+            activeRef.current = 0
           }
         }
       })
       .catch(() => {})
-    return () => {
-      mounted = false
-    }
   }, [])
+
+  useEffect(() => {
+    loadBanners()
+
+    const onBannerUpdate = () => loadBanners()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_banners_last_update") loadBanners()
+    }
+    const onFocus = () => loadBanners()
+
+    window.addEventListener("gb-banners-updated", onBannerUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      window.removeEventListener("gb-banners-updated", onBannerUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [loadBanners])
 
   const startProgress = useCallback((index: number) => {
     progress.current?.kill()
@@ -262,7 +311,7 @@ export default function HeroSlider() {
         },
       })
     },
-    { scope: root },
+    { scope: root, dependencies: [slides] },
   )
 
   useEffect(() => {

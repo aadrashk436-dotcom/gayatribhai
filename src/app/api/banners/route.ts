@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -107,7 +110,11 @@ function saveBanners(banners: BannerSlide[]) {
 
 export async function GET() {
   const banners = readStoredBanners();
-  return NextResponse.json(banners);
+  return NextResponse.json(banners, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -115,7 +122,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (Array.isArray(body)) {
       saveBanners(body);
-      return NextResponse.json({ success: true, banners: body });
+      return NextResponse.json(
+        { success: true, banners: body },
+        { headers: { "Cache-Control": "no-store" } }
+      );
     } else if (body && body.banner) {
       const current = readStoredBanners();
       const existingIdx = current.findIndex((b) => b.id === body.banner.id);
@@ -127,7 +137,10 @@ export async function POST(request: Request) {
         updated = [body.banner, ...current];
       }
       saveBanners(updated);
-      return NextResponse.json({ success: true, banners: updated });
+      return NextResponse.json(
+        { success: true, banners: updated },
+        { headers: { "Cache-Control": "no-store" } }
+      );
     }
     return NextResponse.json({ error: "Invalid banner payload format" }, { status: 400 });
   } catch (err: any) {

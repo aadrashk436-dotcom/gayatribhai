@@ -1,6 +1,9 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { products } from "@/lib/products"
+import { getStoredProducts, getStoredProductBySlug } from "@/lib/serverProducts"
 import ProductClient from "./ProductClient"
 
 interface ProductPageProps {
@@ -9,15 +12,9 @@ interface ProductPageProps {
 
 const BASE_URL = "https://gayatribhai.vercel.app"
 
-export async function generateStaticParams() {
-  return products.map((product) => ({
-    slug: product.slug,
-  }))
-}
-
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params
-  const product = products.find((p) => p.slug === slug)
+  const product = getStoredProductBySlug(slug, false)
 
   if (!product) {
     return {
@@ -73,9 +70,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
-  const product = products.find((p) => p.slug === slug)
+  const product = getStoredProductBySlug(slug, false)
 
-  if (!product) {
+  if (!product || product.is_visible === false) {
     notFound()
   }
 
@@ -121,7 +118,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductClient slug={slug} />
+      <ProductClient slug={slug} initialProduct={product} />
     </>
   )
 }

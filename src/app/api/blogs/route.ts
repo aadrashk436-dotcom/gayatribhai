@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import { NextResponse } from "next/server"
 import {
   getStoredBlogPosts,
@@ -17,22 +20,34 @@ export async function GET(request: Request) {
     if (slug) {
       const blog = getStoredBlogPostBySlug(slug, all)
       if (!blog) {
-        return NextResponse.json({ error: "Blog not found" }, { status: 404 })
+        return NextResponse.json(
+          { error: "Blog not found" },
+          { status: 404, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+        )
       }
-      return NextResponse.json(blog)
+      return NextResponse.json(blog, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      })
     }
 
     if (id) {
       const posts = getStoredBlogPosts(true)
       const blog = posts.find((p) => p.id === id)
       if (!blog) {
-        return NextResponse.json({ error: "Blog not found" }, { status: 404 })
+        return NextResponse.json(
+          { error: "Blog not found" },
+          { status: 404, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+        )
       }
-      return NextResponse.json(blog)
+      return NextResponse.json(blog, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      })
     }
 
     const posts = getStoredBlogPosts(all)
-    return NextResponse.json(posts)
+    return NextResponse.json(posts, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+    })
   } catch (error: any) {
     console.error("GET /api/blogs error:", error)
     return NextResponse.json(

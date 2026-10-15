@@ -43,10 +43,13 @@ export function BlogView({
       setBlogPosts(postsOverride)
       return
     }
-    fetch("/api/blogs")
+    fetch(`/api/blogs?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setBlogPosts(data.filter((b: BlogPost) => b.is_published !== false))
         }
       })

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { products } from "@/lib/products"
+import { getStoredProducts } from "@/lib/serverProducts"
 import { getStoredBlogPosts } from "@/lib/blogs"
 
 const BASE_URL = "https://gayatribhai.vercel.app"
@@ -26,7 +26,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  const productPages: MetadataRoute.Sitemap = products.map((p) => ({
+  const liveProducts = getStoredProducts(false)
+  const productPages: MetadataRoute.Sitemap = liveProducts.map((p) => ({
     url: `${BASE_URL}/product/${p.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,

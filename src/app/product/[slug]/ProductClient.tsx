@@ -1,42 +1,65 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { products } from "@/lib/products"
+import { useState, useEffect, useCallback } from "react"
 import { useStore } from "@/lib/store"
 import { useAppNavigation } from "@/lib/useAppNavigation"
 import ProductDetailView from "@/components/views/ProductDetailView"
 import Empty from "@/components/common/Empty"
 import type { Product } from "@/types"
 
-export default function ProductClient({ slug }: { slug: string }) {
-  const initial = products.find((p) => p.slug === slug)
-  const [product, setProduct] = useState<Product | undefined>(initial as Product | undefined)
+interface ProductClientProps {
+  slug: string
+  initialProduct?: Product
+}
+
+export default function ProductClient({ slug, initialProduct }: ProductClientProps) {
+  const [product, setProduct] = useState<Product | undefined>(initialProduct)
   const { openProduct, go, goBack } = useAppNavigation()
   const { wishlist, toggleWish, addToCart } = useStore()
 
-  useEffect(() => {
-    let isMounted = true
-    fetch("/api/products")
-      .then((r) => r.json())
+  const loadProduct = useCallback(() => {
+    fetch(`/api/products?slug=${encodeURIComponent(slug)}&_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data.products && isMounted) {
-          const found = data.products.find((p: any) => p.slug === slug)
-          if (found) setProduct(found)
+        if (data && data.id && data.is_visible !== false) {
+          setProduct(data)
+        } else if (data && data.is_visible === false) {
+          setProduct(undefined)
         }
       })
       .catch((err) => console.warn("Product dynamic API load:", err))
-    return () => {
-      isMounted = false
-    }
   }, [slug])
 
-  if (!product) {
+  useEffect(() => {
+    loadProduct()
+
+    const onProductsUpdate = () => loadProduct()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_products_last_update") loadProduct()
+    }
+    const onFocus = () => loadProduct()
+
+    window.addEventListener("gb-products-updated", onProductsUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      window.removeEventListener("gb-products-updated", onProductsUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [loadProduct])
+
+  if (!product || product.is_visible === false) {
     return (
       <div className="standard-page" style={{ padding: "80px 20px", textAlign: "center" }}>
         <Empty
           icon="search"
           title="Product not found"
-          copy="The shirt you are looking for does not exist."
+          copy="The shirt you are looking for does not exist or is currently unavailable."
           action="Browse all shirts"
           onAction={() => go("shop")}
         />

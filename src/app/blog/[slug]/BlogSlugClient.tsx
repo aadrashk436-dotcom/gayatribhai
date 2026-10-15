@@ -1,32 +1,66 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useStore } from "@/lib/store"
 import { useAppNavigation } from "@/lib/useAppNavigation"
 import BlogView from "@/components/views/BlogView"
-import { BLOG_POSTS as INITIAL_POSTS } from "@/data/blogData"
 import type { BlogPost } from "@/types"
 import { getBlogUrl } from "@/lib/navigation"
 
-export default function BlogSlugClient({ slug }: { slug: string }) {
+interface BlogSlugClientProps {
+  slug: string
+  initialPost?: BlogPost
+}
+
+export default function BlogSlugClient({ slug, initialPost }: BlogSlugClientProps) {
   const { go, openProduct } = useAppNavigation()
   const { addToCart } = useStore()
   const router = useRouter()
-  const [blogs, setBlogs] = useState<BlogPost[]>(INITIAL_POSTS)
+  const [blogs, setBlogs] = useState<BlogPost[]>(() => (initialPost ? [initialPost] : []))
 
-  useEffect(() => {
-    fetch("/api/blogs")
+  const loadBlogs = useCallback(() => {
+    fetch(`/api/blogs?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setBlogs(data.filter((b: BlogPost) => b.is_published !== false))
+        if (Array.isArray(data)) {
+          const published = data.filter((b: BlogPost) => b.is_published !== false)
+          setBlogs(published)
+
+          // If current post is not found among published blogs, redirect back to /blog
+          const currentPost = published.find((p) => p.slug === slug)
+          if (!currentPost && published.length > 0) {
+            router.push("/blog")
+          }
         }
       })
       .catch(() => {})
-  }, [])
+  }, [router, slug])
 
-  const blogPost = blogs.find((p) => p.slug === slug)
+  useEffect(() => {
+    loadBlogs()
+
+    const onBlogUpdate = () => loadBlogs()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_blogs_last_update") loadBlogs()
+    }
+    const onFocus = () => loadBlogs()
+
+    window.addEventListener("gb-blogs-updated", onBlogUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      window.removeEventListener("gb-blogs-updated", onBlogUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [loadBlogs])
+
+  const blogPost = blogs.find((p) => p.slug === slug) || initialPost
 
   return (
     <BlogView

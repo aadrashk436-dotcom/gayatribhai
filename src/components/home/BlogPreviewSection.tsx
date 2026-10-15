@@ -23,15 +23,38 @@ export function BlogPreviewSection({
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
 
-  useEffect(() => {
-    fetch("/api/blogs")
+  const loadBlogs = () => {
+    fetch(`/api/blogs?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setBlogPosts(data.filter((b: BlogPost) => b.is_published !== false))
         }
       })
       .catch(() => {})
+  }
+
+  useEffect(() => {
+    loadBlogs()
+
+    const onBlogUpdate = () => loadBlogs()
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === "gb_blogs_last_update") loadBlogs()
+    }
+    const onFocus = () => loadBlogs()
+
+    window.addEventListener("gb-blogs-updated", onBlogUpdate)
+    window.addEventListener("storage", onStorageChange)
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      window.removeEventListener("gb-blogs-updated", onBlogUpdate)
+      window.removeEventListener("storage", onStorageChange)
+      window.removeEventListener("focus", onFocus)
+    }
   }, [])
 
   const checkScrollState = () => {

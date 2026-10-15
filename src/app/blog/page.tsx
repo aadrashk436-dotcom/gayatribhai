@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import type { Metadata } from "next"
 import { getStoredBlogPosts } from "@/lib/blogs"
 import BlogClient from "./BlogClient"
@@ -62,7 +65,7 @@ export default function BlogPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BlogClient />
+      <BlogClient initialPosts={publishedPosts} />
     </>
   )
 }

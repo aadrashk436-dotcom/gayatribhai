@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { products } from "@/products";
+import { getStoredProductById } from "@/lib/serverProducts";
 import fs from "fs";
 import path from "path";
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     // Enrich items with real product info from database / store
     const enrichedItems = items.map((item: any) => {
       const prodId = item.productId || item.id;
-      const p = products.find((prod) => prod.id === prodId || prod.slug === prodId);
+      const p = getStoredProductById(prodId) || products.find((prod) => prod.id === prodId || prod.slug === prodId);
       const unitPrice = p ? p.price : (item.price > 1000 ? Math.round(item.price / 100) : (item.price || 2100));
       return {
         productId: prodId,

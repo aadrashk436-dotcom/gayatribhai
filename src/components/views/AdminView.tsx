@@ -414,6 +414,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: product.id, is_visible: newVisibility }),
       })
+      localStorage.setItem("gb_products_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-products-updated"))
     } catch (e) {
       console.warn("Could not sync visibility to API:", e)
     }
@@ -449,6 +451,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: productId, stock: updatedStock }),
       })
+      localStorage.setItem("gb_products_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-products-updated"))
     } catch (e) {
       console.warn("Could not sync stock adjust:", e)
     }
@@ -461,14 +465,17 @@ export function AdminView() {
   const handleConfirmDeleteProduct = async () => {
     if (!deleteProductModal) return
     const idToDelete = deleteProductModal.id
+    const titleToDelete = deleteProductModal.name
     setProductList((prev) => prev.filter((p) => p.id !== idToDelete))
     setDeleteProductModal(null)
-    showToast(`"${deleteProductModal.name}" deleted from catalog.`)
+    showToast(`"${titleToDelete}" deleted from catalog.`)
 
     try {
       await fetch(`/api/products?id=${encodeURIComponent(idToDelete)}`, {
         method: "DELETE",
       })
+      localStorage.setItem("gb_products_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-products-updated"))
     } catch (e) {
       console.warn("Could not sync deletion to API:", e)
     }
@@ -1079,6 +1086,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedList),
       })
+      localStorage.setItem("gb_banners_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-banners-updated"))
     } catch (e) {
       console.warn("Could not sync banners to API:", e)
     }
@@ -1096,6 +1105,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedList),
       })
+      localStorage.setItem("gb_banners_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-banners-updated"))
     } catch (e) {
       console.warn("Could not sync banners to API:", e)
     }
@@ -1109,6 +1120,8 @@ export function AdminView() {
       await fetch(`/api/banners?id=${encodeURIComponent(bannerId)}`, {
         method: "DELETE",
       })
+      localStorage.setItem("gb_banners_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-banners-updated"))
     } catch (e) {
       console.warn("Could not sync delete banner to API:", e)
     }
@@ -1132,6 +1145,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
       })
+      localStorage.setItem("gb_banners_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-banners-updated"))
     } catch (e) {
       console.warn("Could not sync banners to API:", e)
     }
@@ -1153,6 +1168,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
       })
+      localStorage.setItem("gb_banners_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-banners-updated"))
     } catch (e) {
       console.warn("Could not sync banners to API:", e)
     }
@@ -1189,6 +1206,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: blogId, is_published: newStatus }),
       })
+      localStorage.setItem("gb_blogs_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-blogs-updated"))
     } catch (e) {
       console.warn("Could not sync blog visibility to API:", e)
     }
@@ -1210,6 +1229,8 @@ export function AdminView() {
       await fetch(`/api/blogs?id=${encodeURIComponent(idToDelete)}`, {
         method: "DELETE",
       })
+      localStorage.setItem("gb_blogs_last_update", String(Date.now()))
+      window.dispatchEvent(new Event("gb-blogs-updated"))
     } catch (e) {
       console.warn("Could not sync delete blog to API:", e)
     }
@@ -1229,6 +1250,8 @@ export function AdminView() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(blogPayload),
         })
+        localStorage.setItem("gb_blogs_last_update", String(Date.now()))
+        window.dispatchEvent(new Event("gb-blogs-updated"))
       } catch (err) {
         console.warn("Could not sync edit blog to API:", err)
       }
@@ -1241,6 +1264,8 @@ export function AdminView() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(blogPayload),
         })
+        localStorage.setItem("gb_blogs_last_update", String(Date.now()))
+        window.dispatchEvent(new Event("gb-blogs-updated"))
       } catch (err) {
         console.warn("Could not sync new blog to API:", err)
       }
@@ -1652,6 +1677,10 @@ export function AdminView() {
           onSaved={(updated) => {
             setProductList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
             setQuickPriceModalProduct(null)
+            try {
+              localStorage.setItem("gb_products_last_update", String(Date.now()))
+              window.dispatchEvent(new Event("gb-products-updated"))
+            } catch {}
           }}
           showToast={showToast}
         />
@@ -1680,6 +1709,11 @@ export function AdminView() {
             } catch (err) {
               console.warn("Could not persist product edits:", err)
               showToast(`"${updated.name}" updated locally!`)
+            } finally {
+              try {
+                localStorage.setItem("gb_products_last_update", String(Date.now()))
+                window.dispatchEvent(new Event("gb-products-updated"))
+              } catch {}
             }
           }}
           onOpenZoom={(zoomState) => setZoomImageModal(zoomState)}
@@ -1696,6 +1730,10 @@ export function AdminView() {
             setProductList((prev) => [newProduct, ...prev])
             setShowAddShirtModal(false)
             showToast(`"${newProduct.name}" added to catalog!`)
+            try {
+              localStorage.setItem("gb_products_last_update", String(Date.now()))
+              window.dispatchEvent(new Event("gb-products-updated"))
+            } catch {}
           }}
           showToast={showToast}
         />

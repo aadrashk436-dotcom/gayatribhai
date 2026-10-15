@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getStoredBlogPosts, getStoredBlogPostBySlug } from "@/lib/blogs"
@@ -105,7 +108,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BlogSlugClient slug={slug} />
+      <BlogSlugClient slug={slug} initialPost={post} />
     </>
   )
 }

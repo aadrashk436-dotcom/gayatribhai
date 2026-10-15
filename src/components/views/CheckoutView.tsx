@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { products } from "../../products"
-import type { Address, CartItem, User, View } from "../../types"
+import type { Address, CartItem, User, View, Product } from "../../types"
 import { money } from "../../utils/format"
 import Button from "../common/Button"
 import Icon from "../common/Icon"
@@ -925,9 +925,25 @@ export function CheckoutView({
   )
   const [confirmedPaymentMethod, setConfirmedPaymentMethod] = useState<string>("Razorpay (Online)")
 
+  const [productList, setProductList] = useState<Product[]>(products)
+
+  useEffect(() => {
+    fetch(`/api/products?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          setProductList(data.products)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const subtotal = cart.reduce(
     (sum, x) =>
-      sum + (products.find((p) => p.id === x.id)?.price || 0) * x.quantity,
+      sum + ((productList.find((p) => p.id === x.id || p.slug === x.id)?.price || products.find((p) => p.id === x.id)?.price || 0)) * x.quantity,
     0
   )
 
