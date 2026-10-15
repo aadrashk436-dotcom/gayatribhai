@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
@@ -280,7 +280,10 @@ export function AdminView() {
         .finally(() => setIsLoadingProducts(false))
 
       // 2. Live Orders
-      const fetchOrders = fetch("/api/orders")
+      const fetchOrders = fetch(`/api/orders?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.orders)) {
@@ -291,7 +294,10 @@ export function AdminView() {
         .finally(() => setIsLoadingOrders(false))
 
       // 3. Live Customers
-      const fetchCustomers = fetch("/api/admin/customers")
+      const fetchCustomers = fetch(`/api/admin/customers?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.customers)) {
@@ -340,9 +346,42 @@ export function AdminView() {
     }
   }
 
+  const refreshOrders = useCallback(async () => {
+    setIsLoadingOrders(true)
+    try {
+      const res = await fetch(`/api/orders?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data && Array.isArray(data.orders)) {
+          setOrderList(data.orders)
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load orders from API:", e)
+    } finally {
+      setIsLoadingOrders(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchAllLiveData()
-  }, [])
+    const timer = setInterval(() => {
+      refreshOrders()
+    }, 12000)
+
+    const onFocus = () => {
+      refreshOrders()
+    }
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [refreshOrders])
 
   const handleRefreshAllData = async () => {
     showToast("Syncing with live database...")
@@ -1227,15 +1266,25 @@ export function AdminView() {
 
   // ══════════════ MEMOIZED DERIVED VALUES ══════════════
   const filteredOrders = useMemo(() => {
+    const q = (searchQuery || "").trim().toLowerCase()
     return orderList.filter((o) => {
+      const safeId = (o.id || o.orderNumber || "").toLowerCase()
+      const safeCustomer = (o.customer || o.customerName || "").toLowerCase()
+      const safeCity = (o.city || "").toLowerCase()
+      const safePhone = (o.phone || (o as any).customerPhone || "").toLowerCase()
+      const safeShirtName = (o.shirtName || "").toLowerCase()
+
       const matchesSearch =
-        o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.shirtName.toLowerCase().includes(searchQuery.toLowerCase())
+        !q ||
+        safeId.includes(q) ||
+        safeCustomer.includes(q) ||
+        safeCity.includes(q) ||
+        safePhone.includes(q) ||
+        safeShirtName.includes(q)
+
       const matchesStatus =
         orderStatusFilter === "All" || o.status === orderStatusFilter
+
       return matchesSearch && matchesStatus
     })
   }, [orderList, searchQuery, orderStatusFilter])
@@ -1471,6 +1520,7 @@ export function AdminView() {
               setZoomImageModal={setZoomImageModal}
               showToast={showToast}
               formatINR={formatINR}
+              handleRefreshOrders={refreshOrders}
             />
           )}
 

@@ -47,6 +47,7 @@ export function AddressStep({
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
+    email: user?.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") || "" : ""),
     street: "",
     city: "",
     state: "",
@@ -113,6 +114,7 @@ export function AddressStep({
         ...prev,
         name: prev.name || user.name || "",
         phone: prev.phone || user.phone || "",
+        email: prev.email || user.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") || "" : ""),
       }))
     }
   }, [user])
@@ -123,6 +125,7 @@ export function AddressStep({
     setFormData({
       name: addr.name || "",
       phone: addr.phone || "",
+      email: (addr as any).email || user?.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") || "" : ""),
       street: addr.street || "",
       city: addr.city || "",
       state: addr.state || "",
@@ -137,6 +140,7 @@ export function AddressStep({
     setFormData({
       name: user?.name || "",
       phone: user?.phone || "",
+      email: user?.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") || "" : ""),
       street: "",
       city: "",
       state: "",
@@ -153,6 +157,9 @@ export function AddressStep({
     if (!formData.phone.trim() || phoneDigits.length < 10) {
       errs.phone = "Valid 10-digit mobile number is mandatory"
     }
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errs.email = "Please enter a valid email address"
+    }
     if (!formData.street.trim()) errs.street = "Street address is required"
     if (!formData.city.trim()) errs.city = "City is required"
     if (!formData.state.trim()) errs.state = "State is required"
@@ -167,16 +174,21 @@ export function AddressStep({
     e.preventDefault()
     if (!validateAddress()) return
     const targetId = editingAddressId || ("addr_" + Date.now())
-    const newAddr: Address = {
+    const newAddr: any = {
       id: targetId,
       name: formData.name.trim(),
       phone: formData.phone.trim(),
+      email: formData.email.trim() || user?.email || "",
       street: formData.street.trim(),
       city: formData.city.trim(),
       state: formData.state.trim(),
       pincode: formData.pincode.trim(),
       type: "HOME",
       isDefault: cleanAddresses.length === 0 || editingAddressId === selectedId,
+    }
+    if (typeof window !== "undefined") {
+      if (formData.email.trim()) localStorage.setItem("gb_patron_email", formData.email.trim())
+      if (formData.phone.trim()) localStorage.setItem("gb_patron_phone", formData.phone.trim())
     }
     saveAddress(newAddr)
     setSelectedId(targetId)
@@ -391,6 +403,17 @@ export function AddressStep({
               />
               {errors.phone && <span className="err-text">{errors.phone}</span>}
             </div>
+          </div>
+
+          <div style={{ marginBottom: "14px" }}>
+            <label>Email Address (for order updates &amp; live invoice)</label>
+            <input
+              type="email"
+              placeholder="name@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            {errors.email && <span className="err-text">{errors.email}</span>}
           </div>
 
           <div>
@@ -942,11 +965,27 @@ export function CheckoutView({
         quantity: item.quantity,
       }))
 
+      const patronEmail = (
+        user?.email ||
+        (selectedAddress as any)?.email ||
+        (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") : "") ||
+        "care@gayatribhai.com"
+      ).trim().toLowerCase()
+
+      const patronPhone = (
+        selectedAddress?.phone ||
+        user?.phone ||
+        (typeof window !== "undefined" ? localStorage.getItem("gb_patron_phone") : "") ||
+        "+91 98765 43210"
+      ).trim()
+
+      const patronName = (selectedAddress?.name || user?.name || "Customer").trim()
+
       const orderAddress = {
         ...selectedAddress,
-        email: selectedAddress.email || user?.email || "care@gayatribhai.com",
-        phone: selectedAddress.phone || user?.phone || "+91 98765 43210",
-        name: selectedAddress.name || user?.name || "Customer",
+        email: patronEmail,
+        phone: patronPhone,
+        name: patronName,
       }
 
       // Handle Cash on Delivery directly
@@ -962,9 +1001,9 @@ export function CheckoutView({
               selectedCourier,
               packageSummary,
               paymentMethod: "Cash on Delivery",
-              userEmail: user?.email,
-              userPhone: user?.phone,
-              userName: user?.name,
+              userEmail: patronEmail,
+              userPhone: patronPhone,
+              userName: patronName,
               userId: user?.id,
             }
           )
@@ -973,22 +1012,32 @@ export function CheckoutView({
             setConfirmedPaymentMethod("Cash on Delivery")
             try {
               saveAddress(orderAddress)
+              if (typeof window !== "undefined") {
+                localStorage.setItem("gb_patron_email", patronEmail)
+                localStorage.setItem("gb_patron_phone", patronPhone)
+                const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+                if (!existingIds.includes(orderRes.orderNumber)) {
+                  existingIds.unshift(orderRes.orderNumber)
+                  localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
+                }
+              }
               if (!user) {
-                setStoreUser({
+                const newUser = {
                   id: `cust_${Date.now()}`,
-                  name: orderAddress.name || "Customer",
-                  email: orderAddress.email || "customer@gayatribhai.com",
-                  phone: orderAddress.phone || "",
-                  membershipTier: "Silver",
+                  name: patronName,
+                  email: patronEmail,
+                  phone: patronPhone,
+                  membershipTier: "Silver" as const,
                   points: 100,
-                })
+                }
+                setStoreUser(newUser)
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("gb_customer_user", JSON.stringify(newUser))
+                }
               }
-              const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
-              if (!existingIds.includes(orderRes.orderNumber)) {
-                existingIds.unshift(orderRes.orderNumber)
-                localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
-              }
-            } catch {}
+            } catch (storageErr) {
+              console.warn("Storage sync error:", storageErr)
+            }
           } else if (orderRes?.error) {
             throw new Error(orderRes.error)
           }
@@ -1019,6 +1068,7 @@ export function CheckoutView({
       let rzpOrderId = ""
       let createdOrderNum = ""
       let finalAmount = finalTotal * 100 // paise
+      let returnedKeyId = ""
 
       try {
         const orderRes = await apiCreateOrder(
@@ -1031,12 +1081,15 @@ export function CheckoutView({
             selectedCourier,
             packageSummary,
             paymentMethod: chosenMethod || "Razorpay (Online)",
-            userEmail: user?.email,
-            userPhone: user?.phone,
-            userName: user?.name,
+            userEmail: patronEmail,
+            userPhone: patronPhone,
+            userName: patronName,
             userId: user?.id,
           }
         )
+        if (orderRes?.keyId) {
+          returnedKeyId = orderRes.keyId
+        }
         if (orderRes?.razorpayOrderId) {
           rzpOrderId = orderRes.razorpayOrderId
           finalAmount = orderRes.amount
@@ -1052,7 +1105,7 @@ export function CheckoutView({
         return
       }
 
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_Tl6r6m9eEhjxUb"
+      const razorpayKey = returnedKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_Tl6r6m9eEhjxUb"
 
       const options = {
         key: razorpayKey,
@@ -1062,9 +1115,9 @@ export function CheckoutView({
         description: "Artisanal Luxury Shirts",
         order_id: rzpOrderId || undefined,
         prefill: {
-          name: user?.name || selectedAddress.name || "",
-          email: user?.email || selectedAddress.email || "care@gayatribhai.com",
-          contact: selectedAddress.phone || user?.phone || "",
+          name: patronName,
+          email: patronEmail,
+          contact: patronPhone,
         },
         theme: {
           color: "#d4af37",
@@ -1077,21 +1130,29 @@ export function CheckoutView({
               orderNumber: createdOrderNum,
             })
             saveAddress(orderAddress)
-            if (!user) {
-              setStoreUser({
-                id: `cust_${Date.now()}`,
-                name: orderAddress.name || "Customer",
-                email: orderAddress.email || "customer@gayatribhai.com",
-                phone: orderAddress.phone || "",
-                membershipTier: "Silver",
-                points: 100,
-              })
+            if (typeof window !== "undefined") {
+              localStorage.setItem("gb_patron_email", patronEmail)
+              localStorage.setItem("gb_patron_phone", patronPhone)
+              if (createdOrderNum) {
+                const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
+                if (!existingIds.includes(createdOrderNum)) {
+                  existingIds.unshift(createdOrderNum)
+                  localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
+                }
+              }
             }
-            if (createdOrderNum) {
-              const existingIds: string[] = JSON.parse(localStorage.getItem("gb_patron_order_ids") || "[]")
-              if (!existingIds.includes(createdOrderNum)) {
-                existingIds.unshift(createdOrderNum)
-                localStorage.setItem("gb_patron_order_ids", JSON.stringify(existingIds))
+            if (!user) {
+              const newUser = {
+                id: `cust_${Date.now()}`,
+                name: patronName,
+                email: patronEmail,
+                phone: patronPhone,
+                membershipTier: "Silver" as const,
+                points: 100,
+              }
+              setStoreUser(newUser)
+              if (typeof window !== "undefined") {
+                localStorage.setItem("gb_customer_user", JSON.stringify(newUser))
               }
             }
           } catch (e) {

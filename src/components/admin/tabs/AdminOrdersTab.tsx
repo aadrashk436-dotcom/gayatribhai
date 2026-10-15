@@ -46,6 +46,7 @@ interface AdminOrdersTabProps {
   setZoomImageModal: (state: ZoomImageModalState | null) => void
   showToast: (msg: string) => void
   formatINR: (val: number) => string
+  handleRefreshOrders?: () => void
 }
 
 export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
@@ -78,6 +79,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   setZoomImageModal,
   showToast,
   formatINR,
+  handleRefreshOrders,
 }) => {
   const selectedWithAwbCount = filteredOrders.filter(
     (o) => selectedOrderIds.includes(o.id) && Boolean(o.awb)
@@ -87,15 +89,28 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
     <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
       {/* Search & Status Filter Bar (STICKY / FIXED AT TOP) */}
       <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by order ID, patron, phone, city..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search by order ID, patron, phone, city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-[#0d0f12] pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:border-[#d4af37] focus:outline-none"
+            />
+          </div>
+          {handleRefreshOrders && (
+            <button
+              onClick={handleRefreshOrders}
+              disabled={isLoadingOrders}
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0d0f12] px-3 py-2 text-xs font-semibold text-zinc-300 hover:text-[#d4af37] hover:border-[#d4af37]/40 transition shrink-0 cursor-pointer disabled:opacity-50"
+              title="Refresh live orders from database"
+            >
+              <RotateCw className={`h-3.5 w-3.5 ${isLoadingOrders ? "animate-spin text-[#d4af37]" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">

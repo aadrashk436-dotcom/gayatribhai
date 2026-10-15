@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -162,6 +165,7 @@ export async function GET() {
         email: c.email || "",
         phone: c.phone || "",
         tier,
+        orders: ordersCount,
         ordersCount,
         totalSpent,
         points: c.points ?? Math.max(250, Math.round(totalSpent * 0.1)),

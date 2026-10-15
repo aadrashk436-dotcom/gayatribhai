@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -198,13 +201,34 @@ export async function GET(request: Request) {
     const phone = searchParams.get("phone");
     const userId = searchParams.get("userId");
     const id = searchParams.get("id");
+    const ids = searchParams.get("ids");
 
     const orders = readStoredOrders();
 
+    // Sort newest first
+    orders.sort((a: any, b: any) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
     if (id) {
-      const order = orders.find((o: any) => o.id === id || o.orderNumber === id);
+      const cleanId = id.trim().toLowerCase();
+      const order = orders.find(
+        (o: any) => (o.id && o.id.toLowerCase() === cleanId) ||
+                    (o.orderNumber && o.orderNumber.toLowerCase() === cleanId)
+      );
       if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
       return NextResponse.json({ order });
+    }
+
+    if (ids) {
+      const idList = ids.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+      const matchedOrders = orders.filter((o: any) =>
+        idList.includes((o.id || "").toLowerCase()) ||
+        idList.includes((o.orderNumber || "").toLowerCase())
+      );
+      return NextResponse.json({ orders: matchedOrders, total: matchedOrders.length });
     }
 
     if (email || phone || userId) {
@@ -213,14 +237,14 @@ export async function GET(request: Request) {
 
       const userOrders = orders.filter((o: any) => {
         const orderEmail = (o.customerEmail || o.email || o.shippingAddress?.email || "").trim().toLowerCase();
-        const emailMatch = cleanEmail && orderEmail === cleanEmail;
+        const emailMatch = Boolean(cleanEmail && orderEmail && (orderEmail === cleanEmail || cleanEmail.includes(orderEmail) || orderEmail.includes(cleanEmail)));
 
         const rawPhone = (o.customerPhone || o.phone || o.shippingAddress?.phone || "").replace(/\D/g, "").slice(-10);
-        const phoneMatch = cleanPhoneDigits && rawPhone.length >= 10 && rawPhone === cleanPhoneDigits;
+        const phoneMatch = Boolean(cleanPhoneDigits && rawPhone.length >= 10 && rawPhone === cleanPhoneDigits);
 
-        const userIdMatch = userId && o.userId === userId;
+        const userIdMatch = Boolean(userId && o.userId && o.userId === userId);
 
-        return Boolean(emailMatch || phoneMatch || userIdMatch);
+        return emailMatch || phoneMatch || userIdMatch;
       });
       return NextResponse.json({ orders: userOrders, total: userOrders.length });
     }

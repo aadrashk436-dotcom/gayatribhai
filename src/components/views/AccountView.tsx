@@ -598,9 +598,13 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
     setLoadingOrders(true)
     try {
       const params = new URLSearchParams()
-      if (user?.email) params.set("email", user.email)
-      if (user?.phone) params.set("phone", user.phone)
-      if (user?.id) params.set("userId", user.id)
+      const searchEmail = user?.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") : "") || ""
+      const searchPhone = user?.phone || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_phone") : "") || ""
+      const searchUserId = user?.id || ""
+
+      if (searchEmail) params.set("email", searchEmail)
+      if (searchPhone) params.set("phone", searchPhone)
+      if (searchUserId) params.set("userId", searchUserId)
 
       let localOrderIds: string[] = []
       try {
@@ -629,8 +633,9 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
         const extraOrders = await Promise.all(
           missingIds.map(async (oid) => {
             try {
-              const r = await fetch(`/api/orders?id=${oid}&_t=${Date.now()}`, {
+              const r = await fetch(`/api/orders?id=${encodeURIComponent(oid)}&_t=${Date.now()}`, {
                 cache: "no-store",
+                headers: { "Cache-Control": "no-cache" },
               })
               if (r.ok) {
                 const d = await r.json()
@@ -643,6 +648,13 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
         const validExtras = extraOrders.filter(Boolean)
         fetchedList = [...validExtras, ...fetchedList]
       }
+
+      // Sort newest first
+      fetchedList.sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return tB - tA
+      })
 
       setOrders(fetchedList)
     } catch (err) {

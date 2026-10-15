@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { products } from "@/products";
 import fs from "fs";
@@ -29,9 +32,9 @@ export async function POST(request: Request) {
 
     const isCod = rawMethod === "Cash on Delivery" || rawMethod === "COD";
 
-    const customerEmail = userEmail || address?.email || "care@gayatribhai.com";
-    const customerPhone = userPhone || address?.phone || "+91 98765 43210";
-    const customerName = userName || address?.name || "Customer";
+    const customerEmail = (userEmail || address?.email || "care@gayatribhai.com").trim().toLowerCase();
+    const customerPhone = (userPhone || address?.phone || "+91 98765 43210").trim();
+    const customerName = (userName || address?.name || "Customer").trim();
 
     // Enrich items with real product info from database / store
     const enrichedItems = items.map((item: any) => {
@@ -172,6 +175,49 @@ export async function POST(request: Request) {
         // Remove any old duplicate with same orderNumber
         db.orders = db.orders.filter((o: any) => o.orderNumber !== orderNumber && o.id !== orderNumber);
         db.orders.unshift(newOrder);
+
+        // Upsert customer in db.customers
+        db.customers = db.customers || [];
+        const cleanCustEmail = customerEmail.toLowerCase().trim();
+        const existingCustIdx = db.customers.findIndex(
+          (c: any) => (c.email && c.email.toLowerCase().trim() === cleanCustEmail) ||
+                      (userId && c.id === userId)
+        );
+
+        if (existingCustIdx >= 0) {
+          const c = db.customers[existingCustIdx];
+          const currOrders = typeof c.orders === "number" ? c.orders : (Array.isArray(c.orders) ? c.orders.length : 0);
+          const currSpent = typeof c.totalSpent === "number" ? c.totalSpent : 0;
+          db.customers[existingCustIdx] = {
+            ...c,
+            name: c.name || customerName,
+            phone: c.phone || customerPhone,
+            orders: currOrders + 1,
+            totalSpent: currSpent + totalRupees,
+            lastOrder: orderNumber,
+            points: (c.points || 0) + Math.round(totalRupees / 10),
+            updatedAt: new Date().toISOString(),
+          };
+        } else if (cleanCustEmail && cleanCustEmail !== "care@gayatribhai.com") {
+          db.customers.push({
+            id: userId || `cust_${Date.now()}`,
+            name: customerName,
+            email: cleanCustEmail,
+            phone: customerPhone,
+            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(customerName)}&backgroundColor=0a0a0a,d4af37,18181b`,
+            tier: "Silver",
+            points: Math.round(totalRupees / 10),
+            orders: 1,
+            totalSpent: totalRupees,
+            lastOrder: orderNumber,
+            authProvider: cleanCustEmail.endsWith("@gmail.com") ? "google" : "email",
+            authProviders: [cleanCustEmail.endsWith("@gmail.com") ? "google" : "email"],
+            role: "customer",
+            isAdmin: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+
         fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
       }
     } catch (saveErr) {
