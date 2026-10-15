@@ -110,7 +110,7 @@ export function BlogPreviewSection({
                 onClick={() => handleScroll("left")}
                 disabled={!canScrollLeft}
                 aria-label="Previous stories"
-                className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-all hover:border-foreground hover:bg-foreground hover:text-background disabled:opacity-30 disabled:cursor-not-allowed"
+                className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-all hover:border-foreground hover:bg-[#141414] hover:text-white dark:hover:bg-[#d4af37] dark:hover:text-[#0c0c0c] disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m15 18-6-6 6-6" />
@@ -121,7 +121,7 @@ export function BlogPreviewSection({
                 onClick={() => handleScroll("right")}
                 disabled={!canScrollRight}
                 aria-label="Next stories"
-                className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-all hover:border-foreground hover:bg-foreground hover:text-background disabled:opacity-30 disabled:cursor-not-allowed"
+                className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-all hover:border-foreground hover:bg-[#141414] hover:text-white dark:hover:bg-[#d4af37] dark:hover:text-[#0c0c0c] disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m9 18 6-6-6-6" />

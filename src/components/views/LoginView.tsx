@@ -796,7 +796,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-sm font-bold uppercase tracking-[0.14em] transition-all hover:opacity-90 disabled:opacity-60 shadow-md cursor-pointer active:scale-[0.99]"
                   >
                     {loading ? "Sending reset code..." : "Send Reset Code"}
                     {!loading && <Icon name="arrow" size={16} />}
@@ -875,7 +875,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-sm font-semibold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                    className="group mt-2 flex h-14 items-center justify-center gap-3 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-sm font-bold uppercase tracking-[0.14em] transition-all hover:opacity-90 disabled:opacity-60 shadow-md cursor-pointer active:scale-[0.99]"
                   >
                     {loading ? "Updating password..." : "Set New Password & Sign In"}
                     {!loading && <Icon name="check" size={16} />}
@@ -889,13 +889,13 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
               <div data-auth-item className="relative mb-6 grid grid-cols-2 rounded-full border border-border p-1">
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-foreground transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${isSignup ? "translate-x-full" : "translate-x-0"
+                  className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-[#141414] dark:bg-[#d4af37] shadow-md transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] ${isSignup ? "translate-x-full" : "translate-x-0"
                     }`}
                 />
                 <Link
                   href={redirect ? `/login?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(email || "")}`}
                   replace
-                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-background" : "text-foreground"}`}
+                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${!isSignup ? "text-white dark:text-[#0c0c0c] font-bold" : "text-foreground"}`}
                   aria-current={!isSignup ? "page" : undefined}
                 >
                   Sign in
@@ -903,7 +903,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                 <Link
                   href={redirect ? `/signup?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirect)}` : `/signup?email=${encodeURIComponent(email || "")}`}
                   replace
-                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-background" : "text-foreground"}`}
+                  className={`relative z-10 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${isSignup ? "text-white dark:text-[#0c0c0c] font-bold" : "text-foreground"}`}
                   aria-current={isSignup ? "page" : undefined}
                 >
                   Create account
@@ -988,7 +988,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                                 setAlreadyExistsNotice(null)
                                 router.replace(redirect ? `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}&redirect=${encodeURIComponent(redirect)}` : `/login?email=${encodeURIComponent(alreadyExistsNotice.email)}`)
                               }}
-                              className="flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-wider text-background shadow transition-all hover:opacity-90 active:scale-98 cursor-pointer"
+                              className="flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] px-5 text-xs font-bold uppercase tracking-wider shadow transition-all hover:opacity-90 active:scale-98 cursor-pointer"
                             >
                               <span>Sign In Directly</span>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1090,7 +1090,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                       id="submit-credentials-btn"
                       type="submit"
                       disabled={loading}
-                      className="w-full mt-4 flex h-14 items-center justify-center gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                      className="w-full mt-4 flex h-14 items-center justify-center gap-3 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-sm sm:text-base font-bold uppercase tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
                     >
                       {loading ? (
                         <span>Submitting, please wait...</span>
@@ -1210,7 +1210,7 @@ export function LoginView({ mode = "login", onLogin, showToast }: LoginViewProps
                       id="submit-otp-btn"
                       type="submit"
                       disabled={loading || otpCode.trim().length < 4}
-                      className="w-full mt-2 sm:mt-3 flex h-13 sm:h-14 items-center justify-center gap-2.5 sm:gap-3 rounded-full bg-foreground text-background text-sm sm:text-base font-bold uppercase tracking-[0.12em] sm:tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                      className="w-full mt-2 sm:mt-3 flex h-13 sm:h-14 items-center justify-center gap-2.5 sm:gap-3 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-sm sm:text-base font-bold uppercase tracking-[0.12em] sm:tracking-[0.14em] shadow-xl transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? (
                         <span>Verifying code...</span>

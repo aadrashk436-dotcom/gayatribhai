@@ -42,8 +42,8 @@ export function MobileNav({ view, cartCount, wishlistCount = 0, onSearchOpen }: 
             <span className="text-[10px] font-semibold tracking-wide">{tab.label}</span>
           </>
         )
-        const cls = `flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-full transition-colors ${
-          active ? "bg-foreground text-background" : "text-foreground/70"
+        const cls = `flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-full transition-all ${
+          active ? "bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold shadow-sm" : "text-foreground/70 hover:text-foreground"
         }`
         return tab.href ? (
           <Link key={tab.label} href={tab.href} className={cls} aria-current={active ? "page" : undefined}>

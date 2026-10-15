@@ -146,7 +146,7 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
               >
                 {item.label}
                 {item.tag && (
-                  <span className={`rounded-full px-1.5 py-px text-[9px] font-bold tracking-wider ${item.tag === "New" ? "bg-foreground text-background" : "bg-[#b4321f] text-white"}`}>
+                  <span className={`rounded-full px-1.5 py-px text-[9px] font-bold tracking-wider ${item.tag === "New" ? "bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c]" : "bg-[#b4321f] text-white"}`}>
                     {item.tag}
                   </span>
                 )}
@@ -197,7 +197,7 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.avatar} alt={user.name} className="size-7 rounded-full object-cover border border-border" />
                 ) : (
-                  <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-[11px] font-bold">
                     {user.name.slice(0, 1).toUpperCase()}
                   </span>
                 )
@@ -264,7 +264,7 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
               >
                 <span>{item.label}</span>
                 {"tag" in item && item.tag ? (
-                  <span className="rounded-full bg-foreground px-2 py-0.5 font-sans text-[10px] font-bold tracking-wider text-background">{item.tag}</span>
+                  <span className="rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] px-2 py-0.5 font-sans text-[10px] font-bold tracking-wider">{item.tag}</span>
                 ) : (
                   <Icon name="arrow" size={16} />
                 )}
@@ -295,7 +295,7 @@ export function Header({ view, go, menuOpen, setMenuOpen, setSearchOpen, wishlis
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatar} alt={user.name} className="size-11 rounded-full object-cover border border-border" />
             ) : (
-              <span className="flex size-11 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background">
+              <span className="flex size-11 items-center justify-center rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] text-sm font-bold">
                 {user ? user.name.slice(0, 2).toUpperCase() : <Icon name="user" size={18} />}
               </span>
             )}

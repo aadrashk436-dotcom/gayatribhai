@@ -482,7 +482,7 @@ function AddressDialog({ initial, onClose, onSave }: { initial: Address; onClose
                   type="button"
                   onClick={() => set("type", t)}
                   aria-pressed={form.type === t}
-                  className={`h-10 rounded-full border px-5 text-xs font-semibold tracking-wider ${form.type === t ? "border-foreground bg-foreground text-background" : "border-border text-foreground"}`}
+                  className={`h-10 rounded-full border px-5 text-xs font-semibold tracking-wider transition-colors ${form.type === t ? "border-transparent bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold shadow-sm" : "border-border text-foreground hover:bg-foreground/5"}`}
                 >
                   {t}
                 </button>
@@ -494,7 +494,7 @@ function AddressDialog({ initial, onClose, onSave }: { initial: Address; onClose
             Set as default address
           </label>
           {error && <p className="col-span-2 text-sm font-medium text-[#b4321f]">{error}</p>}
-          <button type="submit" className="col-span-2 mt-3 h-13 rounded-full bg-foreground py-4 text-sm font-semibold uppercase tracking-[0.14em] text-background">
+          <button type="submit" className="col-span-2 mt-3 h-13 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold py-4 text-sm uppercase tracking-[0.14em] shadow-md hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer">
             Save address
           </button>
         </form>
@@ -513,7 +513,7 @@ function GuestState() {
         <h1 className="font-display text-4xl text-foreground">Your profile</h1>
         <p className="mt-3 text-muted-foreground">Sign in to see orders, addresses and saved shirts.</p>
         <div className="mt-8 flex flex-col gap-3">
-          <Link href="/login" className="flex h-13 items-center justify-center rounded-full bg-foreground py-4 text-sm font-semibold uppercase tracking-[0.14em] text-background">
+          <Link href="/login" className="flex h-13 items-center justify-center rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold py-4 text-sm uppercase tracking-[0.14em] shadow-md hover:opacity-90 active:scale-[0.99] transition-all">
             Sign in
           </Link>
           <Link href="/signup" className="flex items-center justify-center rounded-full border border-border py-4 text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
@@ -707,7 +707,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <div className="-mt-12 flex flex-col gap-5 md:-mt-16 md:flex-row md:items-end md:justify-between">
           <div className="flex items-end gap-4 md:gap-6">
-            <div className="profile-avatar relative flex size-24 shrink-0 overflow-hidden items-center justify-center rounded-full border-4 border-background bg-foreground font-display text-3xl text-background md:size-32 md:text-4xl shadow-md">
+            <div className="profile-avatar relative flex size-24 shrink-0 overflow-hidden items-center justify-center rounded-full border-4 border-background bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-display text-3xl font-bold md:size-32 md:text-4xl shadow-md">
               {user.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.avatar} alt={user.name} className="size-full object-cover" />
@@ -758,8 +758,10 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                 type="button"
                 onClick={() => setTab(t.id)}
                 aria-current={tab === t.id}
-                className={`flex h-11 shrink-0 items-center gap-3 rounded-full px-5 text-sm font-semibold transition-colors md:rounded-sm md:px-4 ${
-                  tab === t.id ? "bg-foreground text-background" : "border border-border text-foreground hover:bg-foreground/5 md:border-transparent"
+                className={`flex h-11 shrink-0 items-center gap-3 rounded-full px-5 text-sm font-semibold transition-all md:rounded-sm md:px-4 cursor-pointer ${
+                  tab === t.id
+                    ? "bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold shadow-md md:border-transparent"
+                    : "border border-border text-foreground hover:bg-foreground/10 md:border-transparent"
                 }`}
               >
                 <Icon name={t.icon} size={17} />
@@ -805,7 +807,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                       </div>
                       <p className="font-display text-lg">No orders placed yet</p>
                       <p className="mt-1 text-sm text-muted-foreground">Your handcrafted bespoke orders will appear here once placed.</p>
-                      <Link href="/shop" className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-background">
+                      <Link href="/shop" className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold px-5 py-2.5 text-xs uppercase tracking-[0.14em] shadow-md hover:opacity-90 transition-all">
                         Explore collection <Icon name="arrow" size={14} />
                       </Link>
                     </div>
@@ -878,7 +880,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                     <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
                       You have not placed any orders yet. Discover our limited edition French linen shirts and bespoke resortwear.
                     </p>
-                    <Link href="/shop" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-background">
+                    <Link href="/shop" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold px-6 py-3 text-xs uppercase tracking-[0.14em] shadow-md hover:opacity-90 transition-all">
                       Discover collection <Icon name="arrow" size={14} />
                     </Link>
                   </div>
@@ -900,7 +902,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                         isDefault: validAddresses.length === 0,
                       })
                     }
-                    className="flex h-11 items-center gap-2 rounded-full bg-foreground px-5 text-xs font-semibold uppercase tracking-[0.12em] text-background cursor-pointer hover:opacity-90 transition-opacity"
+                    className="flex h-11 items-center gap-2 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold px-5 text-xs uppercase tracking-[0.12em] shadow-sm cursor-pointer hover:opacity-90 transition-all"
                   >
                     <Icon name="plus" size={15} /> Add
                   </button>
@@ -925,7 +927,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                           isDefault: true,
                         })
                       }
-                      className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-background hover:opacity-90 transition-opacity cursor-pointer shadow-md"
+                      className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold px-6 py-3 text-xs uppercase tracking-[0.12em] shadow-md hover:opacity-90 transition-all cursor-pointer"
                     >
                       <Icon name="plus" size={15} /> Add Delivery Address
                     </button>
@@ -1086,7 +1088,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                       />
                     </label>
                   ))}
-                  <button type="submit" className="h-12 rounded-full bg-foreground text-xs font-semibold uppercase tracking-[0.14em] text-background md:col-span-2 md:w-48">
+                  <button type="submit" className="h-12 rounded-full bg-[#141414] text-white dark:bg-[#d4af37] dark:text-[#0c0c0c] font-bold text-xs uppercase tracking-[0.14em] md:col-span-2 md:w-48 shadow-md hover:opacity-90 transition-all cursor-pointer">
                     Save changes
                   </button>
                 </form>
