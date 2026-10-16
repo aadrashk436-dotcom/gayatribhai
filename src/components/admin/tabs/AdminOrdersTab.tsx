@@ -17,6 +17,10 @@ import {
   Undo2,
   RotateCcw,
   Copy,
+  Clock,
+  Package,
+  Layers,
+  AlertTriangle,
 } from "lucide-react"
 import { AdminOrder, ZoomImageModalState } from "../types"
 import { SkeletonOrdersTable } from "../AdminSkeletonLoaders"
@@ -108,8 +112,174 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
     (o) => selectedOrderIds.includes(o.id) && Boolean(o.awb)
   ).length
 
+  // Top KPI Metrics Calculations
+  const totalOrdersCount = orderList.length
+  const totalRevenue = orderList.reduce((acc, o) => acc + (o.total || 0), 0)
+  const pendingCount = orderList.filter((o) => o.status === "Pending Verification").length
+  const verifiedCount = orderList.filter((o) => o.status === "Verified").length
+  const assignedCount = orderList.filter(
+    (o) => o.status === "Assigned to Courier" || (Boolean(o.awb) && o.status !== "Cancelled" && o.status !== "Delivered")
+  ).length
+  const dispatchedCount = orderList.filter((o) => o.status === "Dispatched").length
+  const deliveredCount = orderList.filter((o) => o.status === "Delivered").length
+  const refundsCount = orderList.filter(
+    (o) => o.paymentStatus === "Refunded" || o.paymentStatus === "Refund Pending" || o.status === "Cancelled"
+  ).length
+
   return (
     <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-4">
+      {/* ══════════════ TOP STATS & CURRENT STATUS OVERVIEW BAR ══════════════ */}
+      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+        {/* Card 1: All Orders */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("All")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "All"
+              ? "bg-[#1f242e] border-[#d4af37] ring-1 ring-[#d4af37]/40 shadow-[#d4af37]/10"
+              : "bg-[#14171d]/90 border-white/10 hover:border-white/20 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Total Orders</span>
+            <div className="w-7 h-7 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37]">
+              <Layers className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-xl sm:text-2xl font-black text-white">{totalOrdersCount}</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5 truncate font-medium">
+              Gross: <span className="text-zinc-200 font-bold">{formatINR(totalRevenue)}</span>
+            </p>
+          </div>
+        </button>
+
+        {/* Card 2: Pending Verification */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("Pending Verification")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "Pending Verification"
+              ? "bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/40"
+              : "bg-[#14171d]/90 border-white/10 hover:border-amber-500/30 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Needs Review</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Clock className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-xl sm:text-2xl font-black text-amber-300">{pendingCount}</p>
+              {pendingCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </div>
+            <p className="text-[10px] text-amber-200/80 mt-0.5 truncate">
+              {pendingCount > 0 ? "Pending admin approval" : "All orders verified"}
+            </p>
+          </div>
+        </button>
+
+        {/* Card 3: Ready to Ship / Booked */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("Assigned to Courier")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "Assigned to Courier"
+              ? "bg-sky-950/40 border-sky-500 ring-1 ring-sky-500/40"
+              : "bg-[#14171d]/90 border-white/10 hover:border-sky-500/30 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400">Ready to Ship</span>
+            <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
+              <Truck className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-xl sm:text-2xl font-black text-sky-300">{assignedCount}</p>
+            <p className="text-[10px] text-sky-200/80 mt-0.5 truncate">
+              AWBs booked & ready
+            </p>
+          </div>
+        </button>
+
+        {/* Card 4: Dispatched / In Transit */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("Dispatched")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "Dispatched"
+              ? "bg-indigo-950/40 border-indigo-500 ring-1 ring-indigo-500/40"
+              : "bg-[#14171d]/90 border-white/10 hover:border-indigo-500/30 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">In Transit</span>
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <Activity className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-xl sm:text-2xl font-black text-indigo-300">{dispatchedCount}</p>
+            <p className="text-[10px] text-indigo-200/80 mt-0.5 truncate">
+              On the road with courier
+            </p>
+          </div>
+        </button>
+
+        {/* Card 5: Delivered */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("Delivered")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "Delivered"
+              ? "bg-emerald-950/40 border-emerald-500 ring-1 ring-emerald-500/40"
+              : "bg-[#14171d]/90 border-white/10 hover:border-emerald-500/30 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Delivered</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-xl sm:text-2xl font-black text-emerald-300">{deliveredCount}</p>
+            <p className="text-[10px] text-emerald-200/80 mt-0.5 truncate">
+              Completed & received
+            </p>
+          </div>
+        </button>
+
+        {/* Card 6: Refunds & Cancelled */}
+        <button
+          type="button"
+          onClick={() => setOrderStatusFilter("Refunds")}
+          className={`rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between ${
+            orderStatusFilter === "Refunds"
+              ? "bg-rose-950/40 border-rose-500 ring-1 ring-rose-500/40"
+              : "bg-[#14171d]/90 border-white/10 hover:border-rose-500/30 hover:bg-[#181c24]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Refunds / Void</span>
+            <div className="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <RotateCcw className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-xl sm:text-2xl font-black text-rose-300">{refundsCount}</p>
+            <p className="text-[10px] text-rose-200/80 mt-0.5 truncate">
+              Cancelled / Refunded
+            </p>
+          </div>
+        </button>
+      </div>
+
       {/* Search, Filter & Status Controls Bar */}
       <div className="shrink-0 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#14171d]/95 p-4 backdrop-blur-xl shadow-xl">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -361,7 +531,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                 <th className="py-3.5 px-3">Patron & Shipping</th>
                 <th className="py-3.5 px-3">Shirt Item</th>
                 <th className="py-3.5 px-3">Payment</th>
-                <th className="py-3.5 px-3">Logistics Status</th>
+                <th className="py-3.5 px-3">Current Status & Logistics</th>
                 <th className="py-3.5 px-3 text-right">Fulfillment Actions</th>
               </tr>
             </thead>
@@ -576,28 +746,52 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
                       {/* Status & Logistics */}
                       <td className="py-3.5 px-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            ord.status === "Delivered"
-                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                              : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
-                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                              : ord.status === "Verified"
-                              ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                              : ord.status === "Cancelled"
-                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                              : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                          }`}
-                        >
-                          {ord.status}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              ord.status === "Delivered"
+                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                : ord.status === "Verified"
+                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                : ord.status === "Cancelled"
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            }`}
+                          >
+                            {ord.status === "Delivered" && <CheckCircle2 className="h-2.5 w-2.5" />}
+                            {ord.status === "Dispatched" && <Truck className="h-2.5 w-2.5" />}
+                            {ord.status === "Assigned to Courier" && <Package className="h-2.5 w-2.5" />}
+                            {ord.status === "Verified" && <ShieldCheck className="h-2.5 w-2.5" />}
+                            {ord.status === "Pending Verification" && <Clock className="h-2.5 w-2.5" />}
+                            {ord.status === "Cancelled" && <Ban className="h-2.5 w-2.5" />}
+                            <span>{ord.status}</span>
+                          </span>
 
-                        {ord.awb && (
-                          <div className="mt-1.5 space-y-0.5">
-                            <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || ord.courierName}</p>
-                            <p className="text-[9px] font-mono text-[#d4af37]">AWB: {ord.awb}</p>
-                          </div>
-                        )}
+                          {ord.awb && (
+                            <div className="mt-1 space-y-0.5">
+                              <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || ord.courierName}</p>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-mono font-bold text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.2 rounded border border-[#d4af37]/20 select-all">
+                                  AWB: {ord.awb}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigator.clipboard.writeText(String(ord.awb))
+                                    if (showToast) showToast(`Copied AWB #${ord.awb}`)
+                                  }}
+                                  className="text-zinc-500 hover:text-[#d4af37] p-0.5 cursor-pointer transition"
+                                  title="Copy AWB Number"
+                                >
+                                  <Copy className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Shiprocket Real-Time Status Badge */}
                         {ord.shiprocketStatus && (

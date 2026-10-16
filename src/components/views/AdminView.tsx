@@ -560,10 +560,11 @@ export function AdminView() {
   const handleVerifyOrder = async (orderId: string) => {
     setOrderList((prev) =>
       prev.map((o) =>
-        o.id === orderId
+        (o.id === orderId || o.orderNumber === orderId)
           ? {
             ...o,
             status: "Verified" as const,
+            verified: true,
             verifiedBy: "Gayatri Puri (Admin)",
             verifiedAt: "Just now",
           }
@@ -571,12 +572,13 @@ export function AdminView() {
       )
     )
 
-    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+    if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
       setInspectOrderModal((prev) =>
         prev
           ? {
             ...prev,
             status: "Verified",
+            verified: true,
             verifiedBy: "Gayatri Puri (Admin)",
             verifiedAt: "Just now",
           }
@@ -591,6 +593,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status: "Verified", verified: true }),
       })
+      window.dispatchEvent(new Event("gb-orders-updated"))
+      refreshOrders()
     } catch (e) {
       console.warn("Could not sync with API", e)
     }
@@ -804,7 +808,7 @@ export function AdminView() {
   const handleMarkDispatched = async (orderId: string) => {
     setOrderList((prev) =>
       prev.map((o) =>
-        o.id === orderId
+        (o.id === orderId || o.orderNumber === orderId)
           ? {
             ...o,
             status: "Dispatched" as const,
@@ -813,7 +817,7 @@ export function AdminView() {
       )
     )
 
-    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+    if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
       setInspectOrderModal((prev) =>
         prev
           ? {
@@ -835,6 +839,8 @@ export function AdminView() {
           status: "Dispatched",
         }),
       })
+      window.dispatchEvent(new Event("gb-orders-updated"))
+      refreshOrders()
     } catch (e) {
       console.warn("Could not sync with API", e)
     }
@@ -843,7 +849,7 @@ export function AdminView() {
   const handleMarkDelivered = async (orderId: string) => {
     setOrderList((prev) =>
       prev.map((o) =>
-        o.id === orderId
+        (o.id === orderId || o.orderNumber === orderId)
           ? {
             ...o,
             status: "Delivered" as const,
@@ -853,7 +859,7 @@ export function AdminView() {
       )
     )
 
-    if (inspectOrderModal && inspectOrderModal.id === orderId) {
+    if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
       setInspectOrderModal((prev) =>
         prev
           ? {
@@ -877,6 +883,8 @@ export function AdminView() {
           paymentStatus: "Paid",
         }),
       })
+      window.dispatchEvent(new Event("gb-orders-updated"))
+      refreshOrders()
     } catch (e) {
       console.warn("Could not sync with API", e)
     }
@@ -921,6 +929,8 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderIds: eligibleIds, status: "Verified", verified: true }),
       })
+      window.dispatchEvent(new Event("gb-orders-updated"))
+      refreshOrders()
     } catch (e) {
       console.warn("Could not sync with API", e)
     }
@@ -976,6 +986,8 @@ export function AdminView() {
 
         showToast(`Generated Shiprocket AWBs for ${data.assignedOrders.length} orders!`)
         setSelectedOrderIds([])
+        window.dispatchEvent(new Event("gb-orders-updated"))
+        refreshOrders()
       } else {
         throw new Error(data.error || "Bulk Shiprocket assignment failed")
       }
@@ -1016,13 +1028,17 @@ export function AdminView() {
           reason: "Bulk cancelled by Store Admin via Shiprocket",
         }),
       })
+      const data = await res.json()
       if (res.ok) {
-        showToast(`Successfully cancelled ${eligible.length} orders & Shiprocket shipments!`)
+        showToast(`Cancelled ${eligible.length} orders successfully.`)
         window.dispatchEvent(new Event("gb-orders-updated"))
         refreshOrders()
+      } else {
+        throw new Error(data.error || "Failed to cancel orders")
       }
-    } catch (e) {
-      console.warn("Could not sync with Shiprocket cancel API", e)
+    } catch (e: any) {
+      console.warn("Bulk cancellation note:", e)
+      showToast(e.message || "Bulk cancellation finished.")
     }
   }
 

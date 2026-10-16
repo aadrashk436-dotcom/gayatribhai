@@ -108,6 +108,114 @@ export function InspectOrderModal({
 
         {/* Scrollable Modal Body: smoothly scrolls, never cuts off header or footer! */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Order Fulfillment Lifecycle Stepper */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Order Fulfillment Lifecycle
+              </span>
+              <span className="text-xs font-mono font-bold text-[#d4af37]">
+                Current: {order.status}
+              </span>
+            </div>
+
+            {order.status === "Cancelled" ? (
+              <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 p-3 flex items-start gap-2.5 text-xs text-rose-300">
+                <Ban className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-rose-200">Order Cancelled</p>
+                  <p className="text-[11px] text-rose-300/80 mt-0.5">
+                    {order.cancelReason || "Order and shipment cancelled upon review."}
+                  </p>
+                  {order.refundId && (
+                    <p className="text-[10px] font-mono font-bold text-emerald-400 mt-1">
+                      Razorpay Refund ID: {order.refundId}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="relative flex items-center justify-between px-2">
+                  {/* Progress Line Behind Circles */}
+                  <div className="absolute left-6 right-6 top-3.5 h-0.5 bg-white/10 -z-0" />
+                  <div
+                    className="absolute left-6 top-3.5 h-0.5 bg-gradient-to-r from-amber-400 via-[#d4af37] to-emerald-400 -z-0 transition-all duration-500"
+                    style={{
+                      width: `${
+                        order.status === "Delivered"
+                          ? "calc(100% - 3rem)"
+                          : order.status === "Dispatched"
+                          ? "calc(75% - 2.25rem)"
+                          : order.status === "Assigned to Courier"
+                          ? "calc(50% - 1.5rem)"
+                          : order.status === "Verified"
+                          ? "calc(25% - 0.75rem)"
+                          : "0%"
+                      }`,
+                    }}
+                  />
+
+                  {/* 5 Progression Steps */}
+                  {[
+                    { label: "Placed", desc: "Order Received", stepIdx: 0 },
+                    { label: "Verified", desc: "Admin Approved", stepIdx: 1 },
+                    { label: "Booked", desc: "AWB Generated", stepIdx: 2 },
+                    { label: "In Transit", desc: "Dispatched", stepIdx: 3 },
+                    { label: "Delivered", desc: "Fulfilled", stepIdx: 4 },
+                  ].map((s) => {
+                    const currentIdx =
+                      order.status === "Delivered"
+                        ? 4
+                        : order.status === "Dispatched"
+                        ? 3
+                        : order.status === "Assigned to Courier"
+                        ? 2
+                        : order.status === "Verified"
+                        ? 1
+                        : 0
+                    const isDone = s.stepIdx < currentIdx
+                    const isCurrent = s.stepIdx === currentIdx
+
+                    return (
+                      <div key={s.label} className="flex flex-col items-center relative z-10">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${
+                            isCurrent
+                              ? "bg-[#d4af37] text-black ring-4 ring-[#d4af37]/30 scale-110"
+                              : isDone
+                              ? "bg-emerald-500 text-white"
+                              : "bg-[#1f242e] text-zinc-500 border border-white/10"
+                          }`}
+                        >
+                          {isDone ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            <span>{s.stepIdx + 1}</span>
+                          )}
+                        </div>
+                        <span
+                          className={`text-[10px] mt-1.5 font-bold ${
+                            isCurrent
+                              ? "text-[#d4af37]"
+                              : isDone
+                              ? "text-zinc-200"
+                              : "text-zinc-500"
+                          }`}
+                        >
+                          {s.label}
+                        </span>
+                        <span className="text-[8px] text-zinc-500 hidden sm:block">
+                          {s.desc}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Customer & Address */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
