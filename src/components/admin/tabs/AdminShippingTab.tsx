@@ -276,7 +276,7 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                         </div>
                       ) : (
                         <div className="text-zinc-500 italic text-[11px]">
-                          {ord.status === "Pending Verification"
+                          {ord.status === "Pending Verification" && !ord.verified
                             ? "Awaiting Admin Verification"
                             : "Ready for Shiprocket Assignment"}
                         </div>
@@ -334,7 +334,7 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         {/* Step 1: Verify if pending */}
-                        {ord.status === "Pending Verification" && handleVerifyOrder && (
+                        {ord.status === "Pending Verification" && !ord.verified && handleVerifyOrder && (
                           <button
                             onClick={() => handleVerifyClick(ord.id)}
                             disabled={verifyingId === ord.id}
@@ -353,6 +353,14 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                               </>
                             )}
                           </button>
+                        )}
+
+                        {/* Verified Badge if approved and awaiting courier */}
+                        {(ord.status === "Verified" || ord.verified) && !ord.awb && ord.status !== "Cancelled" && (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-purple-500/15 border border-purple-500/30 px-2 py-1 text-[10px] font-bold text-purple-300">
+                            <ShieldCheck className="h-3 w-3 text-purple-400" />
+                            <span>Verified</span>
+                          </span>
                         )}
 
                         {/* Step 2: Assign Courier (For all active orders without AWB) */}

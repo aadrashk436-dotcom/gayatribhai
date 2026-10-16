@@ -19,6 +19,11 @@ import {
   RotateCcw,
   RefreshCw,
   Copy,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  Lock,
+  ArrowRight,
 } from "lucide-react"
 import { AdminOrder, formatINR } from "../types"
 
@@ -67,15 +72,85 @@ export function InspectOrderModal({
     order.paymentStatus !== "Refunded" &&
     (order.status === "Cancelled" || order.paymentStatus === "Refund Pending" || order.paymentStatus === "Paid")
 
+  const pipelineScrollRef = React.useRef<HTMLDivElement>(null)
   const [isSyncingLive, setIsSyncingLive] = React.useState(false)
   const [isVerifying, setIsVerifying] = React.useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false)
+  const [currentStatus, setCurrentStatus] = React.useState<string>(order.status || "Pending Verification")
+  const [isVerified, setIsVerified] = React.useState<boolean>(
+    order.status !== "Pending Verification" || Boolean(order.verified)
+  )
   const [liveCheckpoint, setLiveCheckpoint] = React.useState<string | null>(order.currentStatusText || null)
   const [liveSRStatus, setLiveSRStatus] = React.useState<string | null>(order.shiprocketStatus || null)
 
   React.useEffect(() => {
+    setCurrentStatus(order.status || "Pending Verification")
+    setIsVerified(order.status !== "Pending Verification" || Boolean(order.verified))
     setLiveSRStatus(order.shiprocketStatus || null)
     setLiveCheckpoint(order.currentStatusText || null)
-  }, [order.shiprocketStatus, order.currentStatusText, order.id])
+  }, [order.status, order.verified, order.shiprocketStatus, order.currentStatusText, order.id])
+
+  const effectiveStatus = currentStatus || order.status
+  const isPendingVerification = !isVerified && effectiveStatus === "Pending Verification"
+
+  const scrollPipeline = (direction: "left" | "right") => {
+    if (pipelineScrollRef.current) {
+      const scrollAmount = direction === "left" ? -280 : 280
+      pipelineScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
+    }
+  }
+
+  const handleVerify = async () => {
+    if (isVerifying) return
+    setIsVerifying(true)
+    // Instant optimistic update so UI immediately reflects approval
+    setCurrentStatus("Verified")
+    setIsVerified(true)
+    try {
+      await onVerify(order.id)
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleManualStatusChange = async (newStatus: "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered") => {
+    if (isUpdatingStatus) return
+    setIsUpdatingStatus(true)
+    setCurrentStatus(newStatus)
+    if (newStatus === "Verified") {
+      setIsVerified(true)
+    }
+
+    try {
+      if (newStatus === "Verified") {
+        await onVerify(order.id)
+        return
+      }
+      if (newStatus === "Dispatched" && onMarkDispatched) {
+        onMarkDispatched(order.id)
+        return
+      }
+      if (newStatus === "Delivered" && onMarkDelivered) {
+        onMarkDelivered(order.id)
+        return
+      }
+
+      const res = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, status: newStatus }),
+      })
+      if (res.ok) {
+        showToast(`Status updated to ${newStatus}`)
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
+        window.dispatchEvent(new Event("gb-orders-updated"))
+      }
+    } catch {
+      showToast("Failed to update status on server")
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
 
   const handleSyncLive = async () => {
     setIsSyncingLive(true)
@@ -88,6 +163,12 @@ export function InspectOrderModal({
           setLiveSRStatus(data.shiprocketStatus)
         } else if (data.trackingData?.current_status) {
           setLiveSRStatus(data.trackingData.current_status)
+        }
+        if (data.status) {
+          setCurrentStatus(data.status)
+          if (data.status !== "Pending Verification") {
+            setIsVerified(true)
+          }
         }
         showToast(`Live status synced: ${data.shiprocketStatus || data.currentStatusText || data.status}`)
         if (onTrackLive) onTrackLive(order.id)
@@ -117,18 +198,18 @@ export function InspectOrderModal({
                 </span>
               ) : (
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${order.status === "Delivered"
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${effectiveStatus === "Delivered"
                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : order.status === "Assigned to Courier" || order.status === "Dispatched"
+                    : effectiveStatus === "Assigned to Courier" || effectiveStatus === "Dispatched"
                       ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                      : order.status === "Verified"
+                      : effectiveStatus === "Verified"
                         ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                        : order.status === "Cancelled"
+                        : effectiveStatus === "Cancelled"
                           ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                           : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                     }`}
                 >
-                  {order.status}
+                  {effectiveStatus}
                 </span>
               )}
               {order.paymentStatus === "Refunded" && (
@@ -171,19 +252,19 @@ export function InspectOrderModal({
                   </div>
                 ) : (
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${order.status === "Delivered"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${effectiveStatus === "Delivered"
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                      : order.status === "Dispatched" || order.status === "Assigned to Courier"
+                      : effectiveStatus === "Dispatched" || effectiveStatus === "Assigned to Courier"
                         ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
-                        : order.status === "Verified"
+                        : effectiveStatus === "Verified"
                           ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
-                          : order.status === "Cancelled"
+                          : effectiveStatus === "Cancelled"
                             ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
                             : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
                       }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                    {order.status}
+                    {effectiveStatus}
                   </span>
                 )}
               </div>
@@ -208,15 +289,15 @@ export function InspectOrderModal({
               <div className="space-y-1">
                 <p className="text-zinc-200 font-medium leading-relaxed">
                   {liveCheckpoint || order.currentStatusText || (
-                    order.status === "Delivered"
+                    effectiveStatus === "Delivered"
                       ? "Order has been successfully delivered and accepted."
-                      : order.status === "Dispatched"
+                      : effectiveStatus === "Dispatched"
                         ? "Consignment is in transit with courier delivery partner."
-                        : order.status === "Assigned to Courier"
+                        : effectiveStatus === "Assigned to Courier"
                           ? "AWB generated and shipment booked for courier pickup."
-                          : order.status === "Verified"
+                          : effectiveStatus === "Verified"
                             ? "Order verified by admin and prepared for courier dispatch."
-                            : order.status === "Cancelled"
+                            : effectiveStatus === "Cancelled"
                               ? `Order cancelled. Reason: ${order.cancelReason || "Cancelled by store"}`
                               : "Order placed and awaiting atelier admin approval."
                   )}
@@ -248,109 +329,426 @@ export function InspectOrderModal({
             </div>
           </div>
 
-          {/* Order Fulfillment Lifecycle Stepper */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                Order Fulfillment Lifecycle
-              </span>
-              <span className="text-xs font-mono font-bold text-[#d4af37]">
-                Current: {order.status}
-              </span>
+          {/* Order Fulfillment Lifecycle Stepper: Clean & Unique Left-Right Scroll Carousel */}
+          <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-black/30 p-4 shadow-xl">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#d4af37] flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-[#d4af37]" />
+                    Order Fulfillment Lifecycle
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">
+                    (Horizontal Pipeline Track)
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Swipe or use arrows to navigate through fulfillment lifecycle stages
+                </p>
+              </div>
+
+              {/* Left / Right Carousel Controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => scrollPipeline("left")}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer"
+                  title="Scroll Left"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollPipeline("right")}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer"
+                  title="Scroll Right"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            {order.status === "Cancelled" ? (
-              <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 p-3 flex items-start gap-2.5 text-xs text-rose-300">
-                <Ban className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            {/* Horizontal Snap Scroll Container */}
+            <div
+              ref={pipelineScrollRef}
+              className="flex items-stretch gap-3 overflow-x-auto admin-scroll snap-x snap-mandatory pb-3 pt-1 px-1 scroll-smooth"
+            >
+              {/* STAGE 1: ORDER PLACED */}
+              <div className="min-w-[240px] sm:min-w-[260px] max-w-[270px] shrink-0 snap-start rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
                 <div>
-                  <p className="font-bold text-rose-200">Order Cancelled</p>
-                  <p className="text-[11px] text-rose-300/80 mt-0.5">
-                    {order.cancelReason || "Order and shipment cancelled upon review."}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold">
+                      <CheckCircle2 className="h-3 w-3" /> Step 1 • Placed
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">100%</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-emerald-400" />
+                    Order Placed
+                  </h4>
+                  <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                    Captured on {order.date || "Atelier store"}. Total: <strong className="text-white">{formatINR(order.total)}</strong>
                   </p>
-                  {order.refundId && (
-                    <p className="text-[10px] font-mono font-bold text-emerald-400 mt-1">
-                      Razorpay Refund ID: {order.refundId}
-                    </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    Payment: <span className="text-zinc-200">{order.paymentMethod || "Online"}</span> ({order.paymentStatus || "Captured"})
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-emerald-500/20 flex items-center justify-between text-[10px]">
+                  <span className="text-emerald-400 font-medium">✓ Order Confirmed</span>
+                  <span className="text-zinc-400">{order.items?.length || 1} {order.items?.length === 1 ? "shirt" : "shirts"}</span>
+                </div>
+              </div>
+
+              {/* STAGE 2: ATELIER VERIFICATION */}
+              <div
+                className={`min-w-[240px] sm:min-w-[260px] max-w-[270px] shrink-0 snap-start rounded-xl border p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden group ${
+                  isVerified || effectiveStatus !== "Pending Verification"
+                    ? "border-purple-500/40 bg-purple-950/15"
+                    : "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/30"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        isVerified || effectiveStatus !== "Pending Verification"
+                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/40 animate-pulse"
+                      }`}
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      {isVerified || effectiveStatus !== "Pending Verification" ? "Step 2 • Verified" : "Step 2 • Action Required"}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {isVerified || effectiveStatus !== "Pending Verification" ? "Done" : "Pending"}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <ShieldCheck className={`h-3.5 w-3.5 ${isVerified || effectiveStatus !== "Pending Verification" ? "text-purple-400" : "text-amber-400"}`} />
+                    Admin Quality Check
+                  </h4>
+                  <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                    {isVerified || effectiveStatus !== "Pending Verification"
+                      ? "Patron details & inventory reserved. Approved for courier dispatch."
+                      : "Sanity check on phone, address and micro-batch stock."}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    Phone: <span className="font-mono text-zinc-200">{order.phone}</span>
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-white/10">
+                  {isVerified || effectiveStatus !== "Pending Verification" ? (
+                    <div className="flex items-center justify-between text-[10px] text-purple-300 font-medium">
+                      <span>✓ Approved by Admin</span>
+                      <span className="text-[9px] text-zinc-400">Ready for Shiprocket</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleVerify}
+                      disabled={isVerifying}
+                      className="w-full py-1.5 px-3 rounded-lg bg-gradient-to-r from-[#d4af37] to-[#c59d28] hover:brightness-110 active:scale-95 text-black font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          <span>Approving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="h-3 w-3" />
+                          <span>Approve & Verify</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
-            ) : (
-              <div>
-                <div className="relative flex items-center justify-between px-2">
-                  {/* Progress Line Behind Circles */}
-                  <div className="absolute left-6 right-6 top-3.5 h-0.5 bg-white/10 -z-0" />
-                  <div
-                    className="absolute left-6 top-3.5 h-0.5 bg-gradient-to-r from-amber-400 via-[#d4af37] to-emerald-400 -z-0 transition-all duration-500"
-                    style={{
-                      width: `${order.status === "Delivered"
-                        ? "calc(100% - 3rem)"
-                        : order.status === "Dispatched"
-                          ? "calc(75% - 2.25rem)"
-                          : order.status === "Assigned to Courier"
-                            ? "calc(50% - 1.5rem)"
-                            : order.status === "Verified"
-                              ? "calc(25% - 0.75rem)"
-                              : "0%"
-                        }`,
-                    }}
-                  />
 
-                  {/* 5 Progression Steps */}
-                  {[
-                    { label: "Placed", desc: "Order Received", stepIdx: 0 },
-                    { label: "Verified", desc: "Admin Approved", stepIdx: 1 },
-                    { label: "Booked", desc: "AWB Generated", stepIdx: 2 },
-                    { label: "In Transit", desc: "Dispatched", stepIdx: 3 },
-                    { label: "Delivered", desc: "Fulfilled", stepIdx: 4 },
-                  ].map((s) => {
-                    const currentIdx =
-                      order.status === "Delivered"
-                        ? 4
-                        : order.status === "Dispatched"
-                          ? 3
-                          : order.status === "Assigned to Courier"
-                            ? 2
-                            : order.status === "Verified"
-                              ? 1
-                              : 0
-                    const isDone = s.stepIdx < currentIdx
-                    const isCurrent = s.stepIdx === currentIdx
-
-                    return (
-                      <div key={s.label} className="flex flex-col items-center relative z-10">
-                        <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${isCurrent
-                            ? "bg-[#d4af37] text-black ring-4 ring-[#d4af37]/30 scale-110"
-                            : isDone
-                              ? "bg-emerald-500 text-white"
-                              : "bg-[#1f242e] text-zinc-500 border border-white/10"
-                            }`}
+              {/* STAGE 3: SHIPROCKET LOGISTICS & AWB */}
+              <div
+                className={`min-w-[240px] sm:min-w-[260px] max-w-[270px] shrink-0 snap-start rounded-xl border p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden group ${
+                  order.awb
+                    ? "border-blue-500/40 bg-blue-950/20"
+                    : isVerified || effectiveStatus !== "Pending Verification"
+                    ? "border-sky-500/40 bg-sky-950/20 ring-1 ring-sky-500/30"
+                    : "border-white/10 bg-white/[0.02] opacity-75"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        order.awb
+                          ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                          : isVerified || effectiveStatus !== "Pending Verification"
+                          ? "bg-sky-500/20 text-sky-300 border border-sky-500/40 animate-pulse"
+                          : "bg-zinc-800 text-zinc-400 border border-white/10"
+                      }`}
+                    >
+                      <Truck className="h-3 w-3" />
+                      {order.awb ? "Step 3 • Booked" : isVerified ? "Step 3 • Ready to Book" : "Step 3 • Locked"}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {order.awb ? "AWB Active" : isVerified ? "Ready" : "Waiting"}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Truck className={`h-3.5 w-3.5 ${order.awb ? "text-blue-400" : "text-[#d4af37]"}`} />
+                    Shiprocket Courier & AWB
+                  </h4>
+                  {order.awb ? (
+                    <div className="mt-1 space-y-1">
+                      <p className="text-[11px] text-zinc-300">
+                        Carrier: <strong className="text-white">{order.courier || order.courierName || "Shiprocket"}</strong>
+                      </p>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#d4af37] bg-black/40 px-2 py-1 rounded border border-white/10">
+                        <span>#{order.awb}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(String(order.awb))
+                            showToast(`Copied AWB #${order.awb}`)
+                          }}
+                          className="hover:text-white p-0.5 ml-auto cursor-pointer"
+                          title="Copy AWB"
                         >
-                          {isDone ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : (
-                            <span>{s.stepIdx + 1}</span>
-                          )}
-                        </div>
-                        <span
-                          className={`text-[10px] mt-1.5 font-bold ${isCurrent
-                            ? "text-[#d4af37]"
-                            : isDone
-                              ? "text-zinc-200"
-                              : "text-zinc-500"
-                            }`}
-                        >
-                          {s.label}
-                        </span>
-                        <span className="text-[8px] text-zinc-500 hidden sm:block">
-                          {s.desc}
-                        </span>
+                          <Copy className="h-3 w-3" />
+                        </button>
                       </div>
-                    )
-                  })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                      {isVerified || effectiveStatus !== "Pending Verification"
+                        ? "Order verified! Generate AWB and book courier pickup instantly."
+                        : "Verify order first to unlock Shiprocket courier booking."}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-white/10">
+                  {order.awb ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose()
+                          onOpenAssignCourier(order)
+                        }}
+                        className="flex-1 py-1 px-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-[10px] font-bold transition text-center cursor-pointer"
+                      >
+                        Re-assign
+                      </button>
+                      {onDownloadLabel && (
+                        <button
+                          type="button"
+                          onClick={() => onDownloadLabel(order.id, order.shiprocket_shipment_id || undefined)}
+                          className="py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold transition cursor-pointer"
+                          title="Download Shipping Label PDF"
+                        >
+                          <FileText className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ) : isVerified || effectiveStatus !== "Pending Verification" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        onOpenAssignCourier(order)
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Truck className="h-3 w-3" />
+                      <span>Assign Shiprocket</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                      <Lock className="h-3 w-3" />
+                      <span>Locked until verified</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* STAGE 4: IN TRANSIT / DISPATCHED */}
+              <div
+                className={`min-w-[240px] sm:min-w-[260px] max-w-[270px] shrink-0 snap-start rounded-xl border p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden group ${
+                  effectiveStatus === "Dispatched"
+                    ? "border-sky-500/50 bg-sky-950/25 ring-1 ring-sky-500/40"
+                    : effectiveStatus === "Delivered"
+                    ? "border-emerald-500/30 bg-emerald-950/15"
+                    : order.awb
+                    ? "border-white/15 bg-white/[0.03]"
+                    : "border-white/10 bg-white/[0.02] opacity-75"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        effectiveStatus === "Dispatched"
+                          ? "bg-sky-500/20 text-sky-400 border border-sky-500/40 animate-pulse"
+                          : effectiveStatus === "Delivered"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                          : "bg-zinc-800 text-zinc-400 border border-white/10"
+                      }`}
+                    >
+                      <Activity className="h-3 w-3" />
+                      Step 4 • In Transit
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {effectiveStatus === "Dispatched" ? "Live" : effectiveStatus === "Delivered" ? "Completed" : "Waiting"}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Activity className={`h-3.5 w-3.5 ${effectiveStatus === "Dispatched" ? "text-sky-400" : "text-zinc-400"}`} />
+                    Courier Handover & Transit
+                  </h4>
+                  <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                    {effectiveStatus === "Dispatched"
+                      ? (liveCheckpoint || order.currentStatusText || "Consignment scanned & in transit with delivery partner.")
+                      : effectiveStatus === "Delivered"
+                      ? "Transit phase completed successfully."
+                      : order.awb
+                      ? "AWB assigned. Ready to mark picked up or sync live tracking."
+                      : "Awaiting courier booking."}
+                  </p>
+                  {order.etd && (
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      Est. Delivery: <strong className="text-zinc-200">{order.etd}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-white/10">
+                  {effectiveStatus === "Dispatched" ? (
+                    <button
+                      type="button"
+                      onClick={handleSyncLive}
+                      disabled={isSyncingLive}
+                      className="w-full py-1.5 px-3 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCcw className={`h-3 w-3 ${isSyncingLive ? "animate-spin" : ""}`} />
+                      <span>{isSyncingLive ? "Syncing..." : "Sync Live Track"}</span>
+                    </button>
+                  ) : effectiveStatus === "Assigned to Courier" || (effectiveStatus === "Verified" && order.awb) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onMarkDispatched) onMarkDispatched(order.id)
+                        setCurrentStatus("Dispatched")
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Truck className="h-3 w-3" />
+                      <span>Mark In Transit</span>
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-zinc-500">
+                      {effectiveStatus === "Delivered" ? "✓ Transit Finished" : "Awaiting Handover"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* STAGE 5: DELIVERED */}
+              <div
+                className={`min-w-[240px] sm:min-w-[260px] max-w-[270px] shrink-0 snap-start rounded-xl border p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden group ${
+                  effectiveStatus === "Delivered"
+                    ? "border-emerald-500/50 bg-emerald-950/25 ring-1 ring-emerald-500/40"
+                    : "border-white/10 bg-white/[0.02]"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        effectiveStatus === "Delivered"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "bg-zinc-800 text-zinc-400 border border-white/10"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      Step 5 • Delivery
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {effectiveStatus === "Delivered" ? "Completed" : "Final"}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <CheckCircle2 className={`h-3.5 w-3.5 ${effectiveStatus === "Delivered" ? "text-emerald-400" : "text-zinc-500"}`} />
+                    Delivered & Accepted
+                  </h4>
+                  <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                    {effectiveStatus === "Delivered"
+                      ? "Consignment delivered to patron. Order marked completed and settled."
+                      : "Pending courier delivery confirmation to patron doorstep."}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    Destination: <span className="text-zinc-200">{order.city || order.shippingAddress?.city || "India"}</span>
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-white/10">
+                  {effectiveStatus === "Delivered" ? (
+                    <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold">
+                      <span>✓ Order Fulfilled</span>
+                      <span className="text-zinc-400 font-mono">100%</span>
+                    </div>
+                  ) : effectiveStatus === "Dispatched" || effectiveStatus === "Assigned to Courier" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onMarkDelivered) onMarkDelivered(order.id)
+                        setCurrentStatus("Delivered")
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>Mark Delivered</span>
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-zinc-500">Awaiting transit</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Direct Status Override Pill Switcher: Instant Left-Right clickable control */}
+            <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                  Quick Status Selector:
+                </span>
+                <span className="text-[9px] text-[#d4af37] font-mono">
+                  (Click any status to switch)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto admin-scroll pb-1">
+                {(["Verified", "Assigned to Courier", "Dispatched", "Delivered"] as const).map((st) => {
+                  const isActive = effectiveStatus === st
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => handleManualStatusChange(st)}
+                      disabled={isUpdatingStatus}
+                      className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
+                        isActive
+                          ? "bg-[#d4af37] text-black shadow-md ring-2 ring-[#d4af37]/40"
+                          : "bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      {isActive && <span className="w-1.5 h-1.5 rounded-full bg-black" />}
+                      <span>{st}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Customer & Address */}
@@ -556,7 +954,7 @@ export function InspectOrderModal({
               )}
 
               {/* Warning box if Cancelled and Paid, but NOT refunded yet */}
-              {order.status === "Cancelled" && (order.razorpayPaymentId || order.paymentMethod?.includes("Razorpay") || order.paymentMethod?.includes("Online")) && order.paymentStatus !== "Refunded" && (
+              {effectiveStatus === "Cancelled" && (order.razorpayPaymentId || order.paymentMethod?.includes("Razorpay") || order.paymentMethod?.includes("Online")) && order.paymentStatus !== "Refunded" && (
                 <div className="mt-2 p-2.5 rounded-xl bg-amber-950/50 border border-amber-500/40 space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
@@ -649,7 +1047,7 @@ export function InspectOrderModal({
                     No Courier Assigned Yet
                   </p>
                   <p className="text-[10px] text-zinc-400 mt-1">
-                    {order.status === "Pending Verification"
+                    {isPendingVerification
                       ? "Requires Admin verification before shipping."
                       : "Verified & ready to assign courier."}
                   </p>
@@ -665,17 +1063,9 @@ export function InspectOrderModal({
         {/* Sticky Bottom Actions Footer: ALWAYS visible, never cut off! */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 sm:px-6 py-3.5 bg-[#111419]/95 backdrop-blur z-10">
           <div className="flex flex-wrap items-center gap-2">
-            {order.status === "Pending Verification" && (
+            {isPendingVerification ? (
               <button
-                onClick={async () => {
-                  if (isVerifying) return
-                  setIsVerifying(true)
-                  try {
-                    await onVerify(order.id)
-                  } finally {
-                    setIsVerifying(false)
-                  }
-                }}
+                onClick={handleVerify}
                 disabled={isVerifying}
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
@@ -691,22 +1081,31 @@ export function InspectOrderModal({
                   </>
                 )}
               </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/20 border border-purple-500/40 px-3 py-2 text-xs font-bold text-purple-300">
+                <ShieldCheck className="h-4 w-4 text-purple-400" />
+                <span>Verified</span>
+              </span>
             )}
 
-            {!order.awb && order.status !== "Cancelled" && order.status !== "Delivered" && (
+            {!order.awb && effectiveStatus !== "Cancelled" && effectiveStatus !== "Delivered" && (
               <button
                 onClick={() => {
                   onClose()
                   onOpenAssignCourier(order)
                 }}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-500 shadow-lg cursor-pointer"
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg cursor-pointer transition ${
+                  isVerified || effectiveStatus !== "Pending Verification"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 ring-2 ring-blue-500/30"
+                    : "bg-blue-600/80 hover:bg-blue-600"
+                }`}
               >
                 <Truck className="h-3.5 w-3.5" />
                 <span>Assign Shiprocket</span>
               </button>
             )}
 
-            {order.awb && order.status !== "Cancelled" && order.status !== "Delivered" && (
+            {order.awb && effectiveStatus !== "Cancelled" && effectiveStatus !== "Delivered" && (
               <button
                 onClick={() => {
                   onClose()
@@ -720,9 +1119,12 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {order.status === "Assigned to Courier" && onMarkDispatched && (
+            {effectiveStatus === "Assigned to Courier" && onMarkDispatched && (
               <button
-                onClick={() => onMarkDispatched(order.id)}
+                onClick={() => {
+                  onMarkDispatched(order.id)
+                  setCurrentStatus("Dispatched")
+                }}
                 className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500 shadow-lg cursor-pointer"
               >
                 <Truck className="h-3.5 w-3.5" />
@@ -730,9 +1132,12 @@ export function InspectOrderModal({
               </button>
             )}
 
-            {(order.status === "Assigned to Courier" || order.status === "Dispatched") && onMarkDelivered && (
+            {(effectiveStatus === "Assigned to Courier" || effectiveStatus === "Dispatched") && onMarkDelivered && (
               <button
-                onClick={() => onMarkDelivered(order.id)}
+                onClick={() => {
+                  onMarkDelivered(order.id)
+                  setCurrentStatus("Delivered")
+                }}
                 className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 shadow-lg cursor-pointer"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -741,7 +1146,7 @@ export function InspectOrderModal({
             )}
 
             {/* Cancel Shipment Only: Allows resetting AWB without cancelling the patron's order */}
-            {Boolean((order.awb && order.awb !== "null" && String(order.awb).length > 3) || order.shiprocket_shipment_id || order.status === "Assigned to Courier") && order.status !== "Delivered" && onCancelShipmentOnly && (
+            {Boolean((order.awb && order.awb !== "null" && String(order.awb).length > 3) || order.shiprocket_shipment_id || effectiveStatus === "Assigned to Courier") && effectiveStatus !== "Delivered" && onCancelShipmentOnly && (
               <button
                 onClick={() => {
                   if (
@@ -761,7 +1166,7 @@ export function InspectOrderModal({
             )}
 
             {/* Cancel Order button: Available until delivered */}
-            {order.status !== "Delivered" && order.status !== "Cancelled" && (
+            {effectiveStatus !== "Delivered" && effectiveStatus !== "Cancelled" && (
               <button
                 onClick={() => {
                   onClose()

@@ -330,7 +330,7 @@ export function AdminDashboardTab({
                   <td className="py-3.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-1.5 flex-wrap">
                       {/* Quick Verify */}
-                      {ord.status === "Pending Verification" && handleVerifyOrder && (
+                      {ord.status === "Pending Verification" && !ord.verified && handleVerifyOrder && (
                         <button
                           onClick={() => handleVerifyOrder(ord.id)}
                           className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[10px] font-bold text-black hover:brightness-110 shadow transition"
@@ -338,6 +338,14 @@ export function AdminDashboardTab({
                         >
                           Verify
                         </button>
+                      )}
+
+                      {/* Verified Badge */}
+                      {(ord.status === "Verified" || ord.verified) && !ord.awb && ord.status !== "Cancelled" && (
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-bold text-purple-300">
+                          <ShieldCheck className="h-3 w-3 text-purple-400" />
+                          <span>Verified</span>
+                        </span>
                       )}
 
                       {/* Quick Assign Shiprocket */}

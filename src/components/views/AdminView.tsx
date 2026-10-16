@@ -458,6 +458,25 @@ export function AdminView() {
     }
   }, [refreshOrders])
 
+  // Synchronize inspectOrderModal whenever orderList updates (e.g. on verify or status sync)
+  useEffect(() => {
+    if (inspectOrderModal) {
+      const updated = orderList.find(
+        (o) => o.id === inspectOrderModal.id || o.orderNumber === inspectOrderModal.orderNumber
+      )
+      if (
+        updated &&
+        (updated.status !== inspectOrderModal.status ||
+          updated.verified !== inspectOrderModal.verified ||
+          updated.awb !== inspectOrderModal.awb ||
+          updated.shiprocketStatus !== inspectOrderModal.shiprocketStatus ||
+          updated.currentStatusText !== inspectOrderModal.currentStatusText)
+      ) {
+        setInspectOrderModal((prev) => (prev ? { ...prev, ...updated } : null))
+      }
+    }
+  }, [orderList])
+
   const handleRefreshAllData = async () => {
     showToast("Syncing with live database...")
     await fetchAllLiveData(true)
@@ -572,19 +591,17 @@ export function AdminView() {
       )
     )
 
-    if (inspectOrderModal && (inspectOrderModal.id === orderId || inspectOrderModal.orderNumber === orderId)) {
-      setInspectOrderModal((prev) =>
-        prev
-          ? {
+    setInspectOrderModal((prev) =>
+      prev && (prev.id === orderId || prev.orderNumber === orderId)
+        ? {
             ...prev,
             status: "Verified",
             verified: true,
             verifiedBy: "Gayatri Puri (Admin)",
-            verifiedAt: "Just now",
+            verifiedAt: new Date().toISOString(),
           }
-          : null
-      )
-    }
+        : prev
+    )
 
     showToast(`Order #${orderId} verified and approved for fulfillment!`)
     try {

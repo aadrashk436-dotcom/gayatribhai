@@ -49,8 +49,10 @@ export interface AdminOrder {
   paymentId: string
   paymentStatus: "Paid" | "Pending COD" | "Pending" | "Refunded" | "Refund Pending" | string
   status: "Pending Verification" | "Verified" | "Assigned to Courier" | "Dispatched" | "Delivered" | "Cancelled" | string
+  verified?: boolean | null
   verifiedBy?: string | null
   verifiedAt?: string | null
+  shippingAddress?: any
   courier?: string | null
   awb?: string | null
   shiprocket_order_id?: number | string | null

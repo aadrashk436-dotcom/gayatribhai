@@ -47,6 +47,11 @@ export function normalizeOrder(o: any) {
   if (rawStatus === "DELIVERED" || rawStatus === "delivered") displayStatus = "Delivered"
   if (rawStatus === "CANCELLED" || rawStatus === "cancelled") displayStatus = "Cancelled"
 
+  // If order was explicitly verified by admin, it must not revert to Pending Verification
+  if (o.verified && displayStatus === "Pending Verification") {
+    displayStatus = "Verified"
+  }
+
   // If order has an active AWB and wasn't cancelled or delivered, it is assigned
   if (cleanAwb && (displayStatus === "Pending Verification" || displayStatus === "Verified" || !displayStatus)) {
     displayStatus = "Assigned to Courier"
@@ -198,6 +203,7 @@ export function normalizeOrder(o: any) {
       (isCodOrder ? `cod_${o.orderNumber || o.id}` : ""),
     paymentStatus: displayPaymentStatus,
     status: displayStatus,
+    verified: Boolean(o.verified || displayStatus === "Verified" || displayStatus === "Assigned to Courier" || displayStatus === "Dispatched" || displayStatus === "Delivered"),
     date: formattedDate || "Today",
     courier: o.courier || o.courierName || (cleanAwb ? "Shiprocket Partner" : null),
     courierName: o.courierName || o.courier || (cleanAwb ? "Shiprocket Partner" : null),

@@ -856,12 +856,12 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </div>
                           ) : (
                             <div className="mt-0.5">
-                              {ord.status === "Verified" && (
+                              {(ord.status === "Verified" || ord.verified) && (
                                 <span className="text-[10px] text-purple-300/80 italic flex items-center gap-1">
                                   <span>Ready to assign courier</span>
                                 </span>
                               )}
-                              {ord.status === "Pending Verification" && (
+                              {ord.status === "Pending Verification" && !ord.verified && (
                                 <span className="text-[10px] text-amber-400/80 italic flex items-center gap-1">
                                   <span>Awaiting verification</span>
                                 </span>
@@ -888,7 +888,7 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                       <td className="py-3.5 px-3 text-right">
                         <div className="flex items-center justify-end flex-wrap gap-1.5">
                           {/* Step 1: Admin Verification Button */}
-                          {ord.status === "Pending Verification" && (
+                          {ord.status === "Pending Verification" && !ord.verified && (
                             <button
                               onClick={() => handleVerifyClick(ord.id)}
                               disabled={verifyingId === ord.id}
@@ -907,6 +907,14 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                                 </>
                               )}
                             </button>
+                          )}
+
+                          {/* Verified Badge if approved and awaiting courier */}
+                          {(ord.status === "Verified" || ord.verified) && !ord.awb && ord.status !== "Cancelled" && (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-purple-500/15 border border-purple-500/30 px-2 py-1 text-[10px] font-bold text-purple-300">
+                              <ShieldCheck className="h-3 w-3 text-purple-400" />
+                              <span>Verified</span>
+                            </span>
                           )}
 
                           {/* Step 2: Assign to Shiprocket Button (Available for orders without active shipment) */}

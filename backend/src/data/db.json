@@ -1484,7 +1484,7 @@
       "paymentId": "cod_GB-044024",
       "paymentStatus": "Pending COD",
       "razorpayOrderId": null,
-      "status": "Pending Verification",
+      "status": "Verified",
       "date": "16 Oct, 03:00 pm",
       "createdAt": "2026-10-16T09:30:44.080Z",
       "state": "Maharashtra",
@@ -1507,8 +1507,9 @@
       "shiprocket_label_url": null,
       "shiprocket_invoice_url": null,
       "razorpayPaymentId": null,
-      "verified": false,
-      "updatedAt": "2026-10-16T12:40:59.002Z"
+      "verified": true,
+      "updatedAt": "2026-10-16T13:37:47.009Z",
+      "verifiedAt": "2026-10-16T13:37:47.008Z"
     },
     {
       "id": "GB-397634",
