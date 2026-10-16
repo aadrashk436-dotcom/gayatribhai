@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { products } from "@/products";
 import { getStoredProductById } from "@/lib/serverProducts";
+import { saveOrderRecord } from "@/lib/orders";
 import fs from "fs";
 import path from "path";
 
@@ -169,58 +170,7 @@ export async function POST(request: Request) {
     };
 
     try {
-      const dbPath = path.join(process.cwd(), "backend", "src", "data", "db.json");
-      if (fs.existsSync(dbPath)) {
-        const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
-        db.orders = db.orders || [];
-        // Remove any old duplicate with same orderNumber
-        db.orders = db.orders.filter((o: any) => o.orderNumber !== orderNumber && o.id !== orderNumber);
-        db.orders.unshift(newOrder);
-
-        // Upsert customer in db.customers
-        db.customers = db.customers || [];
-        const cleanCustEmail = customerEmail.toLowerCase().trim();
-        const existingCustIdx = db.customers.findIndex(
-          (c: any) => (c.email && c.email.toLowerCase().trim() === cleanCustEmail) ||
-                      (userId && c.id === userId)
-        );
-
-        if (existingCustIdx >= 0) {
-          const c = db.customers[existingCustIdx];
-          const currOrders = typeof c.orders === "number" ? c.orders : (Array.isArray(c.orders) ? c.orders.length : 0);
-          const currSpent = typeof c.totalSpent === "number" ? c.totalSpent : 0;
-          db.customers[existingCustIdx] = {
-            ...c,
-            name: c.name || customerName,
-            phone: c.phone || customerPhone,
-            orders: currOrders + 1,
-            totalSpent: currSpent + totalRupees,
-            lastOrder: orderNumber,
-            points: (c.points || 0) + Math.round(totalRupees / 10),
-            updatedAt: new Date().toISOString(),
-          };
-        } else if (cleanCustEmail && cleanCustEmail !== "care@gayatribhai.com") {
-          db.customers.push({
-            id: userId || `cust_${Date.now()}`,
-            name: customerName,
-            email: cleanCustEmail,
-            phone: customerPhone,
-            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(customerName)}&backgroundColor=0a0a0a,d4af37,18181b`,
-            tier: "Silver",
-            points: Math.round(totalRupees / 10),
-            orders: 1,
-            totalSpent: totalRupees,
-            lastOrder: orderNumber,
-            authProvider: cleanCustEmail.endsWith("@gmail.com") ? "google" : "email",
-            authProviders: [cleanCustEmail.endsWith("@gmail.com") ? "google" : "email"],
-            role: "customer",
-            isAdmin: false,
-            createdAt: new Date().toISOString(),
-          });
-        }
-
-        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
-      }
+      saveOrderRecord(newOrder);
     } catch (saveErr) {
       console.warn("Could not save initial order:", saveErr);
     }

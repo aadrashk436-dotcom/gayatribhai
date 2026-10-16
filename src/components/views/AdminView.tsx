@@ -401,6 +401,12 @@ export function AdminView() {
               if (JSON.stringify(prev) === JSON.stringify(payload.orders)) {
                 return prev
               }
+              if (prev.length > 0 && payload.orders.length > prev.length) {
+                const newest = payload.orders[0]
+                const custName = newest.customer || newest.customerName || "Customer"
+                const ordId = newest.orderNumber || newest.id
+                showToast(`🔔 New Order: #${ordId} from ${custName} (${formatINR(newest.total)})`)
+              }
               return payload.orders
             })
           }

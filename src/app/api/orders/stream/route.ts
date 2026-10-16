@@ -1,24 +1,8 @@
 import { NextRequest } from "next/server";
 import fs from "fs";
-import path from "path";
+import { getDbPath, readStoredOrders } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
-
-function getDbPath() {
-  return path.join(process.cwd(), "backend", "src", "data", "db.json");
-}
-
-function readOrders() {
-  try {
-    const dbPath = getDbPath();
-    if (!fs.existsSync(dbPath)) return [];
-    const content = fs.readFileSync(dbPath, "utf8");
-    const json = JSON.parse(content);
-    return Array.isArray(json.orders) ? json.orders : [];
-  } catch (err) {
-    return [];
-  }
-}
 
 /**
  * Server-Sent Events (SSE) route for Real-Time Orders & Shiprocket Status updates.
@@ -34,7 +18,7 @@ export async function GET(req: NextRequest) {
       let isClosed = false;
 
       // 1. Send initial orders payload immediately
-      const initialOrders = readOrders();
+      const initialOrders = readStoredOrders();
       controller.enqueue(
         encoder.encode(`data: ${JSON.stringify({ type: "INITIAL_SYNC", orders: initialOrders, timestamp: Date.now() })}\n\n`)
       );
@@ -55,7 +39,7 @@ export async function GET(req: NextRequest) {
             const currentMtime = fs.statSync(dbPath).mtimeMs;
             if (currentMtime !== lastMtime) {
               lastMtime = currentMtime;
-              const freshOrders = readOrders();
+              const freshOrders = readStoredOrders();
               controller.enqueue(
                 encoder.encode(
                   `data: ${JSON.stringify({ type: "ORDERS_UPDATED", orders: freshOrders, timestamp: Date.now() })}\n\n`

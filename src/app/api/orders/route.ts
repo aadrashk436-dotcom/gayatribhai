@@ -6,194 +6,12 @@ import fs from "fs";
 import path from "path";
 import { products } from "@/products";
 import { cancelShiprocketOrder, cancelShiprocketShipmentAWBs } from "@/lib/shiprocket";
-
-// Order persistence helper
-function getOrdersFilePath() {
-  return path.join(process.cwd(), "backend", "src", "data", "db.json");
-}
-
-function normalizeOrder(o: any) {
-  const firstItem = (o.items && o.items[0]) || {};
-  const prodId = firstItem.productId || firstItem.id;
-  const p = products.find((prod) => prod.id === prodId || prod.slug === prodId);
-
-  const streetAddr =
-    typeof o.address === "string" && o.address.length > 0
-      ? o.address
-      : o.shippingAddress?.street || o.shippingAddress?.address || "";
-  const cityStr =
-    o.city ||
-    (o.shippingAddress?.city
-      ? o.shippingAddress?.state
-        ? `${o.shippingAddress.city}, ${o.shippingAddress.state}`
-        : o.shippingAddress.city
-      : "");
-  const pincodeStr = o.pincode || o.shippingAddress?.pincode || "";
-
-  const totalPaise = o.totalPaise || (o.total > 10000 ? o.total : (o.total || 0) * 100);
-  const totalRupees = o.total > 10000 ? Math.round(o.total / 100) : (o.total || Math.round(totalPaise / 100));
-
-  const rawStatus = o.status || "Pending Verification";
-  let displayStatus = rawStatus;
-  if (rawStatus === "PROCESSING" || rawStatus === "processing") displayStatus = "Pending Verification";
-  if (rawStatus === "CONFIRMED" || rawStatus === "confirmed") displayStatus = "Verified";
-  if (rawStatus === "SHIPPED" || rawStatus === "shipped") displayStatus = "Dispatched";
-  if (rawStatus === "DELIVERED" || rawStatus === "delivered") displayStatus = "Delivered";
-  if (rawStatus === "CANCELLED" || rawStatus === "cancelled") displayStatus = "Cancelled";
-
-  const isCodOrder =
-    o.paymentMethod === "Cash on Delivery" ||
-    o.paymentMethod === "COD" ||
-    o.payment_method === "cod" ||
-    o.payment_method === "Cash on Delivery";
-
-  let displayPaymentStatus = isCodOrder ? "Pending COD" : "Pending";
-  if (o.paymentStatus === "PAID" || o.paymentStatus === "Paid" || o.payment_status === "paid") {
-    displayPaymentStatus = "Paid";
-  } else if (displayStatus === "Delivered" && isCodOrder) {
-    displayPaymentStatus = "Paid";
-  } else if (!isCodOrder && (o.paymentStatus === "Pending" || o.paymentStatus === "PENDING")) {
-    displayPaymentStatus = "Pending";
-  }
-
-  let formattedDate = o.date;
-  if (!formattedDate && o.createdAt) {
-    try {
-      formattedDate = new Date(o.createdAt).toLocaleString("en-IN", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      formattedDate = "Recently";
-    }
-  }
-
-  const rawItems = Array.isArray(o.items) && o.items.length > 0
-    ? o.items
-    : [
-        {
-          productId: prodId,
-          id: prodId,
-          name: o.shirtName || p?.name || "Artisanal Linen Shirt",
-          sku: o.sku || p?.sku || "GB-ART-01",
-          size: o.size || "M",
-          quantity: o.qty || 1,
-          price: o.price || totalRupees,
-          image:
-            o.image ||
-            p?.images?.[0] ||
-            "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
-          color: p?.color || "Exclusive",
-        },
-      ];
-
-  const enrichedItems = rawItems.map((item: any) => {
-    const itemProdId = item.productId || item.id;
-    const itemProd = products.find((prod) => prod.id === itemProdId || prod.slug === itemProdId);
-    return {
-      productId: itemProdId,
-      id: itemProdId,
-      name: item.name || item.shirtName || itemProd?.name || o.shirtName || "Artisanal Linen Shirt",
-      sku: item.sku || itemProd?.sku || o.sku || "GB-ART-01",
-      size: item.size || o.size || "M",
-      quantity: item.quantity || item.qty || 1,
-      price: item.price || itemProd?.price || o.price || totalRupees,
-      image:
-        item.image ||
-        itemProd?.images?.[0] ||
-        o.image ||
-        "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
-      color: item.color || itemProd?.color || "Exclusive",
-    };
-  });
-
-  return {
-    ...o,
-    id: o.orderNumber || o.order_number || o.id,
-    orderNumber: o.orderNumber || o.order_number || o.id,
-    customer: o.customer || o.customerName || o.shippingAddress?.name || "Customer",
-    customerName: o.customerName || o.customer || o.shippingAddress?.name || "Customer",
-    email: o.email || o.customerEmail || o.shippingAddress?.email || "",
-    customerEmail: o.customerEmail || o.email || o.shippingAddress?.email || "",
-    phone: o.phone || o.customerPhone || o.shippingAddress?.phone || "",
-    customerPhone: o.customerPhone || o.phone || o.shippingAddress?.phone || "",
-    address: streetAddr,
-    city: cityStr,
-    pincode: pincodeStr,
-    shippingAddress: o.shippingAddress || {
-      name: o.customer,
-      street: streetAddr,
-      city: cityStr,
-      pincode: pincodeStr,
-      phone: o.phone,
-    },
-    items: enrichedItems,
-    shirtName: o.shirtName || firstItem.name || p?.name || "Artisanal Linen Shirt",
-    sku: o.sku || firstItem.sku || p?.sku || "GB-LUX-01",
-    size: o.size || firstItem.size || "M",
-    qty: o.qty || enrichedItems.reduce((acc: number, cur: any) => acc + (cur.quantity || 1), 0),
-    price: o.price || firstItem.price || p?.price || totalRupees,
-    subtotal: o.subtotal || Math.round(enrichedItems.reduce((acc: number, cur: any) => acc + ((cur.price || 0) * (cur.quantity || 1)), 0)),
-    discount: o.discount || 0,
-    shipping: typeof o.shipping === "number" ? o.shipping : (o.courierRate || 0),
-    total: totalRupees,
-    totalPaise,
-    image:
-      o.image ||
-      firstItem.image ||
-      p?.images?.[0] ||
-      "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg",
-    paymentMethod: isCodOrder
-      ? "Cash on Delivery"
-      : o.paymentMethod || (o.payment_method === "razorpay" ? "Razorpay (Online)" : "Razorpay (Online)"),
-    paymentId: o.paymentId || o.razorpayPaymentId || o.razorpay_payment_id || (isCodOrder ? `cod_${o.orderNumber || o.id}` : ""),
-    paymentStatus: displayPaymentStatus,
-    status: displayStatus,
-    date: formattedDate || "Today",
-    courier: o.courier || o.courierName || null,
-    awb: o.awb || null,
-  };
-}
-
-function readStoredOrders() {
-  try {
-    const filePath = getOrdersFilePath();
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      return (data.orders || []).map(normalizeOrder);
-    }
-  } catch (err) {
-    console.warn("Could not read stored orders:", err);
-  }
-  return [];
-}
-
-function saveOrder(newOrder: any) {
-  try {
-    const filePath = getOrdersFilePath();
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      data.orders = data.orders || [];
-      const existingIdx = data.orders.findIndex(
-        (o: any) => o.id === newOrder.id || o.orderNumber === newOrder.orderNumber
-      );
-      if (existingIdx >= 0) {
-        data.orders[existingIdx] = {
-          ...data.orders[existingIdx],
-          ...newOrder,
-          updatedAt: new Date().toISOString(),
-        };
-      } else {
-        data.orders.unshift(newOrder);
-      }
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-    }
-  } catch (err) {
-    console.warn("Could not save order to file:", err);
-  }
-}
+import {
+  getDbPath,
+  normalizeOrder,
+  readStoredOrders,
+  saveOrderRecord,
+} from "@/lib/orders";
 
 export async function GET(request: Request) {
   try {
@@ -284,9 +102,9 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    saveOrder(order);
+    const saved = saveOrderRecord(order);
 
-    return NextResponse.json({ success: true, order });
+    return NextResponse.json({ success: true, order: saved });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to create order record" }, { status: 500 });
   }
@@ -359,11 +177,11 @@ export async function PATCH(request: Request) {
     });
 
     try {
-      const filePath = getOrdersFilePath();
-      if (fs.existsSync(filePath)) {
-        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      const dbPath = getDbPath();
+      if (fs.existsSync(dbPath)) {
+        const data = JSON.parse(fs.readFileSync(dbPath, "utf8"));
         data.orders = updatedOrders;
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
       }
     } catch (saveErr) {
       console.warn("Could not save updated orders to file:", saveErr);
