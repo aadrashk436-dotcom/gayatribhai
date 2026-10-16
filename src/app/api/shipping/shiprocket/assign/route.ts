@@ -273,12 +273,19 @@ export async function POST(request: Request) {
           const awbResult = await assignShiprocketAWB(
             shipmentId,
             courierId,
-            shiprocketOrderId
+            shiprocketOrderId,
+            finalCourierName
           );
 
           if (awbResult.success && awbResult.awb_code) {
             awbCode = awbResult.awb_code;
-            finalCourierName = awbResult.courier_name || finalCourierName;
+            if (awbResult.courier_name && awbResult.courier_name !== "Shiprocket Express Partner") {
+              finalCourierName = awbResult.courier_name;
+            } else if (courierName) {
+              finalCourierName = courierName;
+            } else if (awbResult.courier_name) {
+              finalCourierName = awbResult.courier_name;
+            }
           }
         }
 
@@ -330,6 +337,7 @@ export async function POST(request: Request) {
       });
     }
 
+    db.orders = orders;
     writeDb(db);
 
     return NextResponse.json({

@@ -17,6 +17,7 @@ import {
   Receipt,
   Activity,
   RotateCcw,
+  RefreshCw,
   Copy,
 } from "lucide-react"
 import { AdminOrder, formatINR } from "../types"
@@ -67,6 +68,7 @@ export function InspectOrderModal({
     (order.status === "Cancelled" || order.paymentStatus === "Refund Pending" || order.paymentStatus === "Paid")
 
   const [isSyncingLive, setIsSyncingLive] = React.useState(false)
+  const [isVerifying, setIsVerifying] = React.useState(false)
   const [liveCheckpoint, setLiveCheckpoint] = React.useState<string | null>(order.currentStatusText || null)
   const [liveSRStatus, setLiveSRStatus] = React.useState<string | null>(order.shiprocketStatus || null)
 
@@ -102,14 +104,14 @@ export function InspectOrderModal({
               <h3 className="font-serif text-lg sm:text-xl font-bold text-white">Order #{order.id}</h3>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${order.status === "Delivered"
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : order.status === "Assigned to Courier" || order.status === "Dispatched"
-                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                      : order.status === "Verified"
-                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                        : order.status === "Cancelled"
-                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : order.status === "Assigned to Courier" || order.status === "Dispatched"
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    : order.status === "Verified"
+                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                      : order.status === "Cancelled"
+                        ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                   }`}
               >
                 {order.status}
@@ -142,17 +144,16 @@ export function InspectOrderModal({
                   Order Current Status:
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${
-                    order.status === "Delivered"
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                      : order.status === "Dispatched" || order.status === "Assigned to Courier"
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${order.status === "Delivered"
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                    : order.status === "Dispatched" || order.status === "Assigned to Courier"
                       ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
                       : order.status === "Verified"
-                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
-                      : order.status === "Cancelled"
-                      ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
-                      : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                  }`}
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
+                        : order.status === "Cancelled"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                    }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
                   {order.status}
@@ -189,14 +190,14 @@ export function InspectOrderModal({
                     order.status === "Delivered"
                       ? "Order has been successfully delivered and accepted."
                       : order.status === "Dispatched"
-                      ? "Consignment is in transit with courier delivery partner."
-                      : order.status === "Assigned to Courier"
-                      ? "AWB generated and shipment booked for courier pickup."
-                      : order.status === "Verified"
-                      ? "Order verified by admin and prepared for courier dispatch."
-                      : order.status === "Cancelled"
-                      ? `Order cancelled. Reason: ${order.cancelReason || "Cancelled by store"}`
-                      : "Order placed and awaiting atelier admin approval."
+                        ? "Consignment is in transit with courier delivery partner."
+                        : order.status === "Assigned to Courier"
+                          ? "AWB generated and shipment booked for courier pickup."
+                          : order.status === "Verified"
+                            ? "Order verified by admin and prepared for courier dispatch."
+                            : order.status === "Cancelled"
+                              ? `Order cancelled. Reason: ${order.cancelReason || "Cancelled by store"}`
+                              : "Order placed and awaiting atelier admin approval."
                   )}
                 </p>
                 {order.etd && (
@@ -261,14 +262,14 @@ export function InspectOrderModal({
                     className="absolute left-6 top-3.5 h-0.5 bg-gradient-to-r from-amber-400 via-[#d4af37] to-emerald-400 -z-0 transition-all duration-500"
                     style={{
                       width: `${order.status === "Delivered"
-                          ? "calc(100% - 3rem)"
-                          : order.status === "Dispatched"
-                            ? "calc(75% - 2.25rem)"
-                            : order.status === "Assigned to Courier"
-                              ? "calc(50% - 1.5rem)"
-                              : order.status === "Verified"
-                                ? "calc(25% - 0.75rem)"
-                                : "0%"
+                        ? "calc(100% - 3rem)"
+                        : order.status === "Dispatched"
+                          ? "calc(75% - 2.25rem)"
+                          : order.status === "Assigned to Courier"
+                            ? "calc(50% - 1.5rem)"
+                            : order.status === "Verified"
+                              ? "calc(25% - 0.75rem)"
+                              : "0%"
                         }`,
                     }}
                   />
@@ -298,10 +299,10 @@ export function InspectOrderModal({
                       <div key={s.label} className="flex flex-col items-center relative z-10">
                         <div
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${isCurrent
-                              ? "bg-[#d4af37] text-black ring-4 ring-[#d4af37]/30 scale-110"
-                              : isDone
-                                ? "bg-emerald-500 text-white"
-                                : "bg-[#1f242e] text-zinc-500 border border-white/10"
+                            ? "bg-[#d4af37] text-black ring-4 ring-[#d4af37]/30 scale-110"
+                            : isDone
+                              ? "bg-emerald-500 text-white"
+                              : "bg-[#1f242e] text-zinc-500 border border-white/10"
                             }`}
                         >
                           {isDone ? (
@@ -312,10 +313,10 @@ export function InspectOrderModal({
                         </div>
                         <span
                           className={`text-[10px] mt-1.5 font-bold ${isCurrent
-                              ? "text-[#d4af37]"
-                              : isDone
-                                ? "text-zinc-200"
-                                : "text-zinc-500"
+                            ? "text-[#d4af37]"
+                            : isDone
+                              ? "text-zinc-200"
+                              : "text-zinc-500"
                             }`}
                         >
                           {s.label}
@@ -439,12 +440,12 @@ export function InspectOrderModal({
                 <span className="text-xs font-semibold text-zinc-200">{order.paymentMethod}</span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${order.paymentStatus === "Paid"
-                      ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                      : order.paymentStatus === "Refunded"
-                        ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
-                        : order.paymentStatus === "Refund Pending"
-                          ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
-                          : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : order.paymentStatus === "Refunded"
+                      ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
+                      : order.paymentStatus === "Refund Pending"
+                        ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
+                        : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
                     }`}
                 >
                   {order.paymentStatus}
@@ -645,11 +646,29 @@ export function InspectOrderModal({
           <div className="flex flex-wrap items-center gap-2">
             {order.status === "Pending Verification" && (
               <button
-                onClick={() => onVerify(order.id)}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg"
+                onClick={async () => {
+                  if (isVerifying) return
+                  setIsVerifying(true)
+                  try {
+                    await onVerify(order.id)
+                  } finally {
+                    setIsVerifying(false)
+                  }
+                }}
+                disabled={isVerifying}
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Verify & Approve</span>
+                {isVerifying ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-black" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Verify & Approve</span>
+                  </>
+                )}
               </button>
             )}
 

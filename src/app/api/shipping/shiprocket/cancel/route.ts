@@ -131,6 +131,7 @@ export async function POST(request: Request) {
       }
     }
 
+    db.orders = orders;
     writeDb(db);
 
     return NextResponse.json({

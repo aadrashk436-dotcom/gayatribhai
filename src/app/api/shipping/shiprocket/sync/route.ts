@@ -134,6 +134,7 @@ export async function POST(request: Request) {
     );
 
     if (updatedCount > 0) {
+      db.orders = orders;
       writeDb(db);
     }
 

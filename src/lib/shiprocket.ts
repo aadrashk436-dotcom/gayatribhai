@@ -135,7 +135,8 @@ export async function getShiprocketServiceability(
 export async function assignShiprocketAWB(
   shipmentId: number | string,
   courierId?: number | string,
-  shiprocketOrderId?: number | string
+  shiprocketOrderId?: number | string,
+  preferredCourierName?: string
 ): Promise<{
   success: boolean;
   awb_code?: string;
@@ -156,7 +157,7 @@ export async function assignShiprocketAWB(
     return {
       success: true,
       awb_code: awbRes.response.data.awb_code,
-      courier_name: awbRes.response.data.courier_name || "Shiprocket Express Partner",
+      courier_name: awbRes.response.data.courier_name || preferredCourierName || "Shiprocket Express Partner",
       courier_company_id: awbRes.response.data.courier_company_id || courierId,
       raw: awbRes,
     };
@@ -172,7 +173,7 @@ export async function assignShiprocketAWB(
     return {
       success: true,
       awb_code: match[1],
-      courier_name: awbRes?.response?.data?.courier_name || "Shiprocket Express Partner",
+      courier_name: awbRes?.response?.data?.courier_name || preferredCourierName || "Shiprocket Express Partner",
       courier_company_id: awbRes?.response?.data?.courier_id || courierId,
       raw: awbRes,
     };

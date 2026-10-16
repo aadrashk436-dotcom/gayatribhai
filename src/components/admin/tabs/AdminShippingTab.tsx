@@ -12,6 +12,8 @@ import {
   ExternalLink,
   Package,
   RotateCcw,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react"
 import { AdminOrder, formatINR as defaultFormatINR } from "../types"
 
@@ -63,6 +65,17 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
   formatINR = defaultFormatINR,
 }) => {
   const [shippingSubTab, setShippingSubTab] = useState<"active" | "ready" | "all">("active")
+  const [verifyingId, setVerifyingId] = useState<string | null>(null)
+
+  const handleVerifyClick = async (orderId: string) => {
+    if (!handleVerifyOrder || verifyingId) return
+    setVerifyingId(orderId)
+    try {
+      await handleVerifyOrder(orderId)
+    } finally {
+      setVerifyingId(null)
+    }
+  }
 
   // Orders that have been assigned to courier with an AWB
   const activeShipments = orderList.filter((o) => Boolean(o.awb))
@@ -295,11 +308,22 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
                         {/* Step 1: Verify if pending */}
                         {ord.status === "Pending Verification" && handleVerifyOrder && (
                           <button
-                            onClick={() => handleVerifyOrder(ord.id)}
-                            className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[10px] font-bold text-black hover:brightness-110 shadow transition"
+                            onClick={() => handleVerifyClick(ord.id)}
+                            disabled={verifyingId === ord.id}
+                            className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[10px] font-bold text-black hover:brightness-110 shadow transition flex items-center gap-1 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                             title="Verify patron details and approve order"
                           >
-                            Verify
+                            {verifyingId === ord.id ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 animate-spin text-black" />
+                                <span>Verifying...</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-3 w-3 text-black" />
+                                <span>Verify</span>
+                              </>
+                            )}
                           </button>
                         )}
 

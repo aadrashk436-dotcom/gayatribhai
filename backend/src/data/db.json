@@ -1393,7 +1393,7 @@
       "subtotal": 4200,
       "discount": 0,
       "shipping": 99,
-      "courierName": "Blue Dart Express Air",
+      "courierName": "Delhivery Surface",
       "courierId": 1,
       "courierRate": 99,
       "packageSummary": {},
@@ -1401,7 +1401,7 @@
       "paymentId": "cod_GB-563726",
       "paymentStatus": "Pending COD",
       "razorpayOrderId": null,
-      "status": "Pending Verification",
+      "status": "Assigned to Courier",
       "date": "16 Oct, 03:09 pm",
       "createdAt": "2026-10-16T09:39:23.741Z",
       "state": "Maharashtra",
@@ -1414,15 +1414,20 @@
         "state": "Maharashtra",
         "pincode": "400006"
       },
-      "courier": "Blue Dart Express Air",
+      "courier": "Delhivery Surface",
       "etd": "2-3 business days",
-      "awb": null,
+      "awb": "19041969079214",
       "shiprocketStatus": null,
-      "shiprocket_order_id": null,
-      "shiprocket_shipment_id": null,
-      "shiprocket_label_url": null,
-      "shiprocket_invoice_url": null,
-      "razorpayPaymentId": null
+      "shiprocket_order_id": 1657894554,
+      "shiprocket_shipment_id": 1653585339,
+      "shiprocket_label_url": "https://sr-core-cdn.shiprocket.in/label/s/11855410/01a144a0-f6cc-74f7-881c-4cdb5fc69370.pdf",
+      "shiprocket_invoice_url": "https://sr-core-cdn.shiprocket.in/multichannel-api-invoice/invoices/11855410/Retail000125ace0efa-a16e-4e5c-9e47-e5e31e1bf6aa.pdf",
+      "razorpayPaymentId": null,
+      "verified": true,
+      "verifiedAt": "2026-10-16T12:12:39.916Z",
+      "verifiedBy": "Gayatri Puri (Admin)",
+      "assignedAt": "2026-10-16T12:12:42.213Z",
+      "updatedAt": "2026-10-16T12:12:42.213Z"
     },
     {
       "id": "GB-044024",
@@ -1444,7 +1449,8 @@
         "street": "Flat 402, Lotus Grandeur, Linking Road",
         "city": "Mumbai, Maharashtra",
         "state": "Maharashtra",
-        "pincode": "400050"
+        "pincode": "400050",
+        "type": "HOME"
       },
       "shirtName": "Azure Leaf Hand-Embroidered Shirt",
       "sku": "M26/SS/CON/CS/23",
@@ -1479,7 +1485,29 @@
       "razorpayOrderId": null,
       "status": "Pending Verification",
       "date": "16 Oct, 03:00 pm",
-      "createdAt": "2026-10-16T09:30:44.080Z"
+      "createdAt": "2026-10-16T09:30:44.080Z",
+      "state": "Maharashtra",
+      "billingAddress": {
+        "name": "Rohan Mehra",
+        "phone": "9876543210",
+        "email": "rohan.mehra@example.com",
+        "street": "Flat 402, Lotus Grandeur, Linking Road",
+        "city": "Mumbai, Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "courier": "Blue Dart Express Air",
+      "courierId": null,
+      "etd": "2-3 business days",
+      "awb": null,
+      "shiprocketStatus": null,
+      "shiprocket_order_id": null,
+      "shiprocket_shipment_id": null,
+      "shiprocket_label_url": null,
+      "shiprocket_invoice_url": null,
+      "razorpayPaymentId": null,
+      "verified": false,
+      "updatedAt": "2026-10-16T12:40:59.002Z"
     },
     {
       "id": "GB-397634",
@@ -1501,7 +1529,8 @@
         "street": "101 Marine Drive",
         "city": "Mumbai, Maharashtra",
         "state": "Maharashtra",
-        "pincode": "400020"
+        "pincode": "400020",
+        "type": "HOME"
       },
       "shirtName": "Artisanal Linen Shirt",
       "sku": "GB-ART-01",
@@ -1555,7 +1584,20 @@
       "assignedAt": "2026-10-15T16:57:52.518Z",
       "previousAwb": "SF4078723107KR",
       "shipmentCancelledAt": "2026-10-15T16:50:23.674Z",
-      "shipmentCancelReason": "Testing shipment cancellation"
+      "shipmentCancelReason": "Testing shipment cancellation",
+      "state": "Maharashtra",
+      "billingAddress": {
+        "name": "Aarav Sharma",
+        "phone": "9876543210",
+        "email": "aarav.sharma@example.com",
+        "street": "101 Marine Drive",
+        "city": "Mumbai, Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "400020"
+      },
+      "courierId": null,
+      "etd": "2-3 business days",
+      "shiprocketStatus": null
     },
     {
       "id": "GB-124382",
@@ -1577,7 +1619,8 @@
         "street": "MG Road",
         "city": "Surat, Gujarat",
         "state": "Gujarat",
-        "pincode": "395007"
+        "pincode": "395007",
+        "type": "HOME"
       },
       "shirtName": "Azure Leaf Hand-Embroidered Shirt",
       "sku": "M26/SS/CON/CS/23",
@@ -1631,7 +1674,21 @@
       "refundedAt": "2026-10-15T21:40:00.000Z",
       "refundId": "rfnd_RzP98421035",
       "currentStatusText": "AWB cancelled by user",
-      "etd": "2026-10-17 00:00:00"
+      "etd": "2026-10-17 00:00:00",
+      "state": "Gujarat",
+      "billingAddress": {
+        "name": "Razorpay Patron",
+        "phone": "9876543210",
+        "email": "gayatri.rzp.test@gmail.com",
+        "street": "MG Road",
+        "city": "Surat, Gujarat",
+        "state": "Gujarat",
+        "pincode": "395007"
+      },
+      "courierId": null,
+      "shiprocketStatus": null,
+      "shiprocket_label_url": null,
+      "shiprocket_invoice_url": null
     },
     {
       "id": "GB-065976",
@@ -1653,7 +1710,8 @@
         "street": "404 Heritage Lane",
         "city": "Surat, Gujarat",
         "state": "Gujarat",
-        "pincode": "395007"
+        "pincode": "395007",
+        "type": "HOME"
       },
       "shirtName": "Azure Leaf Hand-Embroidered Shirt",
       "sku": "M26/SS/CON/CS/23",
@@ -1699,7 +1757,23 @@
       "assignedAt": "2026-10-15T15:04:06.429Z",
       "updatedAt": "2026-10-15T15:04:20.176Z",
       "cancelReason": null,
-      "cancelledAt": null
+      "cancelledAt": null,
+      "state": "Gujarat",
+      "billingAddress": {
+        "name": "Gayatri Devi",
+        "phone": "9876501234",
+        "email": "gayatri.cod.test@gmail.com",
+        "street": "404 Heritage Lane",
+        "city": "Surat, Gujarat",
+        "state": "Gujarat",
+        "pincode": "395007"
+      },
+      "courierId": null,
+      "etd": "2-3 business days",
+      "shiprocketStatus": null,
+      "shiprocket_label_url": null,
+      "shiprocket_invoice_url": null,
+      "razorpayPaymentId": null
     },
     {
       "id": "GB-016307",
@@ -1717,11 +1791,12 @@
       "shippingAddress": {
         "name": "Gayatri Puri",
         "phone": "9876543210",
+        "email": "gayatripuri634@gmail.com",
         "street": "Ring Road",
         "city": "Surat, Gujarat",
         "state": "Gujarat",
         "pincode": "395007",
-        "email": "gayatripuri634@gmail.com"
+        "type": "HOME"
       },
       "shirtName": "Azure Leaf Hand-Embroidered Shirt",
       "sku": "M26/SS/CON/CS/23",
@@ -1774,7 +1849,20 @@
       "razorpayPaymentId": "pay_test_1792080000000",
       "refundAmount": 2199,
       "refundReason": "Customer requested refund test (Gateway notice: no Route matched with those values)",
-      "refundedAt": "2026-10-16T11:19:10.552Z"
+      "refundedAt": "2026-10-16T11:19:10.552Z",
+      "state": "Gujarat",
+      "billingAddress": {
+        "name": "Gayatri Puri",
+        "phone": "9876543210",
+        "street": "Ring Road",
+        "city": "Surat, Gujarat",
+        "state": "Gujarat",
+        "pincode": "395007",
+        "email": "gayatripuri634@gmail.com"
+      },
+      "courierId": null,
+      "etd": "2-3 business days",
+      "shiprocketStatus": null
     },
     {
       "id": "GB-505060",
@@ -1791,12 +1879,13 @@
       "pincode": "395007",
       "shippingAddress": {
         "name": "Test Customer",
-        "email": "purigayatri006@gmail.com",
         "phone": "9876543210",
+        "email": "purigayatri006@gmail.com",
         "street": "123 Test St",
         "city": "Surat, Gujarat",
         "state": "Gujarat",
-        "pincode": "395007"
+        "pincode": "395007",
+        "type": "HOME"
       },
       "shirtName": "Azure Leaf Hand-Embroidered Shirt",
       "sku": "M26/SS/CON/CS/23",
@@ -1822,30 +1911,44 @@
       "subtotal": 2100,
       "discount": 0,
       "shipping": 99,
-      "courierName": null,
+      "courierName": "Xpressbees Surface",
       "courierRate": 99,
       "packageSummary": {},
       "paymentMethod": "Cash on Delivery",
       "paymentId": "cod_GB-505060",
       "paymentStatus": "Pending COD",
       "razorpayOrderId": null,
-      "status": "Verified",
+      "status": "Assigned to Courier",
       "date": "15 Oct, 07:25 pm",
       "createdAt": "2026-10-15T13:55:05.112Z",
       "verified": true,
       "verifiedAt": "2026-10-15T16:24:48.887Z",
       "verifiedBy": "Gayatri Puri (Admin)",
-      "courier": null,
-      "awb": null,
+      "courier": "Xpressbees Surface",
+      "awb": "AWB-SR-5311863798",
       "shiprocket_order_id": 1656118303,
       "shiprocket_shipment_id": 1651826059,
       "shiprocket_label_url": "https://sr-core-cdn.shiprocket.in/label/s/11855410/01a14061-72f1-7a01-95c3-96f1d464f055.pdf",
       "shiprocket_invoice_url": "https://sr-core-cdn.shiprocket.in/multichannel-api-invoice/invoices/11855410/Retail000090af44fb0-9493-4755-b1a6-25f6a59412c6.pdf",
-      "assignedAt": "2026-10-15T16:24:51.557Z",
-      "updatedAt": "2026-10-15T16:24:57.382Z",
+      "assignedAt": "2026-10-16T12:18:38.637Z",
+      "updatedAt": "2026-10-16T12:19:06.522Z",
       "previousAwb": "14112367013916",
       "shipmentCancelledAt": "2026-10-15T16:24:57.382Z",
-      "shipmentCancelReason": "Testing shipment-only cancellation"
+      "shipmentCancelReason": "Testing shipment-only cancellation",
+      "state": "Gujarat",
+      "billingAddress": {
+        "name": "Test Customer",
+        "email": "purigayatri006@gmail.com",
+        "phone": "9876543210",
+        "street": "123 Test St",
+        "city": "Surat, Gujarat",
+        "state": "Gujarat",
+        "pincode": "395007"
+      },
+      "courierId": null,
+      "etd": "2-3 business days",
+      "shiprocketStatus": null,
+      "razorpayPaymentId": null
     }
   ],
   "coupons": [

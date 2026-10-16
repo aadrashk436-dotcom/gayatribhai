@@ -1026,8 +1026,10 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   }
 
   // Fetch real user orders from API with no-cache for instant live status reflection
-  const fetchUserOrders = async () => {
-    setLoadingOrders(true)
+  const fetchUserOrders = async (silent = false) => {
+    if (!silent) {
+      setLoadingOrders(true)
+    }
     try {
       const params = new URLSearchParams()
       const searchEmail = user?.email || (typeof window !== "undefined" ? localStorage.getItem("gb_patron_email") : "") || ""
@@ -1093,22 +1095,24 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
       console.warn("Could not load user orders:", err)
       setOrders([])
     } finally {
-      setLoadingOrders(false)
+      if (!silent) {
+        setLoadingOrders(false)
+      }
     }
   }
 
   useEffect(() => {
     fetchUserOrders()
-    // Auto-poll orders every 12 seconds to reflect live admin & Shiprocket updates instantly
+    // Auto-poll orders every 12 seconds to reflect live admin & Shiprocket updates
     const interval = setInterval(() => {
-      fetchUserOrders()
+      fetchUserOrders(true)
     }, 12000)
 
-    const onFocus = () => fetchUserOrders()
-    const onOrdersUpdated = () => fetchUserOrders()
+    const onFocus = () => fetchUserOrders(true)
+    const onOrdersUpdated = () => fetchUserOrders(true)
     const onStorage = (e: StorageEvent) => {
       if (!e.key || e.key === "gb_orders_last_updated" || e.key === "gb_patron_order_ids") {
-        fetchUserOrders()
+        fetchUserOrders(true)
       }
     }
 
@@ -1116,7 +1120,24 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
     window.addEventListener("gb-orders-updated", onOrdersUpdated)
     window.addEventListener("storage", onStorage)
 
+    // 🟢 Real-time SSE Stream for Instant Push Updates to Patron View
+    let eventSource: EventSource | null = null
+    try {
+      eventSource = new EventSource("/api/orders/stream")
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data)
+          if (payload && Array.isArray(payload.orders)) {
+            fetchUserOrders(true)
+          }
+        } catch {}
+      }
+    } catch {}
+
     return () => {
+      if (eventSource) {
+        eventSource.close()
+      }
       clearInterval(interval)
       window.removeEventListener("focus", onFocus)
       window.removeEventListener("gb-orders-updated", onOrdersUpdated)

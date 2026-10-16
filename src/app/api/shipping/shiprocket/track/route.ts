@@ -108,6 +108,7 @@ export async function GET(request: Request) {
         order.paymentStatus = "Paid";
       }
       order.updatedAt = new Date().toISOString();
+      db.orders = orders;
       writeDb(db);
     }
 

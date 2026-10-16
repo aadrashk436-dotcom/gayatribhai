@@ -33,6 +33,12 @@ export function normalizeOrder(o: any) {
   const totalPaise = o.totalPaise || (o.total > 10000 ? o.total : (o.total || 0) * 100)
   const totalRupees = o.total > 10000 ? Math.round(o.total / 100) : (o.total || Math.round(totalPaise / 100))
 
+  const rawAwb = o.awb || o.awbCode || o.awb_code;
+  const cleanAwb =
+    rawAwb && rawAwb !== "null" && rawAwb !== "undefined" && String(rawAwb).trim().length > 3
+      ? String(rawAwb).trim()
+      : null;
+
   const rawStatus = o.status || "Pending Verification"
   let displayStatus = rawStatus
   if (rawStatus === "PROCESSING" || rawStatus === "processing") displayStatus = "Pending Verification"
@@ -40,6 +46,11 @@ export function normalizeOrder(o: any) {
   if (rawStatus === "SHIPPED" || rawStatus === "shipped") displayStatus = "Dispatched"
   if (rawStatus === "DELIVERED" || rawStatus === "delivered") displayStatus = "Delivered"
   if (rawStatus === "CANCELLED" || rawStatus === "cancelled") displayStatus = "Cancelled"
+
+  // If order has an active AWB and wasn't cancelled or delivered, it is assigned
+  if (cleanAwb && (displayStatus === "Pending Verification" || displayStatus === "Verified" || !displayStatus)) {
+    displayStatus = "Assigned to Courier"
+  }
 
   const isCodOrder =
     o.paymentMethod === "Cash on Delivery" ||
@@ -188,12 +199,12 @@ export function normalizeOrder(o: any) {
     paymentStatus: displayPaymentStatus,
     status: displayStatus,
     date: formattedDate || "Today",
-    courier: o.courier || o.courierName || null,
-    courierName: o.courierName || o.courier || "Blue Dart Express Air",
+    courier: o.courier || o.courierName || (cleanAwb ? "Shiprocket Partner" : null),
+    courierName: o.courierName || o.courier || (cleanAwb ? "Shiprocket Partner" : null),
     courierId: o.courierId || null,
     courierRate: typeof o.courierRate === "number" ? o.courierRate : (o.shipping || 0),
     etd: o.etd || "2-3 business days",
-    awb: o.awb || null,
+    awb: cleanAwb,
     shiprocketStatus: o.shiprocketStatus || null,
     shiprocket_order_id: o.shiprocket_order_id || null,
     shiprocket_shipment_id: o.shiprocket_shipment_id || null,

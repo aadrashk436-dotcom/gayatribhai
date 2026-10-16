@@ -108,6 +108,18 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
   handleRefreshOrders,
   isRealTimeConnected = true,
 }) => {
+  const [verifyingId, setVerifyingId] = React.useState<string | null>(null)
+
+  const handleVerifyClick = async (orderId: string) => {
+    if (verifyingId) return
+    setVerifyingId(orderId)
+    try {
+      await handleVerifyOrder(orderId)
+    } finally {
+      setVerifyingId(null)
+    }
+  }
+
   const selectedWithAwbCount = filteredOrders.filter(
     (o) => selectedOrderIds.includes(o.id) && Boolean(o.awb)
   ).length
@@ -200,9 +212,9 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
             </div>
           </div>
           <div className="mt-2">
-            <p className="text-xl sm:text-2xl font-black text-sky-300">{assignedCount}</p>
+            <p className="text-xl sm:text-2xl font-black text-sky-300">{verifiedCount + assignedCount}</p>
             <p className="text-[10px] text-sky-200/80 mt-0.5 truncate">
-              AWBs booked & ready
+              {verifiedCount > 0 ? `${verifiedCount} verified • ${assignedCount} booked` : `${assignedCount} AWBs booked`}
             </p>
           </div>
         </button>
@@ -775,26 +787,51 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                             </span>
                           </div>
 
-                          {ord.awb && (
-                            <div className="mt-1 space-y-0.5">
-                              <p className="text-[10px] font-semibold text-zinc-300">{ord.courier || ord.courierName}</p>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-mono font-bold text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.2 rounded border border-[#d4af37]/20 select-all">
-                                  AWB: {ord.awb}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    navigator.clipboard.writeText(String(ord.awb))
-                                    if (showToast) showToast(`Copied AWB #${ord.awb}`)
-                                  }}
-                                  className="text-zinc-500 hover:text-[#d4af37] p-0.5 cursor-pointer transition"
-                                  title="Copy AWB Number"
-                                >
-                                  <Copy className="h-2.5 w-2.5" />
-                                </button>
+                          {ord.awb ? (
+                            <div className="mt-1 space-y-1">
+                              <p className="text-[10px] font-semibold text-zinc-200 flex items-center gap-1">
+                                <Truck className="h-2.5 w-2.5 text-[#d4af37] shrink-0" />
+                                <span>{ord.courier || ord.courierName || "Shiprocket Partner"}</span>
+                              </p>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {String(ord.awb).includes("Booking") ? (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-[#d4af37] bg-[#d4af37]/15 px-2 py-0.5 rounded border border-[#d4af37]/30 animate-pulse">
+                                    <RefreshCw className="h-2.5 w-2.5 animate-spin text-[#d4af37]" />
+                                    Booking AWB...
+                                  </span>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-mono font-bold text-[#d4af37] bg-[#d4af37]/15 px-2 py-0.5 rounded-md border border-[#d4af37]/30 select-all shadow-sm">
+                                      AWB: {ord.awb}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        navigator.clipboard.writeText(String(ord.awb))
+                                        if (showToast) showToast(`Copied AWB #${ord.awb}`)
+                                      }}
+                                      className="text-zinc-400 hover:text-[#d4af37] p-1 rounded hover:bg-white/5 cursor-pointer transition"
+                                      title="Copy AWB Number"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
+                            </div>
+                          ) : (
+                            <div className="mt-0.5">
+                              {ord.status === "Verified" && (
+                                <span className="text-[10px] text-purple-300/80 italic flex items-center gap-1">
+                                  <span>Ready to assign courier</span>
+                                </span>
+                              )}
+                              {ord.status === "Pending Verification" && (
+                                <span className="text-[10px] text-amber-400/80 italic flex items-center gap-1">
+                                  <span>Awaiting verification</span>
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -827,11 +864,22 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           {/* Step 1: Admin Verification Button */}
                           {ord.status === "Pending Verification" && (
                             <button
-                              onClick={() => handleVerifyOrder(ord.id)}
-                              className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition cursor-pointer"
+                              onClick={() => handleVerifyClick(ord.id)}
+                              disabled={verifyingId === ord.id}
+                              className="rounded-lg bg-[#d4af37] px-2.5 py-1 text-[11px] font-bold text-black hover:brightness-110 shadow transition flex items-center gap-1 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                               title="Verify patron details and approve order"
                             >
-                              Verify
+                              {verifyingId === ord.id ? (
+                                <>
+                                  <RefreshCw className="h-3 w-3 animate-spin text-black" />
+                                  <span>Verifying...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ShieldCheck className="h-3 w-3 text-black" />
+                                  <span>Verify</span>
+                                </>
+                              )}
                             </button>
                           )}
 

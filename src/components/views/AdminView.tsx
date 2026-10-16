@@ -588,20 +588,40 @@ export function AdminView() {
 
     showToast(`Order #${orderId} verified and approved for fulfillment!`)
     try {
-      await fetch("/api/orders", {
+      const res = await fetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status: "Verified", verified: true }),
       })
+      if (!res.ok) {
+        throw new Error("Could not save verification to server")
+      }
+      localStorage.setItem("gb_orders_last_updated", String(Date.now()))
       window.dispatchEvent(new Event("gb-orders-updated"))
-      refreshOrders()
-    } catch (e) {
+      await refreshOrders()
+    } catch (e: any) {
       console.warn("Could not sync with API", e)
+      showToast(`Warning: Could not save verification. ${e?.message || ""}`)
     }
   }
 
   const handleAssignCourier = async (orderId: string, courierName: string, courierId?: number | string) => {
-    showToast("Connecting to live Shiprocket API & booking courier...")
+    showToast(`Booking ${courierName} via Shiprocket API...`)
+
+    // Optimistically update order so admin sees the status change immediately
+    setOrderList((prev) =>
+      prev.map((o) =>
+        o.id === orderId || o.orderNumber === orderId
+          ? {
+              ...o,
+              status: "Assigned to Courier" as const,
+              courier: courierName,
+              courierName: courierName,
+              awb: o.awb || "Booking AWB...",
+            }
+          : o
+      )
+    )
 
     try {
       const res = await fetch("/api/shipping/shiprocket/assign", {
@@ -618,7 +638,7 @@ export function AdminView() {
       if (res.ok && data.assignedOrders?.[0]) {
         const assigned = data.assignedOrders[0]
         const finalAwb = assigned.awb
-        const finalCourier = assigned.courier
+        const finalCourier = assigned.courier || courierName
 
         setOrderList((prev) =>
           prev.map((o) =>
@@ -631,6 +651,8 @@ export function AdminView() {
                   awb: finalAwb,
                   shiprocket_order_id: assigned.shiprocketOrderId,
                   shiprocket_shipment_id: assigned.shipmentId,
+                  shiprocket_label_url: assigned.labelUrl || o.shiprocket_label_url,
+                  shiprocket_invoice_url: assigned.invoiceUrl || o.shiprocket_invoice_url,
                 }
               : o
           )
@@ -647,21 +669,28 @@ export function AdminView() {
                   awb: finalAwb,
                   shiprocket_order_id: assigned.shiprocketOrderId,
                   shiprocket_shipment_id: assigned.shipmentId,
+                  shiprocket_label_url: assigned.labelUrl || prev.shiprocket_label_url,
+                  shiprocket_invoice_url: assigned.invoiceUrl || prev.shiprocket_invoice_url,
                 }
               : null
           )
         }
 
         setAssignCourierModal(null)
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
         window.dispatchEvent(new Event("gb-orders-updated"))
-        refreshOrders()
+        await refreshOrders()
         showToast(`Shipment Booked! ${finalCourier} AWB: #${finalAwb}`)
+        return assigned
       } else {
         throw new Error(data.error || "Failed to assign Shiprocket courier")
       }
     } catch (e: any) {
       console.warn("Could not sync with Shiprocket API", e)
       showToast(e.message || "Shiprocket assignment failed.")
+      // Revert optimistic update
+      refreshOrders()
+      throw e
     }
   }
 
@@ -714,6 +743,7 @@ export function AdminView() {
             ? `Shipment #${order?.awb} & order cancelled on Shiprocket successfully!`
             : `Order #${orderId} has been cancelled successfully.`
         )
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
         window.dispatchEvent(new Event("gb-orders-updated"))
         refreshOrders()
       } else {
@@ -757,6 +787,7 @@ export function AdminView() {
             prev ? { ...prev, status: "Verified", awb: null, courier: null, courierName: null } : null
           )
         }
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
         window.dispatchEvent(new Event("gb-orders-updated"))
         refreshOrders()
       } else {
@@ -794,6 +825,7 @@ export function AdminView() {
             prev ? { ...prev, paymentStatus: "Refunded", refundId: data.refundId } : null
           )
         }
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
         window.dispatchEvent(new Event("gb-orders-updated"))
         refreshOrders()
       } else {
@@ -839,6 +871,7 @@ export function AdminView() {
           status: "Dispatched",
         }),
       })
+      localStorage.setItem("gb_orders_last_updated", String(Date.now()))
       window.dispatchEvent(new Event("gb-orders-updated"))
       refreshOrders()
     } catch (e) {
@@ -883,6 +916,7 @@ export function AdminView() {
           paymentStatus: "Paid",
         }),
       })
+      localStorage.setItem("gb_orders_last_updated", String(Date.now()))
       window.dispatchEvent(new Event("gb-orders-updated"))
       refreshOrders()
     } catch (e) {
@@ -929,6 +963,7 @@ export function AdminView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderIds: eligibleIds, status: "Verified", verified: true }),
       })
+      localStorage.setItem("gb_orders_last_updated", String(Date.now()))
       window.dispatchEvent(new Event("gb-orders-updated"))
       refreshOrders()
     } catch (e) {
@@ -986,6 +1021,7 @@ export function AdminView() {
 
         showToast(`Generated Shiprocket AWBs for ${data.assignedOrders.length} orders!`)
         setSelectedOrderIds([])
+        localStorage.setItem("gb_orders_last_updated", String(Date.now()))
         window.dispatchEvent(new Event("gb-orders-updated"))
         refreshOrders()
       } else {
@@ -1522,6 +1558,11 @@ export function AdminView() {
           o.paymentStatus === "Refunded" ||
           o.paymentStatus === "Refund Pending" ||
           o.status === "Cancelled"
+      } else if (orderStatusFilter === "Assigned to Courier") {
+        matchesStatus =
+          o.status === "Assigned to Courier" ||
+          o.status === "Verified" ||
+          Boolean(o.awb && o.status !== "Cancelled" && o.status !== "Delivered")
       } else if (orderStatusFilter !== "All") {
         matchesStatus = o.status === orderStatusFilter
       }
@@ -2023,8 +2064,8 @@ export function AdminView() {
         <AssignCourierModal
           order={assignCourierModal}
           onClose={() => setAssignCourierModal(null)}
-          onAssign={(orderId, courierName, courierId) => {
-            handleAssignCourier(orderId, courierName, courierId)
+          onAssign={async (orderId, courierName, courierId) => {
+            await handleAssignCourier(orderId, courierName, courierId)
           }}
         />
       )}

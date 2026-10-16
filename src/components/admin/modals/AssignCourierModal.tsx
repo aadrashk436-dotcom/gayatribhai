@@ -113,11 +113,17 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
   if (!order) return null
 
   const handleConfirm = async () => {
+    if (isSubmitting) return
     setIsSubmitting(true)
+    setErrorNotice(null)
     try {
       const courierName = selectedCourier?.name || "Shiprocket Express Partner"
       const courierId = selectedCourier?.courierId || selectedCourier?.id
       await onAssign(order.id, courierName, courierId)
+      onClose()
+    } catch (err: any) {
+      console.error("Assign courier error in modal:", err)
+      setErrorNotice(err.message || "Failed to book Shiprocket courier. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -140,7 +146,7 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition cursor-pointer">✕</button>
+          <button onClick={onClose} disabled={isSubmitting} className="text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-50">✕</button>
         </div>
 
         {order.awb && (
@@ -168,21 +174,24 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
           </div>
 
           {errorNotice && (
-            <p className="text-[11px] text-amber-400 italic">{errorNotice}</p>
+            <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300 space-y-1">
+              <p className="font-bold">Booking Error</p>
+              <p className="text-[11px] text-rose-300/90">{errorNotice}</p>
+            </div>
           )}
 
           <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
             {couriers.map((c) => {
               const isSelected = selectedCourier?.id === c.id || selectedCourier?.name === c.name
               return (
-                <label
+                <div
                   key={c.id || c.name}
-                  onClick={() => setSelectedCourier(c)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
+                  onClick={() => !isSubmitting && setSelectedCourier(c)}
+                  className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition select-none ${
                     isSelected
                       ? "border-[#d4af37] bg-[#d4af37]/10 shadow-sm"
                       : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]"
-                  }`}
+                  } ${isSubmitting ? "opacity-60 pointer-events-none" : ""}`}
                 >
                   <div className="flex items-center gap-3">
                     <input
@@ -190,7 +199,7 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
                       name="courier"
                       checked={isSelected}
                       onChange={() => setSelectedCourier(c)}
-                      className="accent-[#d4af37] h-4 w-4"
+                      className="accent-[#d4af37] h-4 w-4 cursor-pointer"
                     />
                     <div>
                       <div className="flex items-center gap-2">
@@ -213,7 +222,7 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
                       <p className="text-[10px] text-zinc-400">⭐ {c.rating}/5</p>
                     )}
                   </div>
-                </label>
+                </div>
               )
             })}
           </div>
@@ -226,6 +235,7 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
 
         <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
           <button
+            type="button"
             onClick={onClose}
             disabled={isSubmitting}
             className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white disabled:opacity-50 cursor-pointer"
@@ -233,14 +243,15 @@ export function AssignCourierModal({ order, onClose, onAssign }: AssignCourierMo
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleConfirm}
             disabled={isSubmitting || !selectedCourier}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg disabled:opacity-60 cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#c59d28] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 shadow-lg disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed transition"
           >
             {isSubmitting ? (
               <>
                 <span className="size-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                <span>Booking Shiprocket...</span>
+                <span>Booking Shiprocket... Generating AWB</span>
               </>
             ) : (
               <>

@@ -55,6 +55,8 @@ export interface AdminOrder {
   awb?: string | null
   shiprocket_order_id?: number | string | null
   shiprocket_shipment_id?: number | string | null
+  shiprocket_label_url?: string | null
+  shiprocket_invoice_url?: string | null
   razorpayPaymentId?: string | null
   razorpayOrderId?: string | null
   refundId?: string | null
