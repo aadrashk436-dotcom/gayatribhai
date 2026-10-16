@@ -72,6 +72,9 @@ export interface ShiprocketOrderPayload {
   }>;
   payment_method: "COD" | "Prepaid";
   sub_total: number;
+  shipping_charges?: number;
+  total_discount?: number;
+  discount?: number;
   length?: number;
   breadth?: number;
   height?: number;
@@ -91,6 +94,8 @@ export async function createShiprocketOrder(payload: ShiprocketOrderPayload): Pr
       breadth: 20,
       height: 5,
       weight: 0.5,
+      shipping_charges: Number(payload.shipping_charges || 0),
+      total_discount: Number(payload.total_discount || 0),
       ...payload,
     }),
   });

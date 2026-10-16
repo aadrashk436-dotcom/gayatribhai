@@ -1752,7 +1752,7 @@
       "packageSummary": {},
       "paymentMethod": "Razorpay Online",
       "paymentId": "cod_GB-016307",
-      "paymentStatus": "Refund Pending",
+      "paymentStatus": "Refunded (Manual Auth)",
       "razorpayOrderId": null,
       "status": "Cancelled",
       "date": "15 Oct, 07:33 pm",
@@ -1767,11 +1767,14 @@
       "shiprocket_label_url": "https://sr-core-cdn.shiprocket.in/label/s/11855410/01a1401f-376b-7773-8d6a-13cfb86ee30d.pdf",
       "shiprocket_invoice_url": "https://sr-core-cdn.shiprocket.in/multichannel-api-invoice/invoices/11855410/Retail000086841e084-fccc-4884-bef4-41ce61ff310e.pdf",
       "assignedAt": "2026-10-15T15:12:31.082Z",
-      "updatedAt": "2026-10-15T15:12:37.474Z",
+      "updatedAt": "2026-10-16T11:19:10.552Z",
       "cancelReason": "Admin test cancellation via Shiprocket",
       "cancelledAt": "2026-10-15T15:12:37.474Z",
       "shiprocketCancelled": true,
-      "razorpayPaymentId": "pay_test_1792080000000"
+      "razorpayPaymentId": "pay_test_1792080000000",
+      "refundAmount": 2199,
+      "refundReason": "Customer requested refund test (Gateway notice: no Route matched with those values)",
+      "refundedAt": "2026-10-16T11:19:10.552Z"
     },
     {
       "id": "GB-505060",

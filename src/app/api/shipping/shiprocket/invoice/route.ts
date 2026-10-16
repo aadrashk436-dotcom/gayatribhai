@@ -91,3 +91,39 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("orderId") || searchParams.get("id");
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: "Order ID is required." },
+        { status: 400 }
+      );
+    }
+
+    const db = readDb();
+    const orders: any[] = db.orders || [];
+
+    const order = orders.find(
+      (o) =>
+        String(o.id).toUpperCase() === String(orderId).toUpperCase() ||
+        String(o.orderNumber).toUpperCase() === String(orderId).toUpperCase()
+    );
+
+    if (order?.shiprocket_invoice_url) {
+      return NextResponse.redirect(order.shiprocket_invoice_url);
+    }
+
+    const cleanId = order?.orderNumber || order?.id || orderId;
+    return NextResponse.redirect(new URL(`/api/orders/invoice?id=${encodeURIComponent(cleanId)}`, request.url));
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to get invoice" },
+      { status: 500 }
+    );
+  }
+}
+

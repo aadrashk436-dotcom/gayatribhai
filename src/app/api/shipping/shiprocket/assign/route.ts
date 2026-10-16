@@ -164,6 +164,9 @@ export async function POST(request: Request) {
       );
       const subTotal = itemsSum > 0 ? itemsSum : (order.total || 2199);
 
+      const shippingCharges = Number(order.shipping ?? order.shippingCost ?? order.courierRate ?? 0);
+      const discountAmount = Number(order.discount ?? 0);
+
       const isReassign = Boolean(body.reassign) || (Boolean(order.awb) && Boolean(courierName || courierId));
 
       let shiprocketOrderId = isReassign ? null : (order.shiprocket_order_id || null);
@@ -209,6 +212,8 @@ export async function POST(request: Request) {
               order_items: orderItems,
               payment_method: isCod ? "COD" : "Prepaid",
               sub_total: subTotal,
+              shipping_charges: shippingCharges,
+              discount: discountAmount,
               length: 25,
               breadth: 20,
               height: 5,
@@ -240,6 +245,8 @@ export async function POST(request: Request) {
                 order_items: orderItems,
                 payment_method: isCod ? "COD" : "Prepaid",
                 sub_total: subTotal,
+                shipping_charges: shippingCharges,
+                discount: discountAmount,
                 length: 25,
                 breadth: 20,
                 height: 5,

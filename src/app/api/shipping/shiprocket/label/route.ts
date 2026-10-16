@@ -17,10 +17,54 @@ function readDb() {
   }
 }
 
+import { generateShippingLabelHTML } from "@/lib/shippingLabel";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("orderId");
+    const shipmentId = searchParams.get("shipmentId");
+
+    if (!orderId && !shipmentId) {
+      return new Response("Order ID or Shipment ID is required", { status: 400 });
+    }
+
+    const db = readDb();
+    const orders: any[] = db.orders || [];
+
+    const order = orders.find(
+      (o) =>
+        String(o.id).toUpperCase() === String(orderId).toUpperCase() ||
+        String(o.orderNumber).toUpperCase() === String(orderId).toUpperCase() ||
+        (shipmentId && String(o.shiprocket_shipment_id) === String(shipmentId))
+    );
+
+    if (!order) {
+      return new Response("Order not found", { status: 404 });
+    }
+
+    const html = generateShippingLabelHTML(order, {
+      awb_number: order.awb,
+      courier_name: order.courierName || order.courier,
+      shipment_id: order.shiprocket_shipment_id || shipmentId || undefined,
+    });
+
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
+    });
+  } catch (err: any) {
+    console.error("GET shipping label error:", err);
+    return new Response(`Error generating label: ${err.message}`, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, shipmentId } = body;
+    const { orderId, shipmentId, format } = body;
 
     if (!orderId && !shipmentId) {
       return NextResponse.json(
@@ -57,16 +101,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const customLabelUrl = `/api/shipping/shiprocket/label?orderId=${encodeURIComponent(order?.id || orderId)}&format=html`;
+
+    if (format === "html") {
+      return NextResponse.json({
+        success: true,
+        label_url: customLabelUrl,
+        custom_label_url: customLabelUrl,
+      });
+    }
+
     const targetShipmentId = shipmentId || order?.shiprocket_shipment_id;
 
     if (!targetShipmentId) {
-      return NextResponse.json(
-        {
-          error: "No Shiprocket shipment ID found for this order. Please re-assign to Shiprocket.",
-          notAssigned: true,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: true,
+        label_url: customLabelUrl,
+        custom_label_url: customLabelUrl,
+        message: "Generated custom barcode shipping label.",
+      });
     }
 
     const result = await generateShiprocketLabel(targetShipmentId);
@@ -75,16 +128,18 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         label_url: result.label_url,
+        custom_label_url: customLabelUrl,
         message: result.message || "Shipping label generated successfully!",
       });
     }
 
-    return NextResponse.json(
-      {
-        error: result?.message || "Failed to generate label from Shiprocket.",
-      },
-      { status: 502 }
-    );
+    // Graceful fallback to custom printable label with barcode if Shiprocket PDF is unavailable
+    return NextResponse.json({
+      success: true,
+      label_url: customLabelUrl,
+      custom_label_url: customLabelUrl,
+      message: "Generated custom branded shipping label.",
+    });
   } catch (err: any) {
     console.error("Shiprocket label generation error:", err);
     return NextResponse.json(
