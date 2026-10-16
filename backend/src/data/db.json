@@ -1415,9 +1415,9 @@
         "pincode": "400006"
       },
       "courier": "Delhivery Surface",
-      "etd": "2-3 business days",
+      "etd": "2026-10-20 00:00:00",
       "awb": "19041969079214",
-      "shiprocketStatus": null,
+      "shiprocketStatus": "Out for Pickup",
       "shiprocket_order_id": 1657894554,
       "shiprocket_shipment_id": 1653585339,
       "shiprocket_label_url": "https://sr-core-cdn.shiprocket.in/label/s/11855410/01a144a0-f6cc-74f7-881c-4cdb5fc69370.pdf",
@@ -1427,7 +1427,8 @@
       "verifiedAt": "2026-10-16T12:12:39.916Z",
       "verifiedBy": "Gayatri Puri (Admin)",
       "assignedAt": "2026-10-16T12:12:42.213Z",
-      "updatedAt": "2026-10-16T12:12:42.213Z"
+      "updatedAt": "2026-10-16T13:14:42.564Z",
+      "currentStatusText": "Out for pickup (Surat) • 2026-10-16 16:52:14"
     },
     {
       "id": "GB-044024",
@@ -1755,7 +1756,7 @@
       "shiprocket_order_id": 1656075910,
       "shiprocket_shipment_id": 1651783669,
       "assignedAt": "2026-10-15T15:04:06.429Z",
-      "updatedAt": "2026-10-15T15:04:20.176Z",
+      "updatedAt": "2026-10-16T13:14:42.638Z",
       "cancelReason": null,
       "cancelledAt": null,
       "state": "Gujarat",
@@ -1770,10 +1771,11 @@
       },
       "courierId": null,
       "etd": "2-3 business days",
-      "shiprocketStatus": null,
+      "shiprocketStatus": "AWB Assigned",
       "shiprocket_label_url": null,
       "shiprocket_invoice_url": null,
-      "razorpayPaymentId": null
+      "razorpayPaymentId": null,
+      "currentStatusText": "AWB Assigned"
     },
     {
       "id": "GB-016307",

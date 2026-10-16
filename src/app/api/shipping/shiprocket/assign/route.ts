@@ -11,6 +11,9 @@ import {
   generateShiprocketLabel,
   generateShiprocketInvoice,
   cancelShiprocketShipmentAWBs,
+  trackShiprocketAWB,
+  trackShiprocketShipment,
+  extractShiprocketStatus,
 } from "@/lib/shiprocket";
 
 function getDbPath() {
@@ -175,6 +178,8 @@ export async function POST(request: Request) {
       let finalCourierName = courierName || order.courier || "Shiprocket Express Partner";
       let labelUrl = isReassign ? null : (order.shiprocket_label_url || null);
       let invoiceUrl = isReassign ? null : (order.shiprocket_invoice_url || null);
+      let liveSRStatus = order.shiprocketStatus || "AWB Assigned";
+      let liveStatusText = order.currentStatusText || `AWB Assigned (${finalCourierName})`;
 
       try {
         // If re-assigning, first cancel previous AWB on Shiprocket
@@ -268,6 +273,9 @@ export async function POST(request: Request) {
           }
         }
 
+        liveSRStatus = "AWB Assigned";
+        liveStatusText = `AWB Assigned (${finalCourierName})`;
+
         // Step 2: Assign live AWB
         if (shipmentId) {
           const awbResult = await assignShiprocketAWB(
@@ -286,6 +294,41 @@ export async function POST(request: Request) {
             } else if (awbResult.courier_name) {
               finalCourierName = awbResult.courier_name;
             }
+            if (awbResult.status) {
+              liveSRStatus = awbResult.status;
+            }
+          }
+        }
+
+        // Immediately track to fetch exact real-time Shiprocket status
+        if (awbCode && !awbCode.startsWith("AWB-SR-")) {
+          try {
+            const trk = await trackShiprocketAWB(awbCode);
+            const parsed = extractShiprocketStatus(trk);
+            if (parsed.status) {
+              liveSRStatus = parsed.status;
+            }
+            if (parsed.statusText) {
+              liveStatusText = parsed.statusText;
+            }
+            if (parsed.courierName && (!finalCourierName || finalCourierName === "Shiprocket Express Partner")) {
+              finalCourierName = parsed.courierName;
+            }
+          } catch (trkErr) {
+            console.warn("Immediate track after assign notice:", trkErr);
+          }
+        } else if (shipmentId) {
+          try {
+            const trk = await trackShiprocketShipment(shipmentId);
+            const parsed = extractShiprocketStatus(trk);
+            if (parsed.status) {
+              liveSRStatus = parsed.status;
+            }
+            if (parsed.statusText) {
+              liveStatusText = parsed.statusText;
+            }
+          } catch (trkErr) {
+            console.warn("Immediate track by shipment notice:", trkErr);
           }
         }
 
@@ -312,11 +355,13 @@ export async function POST(request: Request) {
         awbCode = `AWB-SR-${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
       }
 
-      // Update order in database
+      // Update order in database with real-time Shiprocket status
       order.status = "Assigned to Courier";
       order.courier = finalCourierName;
       order.courierName = finalCourierName;
       order.awb = awbCode;
+      order.shiprocketStatus = liveSRStatus;
+      order.currentStatusText = liveStatusText;
       order.shiprocket_order_id = shiprocketOrderId;
       order.shiprocket_shipment_id = shipmentId;
       if (labelUrl) order.shiprocket_label_url = labelUrl;
@@ -328,6 +373,8 @@ export async function POST(request: Request) {
         orderId: order.id,
         orderNumber: orderNum,
         status: "Assigned to Courier",
+        shiprocketStatus: liveSRStatus,
+        currentStatusText: liveStatusText,
         courier: finalCourierName,
         awb: awbCode,
         shipmentId: shipmentId || null,

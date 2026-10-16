@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { trackShiprocketShipment, trackShiprocketAWB } from "@/lib/shiprocket";
+import { trackShiprocketShipment, trackShiprocketAWB, extractShiprocketStatus } from "@/lib/shiprocket";
 
 function getDbPath() {
   return path.join(process.cwd(), "backend", "src", "data", "db.json");
@@ -81,9 +81,12 @@ export async function GET(request: Request) {
     const latestActivity = activities[0] || {};
     const trackUrl = trackingData.track_url || (targetAwb ? `https://shiprocket.co/tracking/${targetAwb}` : "");
 
+    // Extract exact live status from Shiprocket
+    const parsedSR = extractShiprocketStatus(trackRes);
+
     // Determine normalized status from Shiprocket
     const srStatusNum = Number(trackingData.shipment_status);
-    const srStatusText = (latestActivity.activity || trackingData.current_status || "").toLowerCase();
+    const srStatusText = (parsedSR.status || latestActivity.activity || trackingData.current_status || "").toLowerCase();
 
     let newStatus = order?.status;
     if (srStatusNum === 7 || srStatusText.includes("delivered")) {
@@ -92,7 +95,8 @@ export async function GET(request: Request) {
       srStatusNum === 6 ||
       srStatusNum === 17 ||
       srStatusNum === 18 ||
-      srStatusText.includes("out for delivery")
+      srStatusText.includes("out for delivery") ||
+      srStatusText.includes("in transit")
     ) {
       newStatus = "Dispatched";
     } else if (srStatusNum === 8 || srStatusText.includes("cancel")) {
@@ -101,26 +105,51 @@ export async function GET(request: Request) {
       newStatus = "Assigned to Courier";
     }
 
-    // Auto-update order in database if status progressed
-    if (order && newStatus && newStatus !== order.status) {
-      order.status = newStatus;
-      if (newStatus === "Delivered") {
-        order.paymentStatus = "Paid";
+    // Auto-update order in database if status progressed or live SR status received
+    if (order) {
+      let changed = false;
+      if (newStatus && newStatus !== order.status) {
+        order.status = newStatus;
+        if (newStatus === "Delivered") {
+          order.paymentStatus = "Paid";
+        }
+        changed = true;
       }
-      order.updatedAt = new Date().toISOString();
-      db.orders = orders;
-      writeDb(db);
+      if (parsedSR.status && order.shiprocketStatus !== parsedSR.status) {
+        order.shiprocketStatus = parsedSR.status;
+        changed = true;
+      }
+      if (parsedSR.statusText && order.currentStatusText !== parsedSR.statusText) {
+        order.currentStatusText = parsedSR.statusText;
+        changed = true;
+      }
+      if (parsedSR.courierName && (!order.courier || order.courier === "Shiprocket Express Partner")) {
+        order.courier = parsedSR.courierName;
+        order.courierName = parsedSR.courierName;
+        changed = true;
+      }
+      if (parsedSR.edd && order.etd !== parsedSR.edd) {
+        order.etd = parsedSR.edd;
+        changed = true;
+      }
+
+      if (changed) {
+        order.updatedAt = new Date().toISOString();
+        db.orders = orders;
+        writeDb(db);
+      }
     }
 
     return NextResponse.json({
       success: true,
       orderId: order?.id || orderId,
       status: order?.status || newStatus,
-      courier: order?.courier || "Blue Dart Express Air",
+      shiprocketStatus: order?.shiprocketStatus || parsedSR.status,
+      courier: order?.courier || parsedSR.courierName || "Shiprocket Express Partner",
       awb: targetAwb,
       trackUrl,
-      etd: trackingData.etd || "3-5 business days",
-      currentStatusText: latestActivity.activity || trackingData.current_status || order?.status,
+      etd: order?.etd || parsedSR.edd || trackingData.etd || "3-5 business days",
+      currentStatusText: order?.currentStatusText || parsedSR.statusText || latestActivity.activity || order?.status,
       activities,
       trackingData,
     });

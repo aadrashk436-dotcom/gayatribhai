@@ -285,21 +285,49 @@ export const AdminShippingTab: React.FC<AdminShippingTabProps> = ({
 
                     {/* Status Badge */}
                     <td className="py-3.5 px-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          ord.status === "Delivered"
-                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                            : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
-                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                            : ord.status === "Verified"
-                            ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                            : ord.status === "Cancelled"
-                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                        }`}
-                      >
-                        {ord.status}
-                      </span>
+                      {ord.shiprocketStatus ? (
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-sm ${
+                              ord.shiprocketStatus.toLowerCase().includes("delivered")
+                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                : ord.shiprocketStatus.toLowerCase().includes("cancel")
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                                : ord.shiprocketStatus.toLowerCase().includes("pickup") ||
+                                  ord.shiprocketStatus.toLowerCase().includes("transit") ||
+                                  ord.shiprocketStatus.toLowerCase().includes("dispatched") ||
+                                  ord.shiprocketStatus.toLowerCase().includes("out for delivery")
+                                ? "bg-sky-500/20 text-sky-400 border border-sky-500/40"
+                                : "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                            <Truck className="h-2.5 w-2.5" />
+                            <span>{ord.shiprocketStatus}</span>
+                          </span>
+                          {ord.currentStatusText && ord.currentStatusText !== ord.shiprocketStatus && (
+                            <p className="text-[9px] text-zinc-300 line-clamp-1" title={ord.currentStatusText}>
+                              📍 {ord.currentStatusText}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            ord.status === "Delivered"
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                              : ord.status === "Verified"
+                              ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                              : ord.status === "Cancelled"
+                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                              : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          }`}
+                        >
+                          {ord.status}
+                        </span>
+                      )}
                     </td>
 
                     {/* Logistics Actions */}

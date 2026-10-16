@@ -72,6 +72,11 @@ export function InspectOrderModal({
   const [liveCheckpoint, setLiveCheckpoint] = React.useState<string | null>(order.currentStatusText || null)
   const [liveSRStatus, setLiveSRStatus] = React.useState<string | null>(order.shiprocketStatus || null)
 
+  React.useEffect(() => {
+    setLiveSRStatus(order.shiprocketStatus || null)
+    setLiveCheckpoint(order.currentStatusText || null)
+  }, [order.shiprocketStatus, order.currentStatusText, order.id])
+
   const handleSyncLive = async () => {
     setIsSyncingLive(true)
     try {
@@ -79,10 +84,12 @@ export function InspectOrderModal({
       const data = await res.json()
       if (res.ok && data.success) {
         setLiveCheckpoint(data.currentStatusText || data.status)
-        if (data.trackingData?.current_status) {
+        if (data.shiprocketStatus) {
+          setLiveSRStatus(data.shiprocketStatus)
+        } else if (data.trackingData?.current_status) {
           setLiveSRStatus(data.trackingData.current_status)
         }
-        showToast(`Live status synced: ${data.currentStatusText || data.status}`)
+        showToast(`Live status synced: ${data.shiprocketStatus || data.currentStatusText || data.status}`)
         if (onTrackLive) onTrackLive(order.id)
       } else {
         showToast(data.error || "Unable to sync live status")
@@ -102,20 +109,28 @@ export function InspectOrderModal({
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="font-serif text-lg sm:text-xl font-bold text-white">Order #{order.id}</h3>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${order.status === "Delivered"
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                  : order.status === "Assigned to Courier" || order.status === "Dispatched"
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : order.status === "Verified"
-                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                      : order.status === "Cancelled"
-                        ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                  }`}
-              >
-                {order.status}
-              </span>
+              {(liveSRStatus || order.shiprocketStatus) ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/40 px-3 py-0.5 text-xs font-bold shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                  <Truck className="h-3 w-3 text-sky-400" />
+                  <span>{liveSRStatus || order.shiprocketStatus}</span>
+                </span>
+              ) : (
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${order.status === "Delivered"
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : order.status === "Assigned to Courier" || order.status === "Dispatched"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                      : order.status === "Verified"
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                        : order.status === "Cancelled"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    }`}
+                >
+                  {order.status}
+                </span>
+              )}
               {order.paymentStatus === "Refunded" && (
                 <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-bold">
                   Refunded
@@ -143,26 +158,32 @@ export function InspectOrderModal({
                   <Activity className="h-3.5 w-3.5 text-[#d4af37]" />
                   Order Current Status:
                 </span>
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${order.status === "Delivered"
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                    : order.status === "Dispatched" || order.status === "Assigned to Courier"
-                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
-                      : order.status === "Verified"
-                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
-                        : order.status === "Cancelled"
-                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
-                          : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                    }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                  {order.status}
-                </span>
-
-                {(liveSRStatus || order.shiprocketStatus) && (
-                  <span className="inline-flex items-center gap-1.5 rounded bg-sky-950/90 border border-sky-500/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sky-300">
-                    <Truck className="h-3 w-3 text-sky-400" />
-                    SR Live: {liveSRStatus || order.shiprocketStatus}
+                {(liveSRStatus || order.shiprocketStatus) ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm bg-sky-500/20 text-sky-400 border border-sky-500/40">
+                      <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                      <Truck className="h-3.5 w-3.5 text-sky-400" />
+                      <span>{liveSRStatus || order.shiprocketStatus}</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      (Shiprocket Live)
+                    </span>
+                  </div>
+                ) : (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${order.status === "Delivered"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                      : order.status === "Dispatched" || order.status === "Assigned to Courier"
+                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                        : order.status === "Verified"
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
+                          : order.status === "Cancelled"
+                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                      }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                    {order.status}
                   </span>
                 )}
               </div>
@@ -570,17 +591,17 @@ export function InspectOrderModal({
                         </span>
                       )}
                     </div>
-                    {order.shiprocketStatus && (
-                      <div className="flex items-center gap-1.5 bg-sky-950/60 border border-sky-500/30 px-2 py-1 rounded-lg">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-                        <span className="text-[10px] font-mono font-bold text-sky-300 uppercase">
-                          Shiprocket: {order.shiprocketStatus}
+                    {(liveSRStatus || order.shiprocketStatus) && (
+                      <div className="flex items-center gap-1.5 bg-sky-950/70 border border-sky-500/40 px-2.5 py-1.5 rounded-lg shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                        <span className="text-xs font-mono font-bold text-sky-300">
+                          Shiprocket Live Status: {liveSRStatus || order.shiprocketStatus}
                         </span>
                       </div>
                     )}
-                    {order.currentStatusText && order.currentStatusText !== order.shiprocketStatus && (
+                    {(liveCheckpoint || (order.currentStatusText && order.currentStatusText !== (liveSRStatus || order.shiprocketStatus))) && (
                       <p className="text-[10px] text-zinc-300 italic px-1">
-                        {order.currentStatusText}
+                        📍 {liveCheckpoint || order.currentStatusText}
                       </p>
                     )}
                   </div>

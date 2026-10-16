@@ -142,6 +142,7 @@ export async function assignShiprocketAWB(
   awb_code?: string;
   courier_name?: string;
   courier_company_id?: number | string;
+  status?: string;
   raw?: any;
 }> {
   const body: Record<string, any> = { shipment_id: Number(shipmentId) || shipmentId };
@@ -154,11 +155,20 @@ export async function assignShiprocketAWB(
 
   // 1. Direct success
   if (awbRes?.response?.data?.awb_code) {
+    const rawData = awbRes.response.data;
+    const liveStatus =
+      rawData.awb_assign_status ||
+      rawData.shipment_status ||
+      rawData.current_status ||
+      rawData.status ||
+      "AWB Assigned";
+
     return {
       success: true,
-      awb_code: awbRes.response.data.awb_code,
-      courier_name: awbRes.response.data.courier_name || preferredCourierName || "Shiprocket Express Partner",
-      courier_company_id: awbRes.response.data.courier_company_id || courierId,
+      awb_code: rawData.awb_code,
+      courier_name: rawData.courier_name || preferredCourierName || "Shiprocket Express Partner",
+      courier_company_id: rawData.courier_company_id || courierId,
+      status: String(liveStatus),
       raw: awbRes,
     };
   }
@@ -170,11 +180,15 @@ export async function assignShiprocketAWB(
     JSON.stringify(awbRes);
   const match = errorMsg.match(/with awb\s*-\s*([A-Za-z0-9]+)/i);
   if (match && match[1]) {
+    const statusMatch = errorMsg.match(/and status\s*-\s*([A-Za-z0-9_ ]+)/i);
+    const parsedStatus = statusMatch && statusMatch[1] ? statusMatch[1].trim() : "AWB Assigned";
+
     return {
       success: true,
       awb_code: match[1],
       courier_name: awbRes?.response?.data?.courier_name || preferredCourierName || "Shiprocket Express Partner",
       courier_company_id: awbRes?.response?.data?.courier_id || courierId,
+      status: parsedStatus,
       raw: awbRes,
     };
   }
@@ -191,6 +205,7 @@ export async function assignShiprocketAWB(
           awb_code: sh.awb,
           courier_name: sh.courier || "Shiprocket Express Partner",
           courier_company_id: sh.courier_id || courierId,
+          status: sh.status || orderData?.data?.status || "AWB Assigned",
           raw: orderData,
         };
       }
@@ -351,3 +366,101 @@ export async function cancelShiprocketComplete({
 
   return result;
 }
+
+/**
+ * Safely parse the live real-time status and activity details from any Shiprocket tracking or order response.
+ */
+export function extractShiprocketStatus(payload: any): {
+  status: string;
+  statusText?: string;
+  location?: string;
+  updatedAt?: string;
+  courierName?: string;
+  edd?: string;
+} {
+  if (!payload) return { status: "AWB Assigned" };
+
+  const trackingData = payload.tracking_data || payload;
+  const firstTrack = Array.isArray(trackingData.shipment_track)
+    ? trackingData.shipment_track[0]
+    : trackingData.shipment_track || {};
+
+  const activities = Array.isArray(trackingData.shipment_track_activities)
+    ? trackingData.shipment_track_activities
+    : [];
+  const latestActivity = activities[0] || {};
+
+  const orderData = payload.data || payload;
+  const orderShipment = Array.isArray(orderData.shipments)
+    ? orderData.shipments[0]
+    : orderData.shipments;
+
+  // Status priority:
+  // 1. shipment_track[0].current_status (e.g. "Out for Pickup", "In Transit", "Delivered")
+  // 2. activities[0]["sr-status-label"] (e.g. "OUT FOR PICKUP")
+  // 3. activities[0].activity (e.g. "Out for pickup")
+  // 4. orderShipment?.status or orderData?.status (e.g. "PICKUP SCHEDULED", "AWB ASSIGNED")
+  // 5. trackingData.current_status
+  // 6. payload.status or payload.awb_assign_status
+  let rawStatus =
+    firstTrack.current_status ||
+    latestActivity["sr-status-label"] ||
+    latestActivity.activity ||
+    orderShipment?.status ||
+    orderData.status ||
+    trackingData.current_status ||
+    payload.status ||
+    payload.awb_assign_status;
+
+  if (typeof rawStatus === "number") {
+    const codeMap: Record<number, string> = {
+      6: "Shipped",
+      7: "Delivered",
+      8: "Canceled",
+      9: "RTO Initiated",
+      10: "RTO Delivered",
+      17: "Out for Delivery",
+      18: "In Transit",
+      19: "Out for Pickup",
+      42: "Pickup Scheduled",
+      46: "Pickup Error",
+      51: "Manifest Generated",
+      54: "Pickup Rescheduled",
+    };
+    rawStatus = codeMap[rawStatus] || `Status Code ${rawStatus}`;
+  }
+
+  const statusStr = String(rawStatus || "AWB Assigned").trim();
+
+  // Clean status display string: title-case if ALL_CAPS
+  let displayStatus = statusStr;
+  if (/^[A-Z0-9_ ]+$/.test(displayStatus) && displayStatus.length > 3) {
+    displayStatus = displayStatus
+      .toLowerCase()
+      .split(/[ _]+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+
+  const loc = latestActivity.location || firstTrack.destination || "";
+  const act = latestActivity.activity || displayStatus;
+  const dt = latestActivity.date || firstTrack.pickup_date || "";
+
+  let statusText = act;
+  if (loc && !statusText.toLowerCase().includes(loc.toLowerCase())) {
+    statusText += ` (${loc})`;
+  }
+  if (dt) {
+    statusText += ` • ${dt}`;
+  }
+
+  return {
+    status: displayStatus,
+    statusText: statusText.trim(),
+    location: loc || undefined,
+    updatedAt: dt || undefined,
+    courierName: firstTrack.courier_name || undefined,
+    edd: firstTrack.edd || trackingData.etd || undefined,
+  };
+}
+

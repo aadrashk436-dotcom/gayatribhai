@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { trackShiprocketShipment, trackShiprocketAWB } from "@/lib/shiprocket";
+import { trackShiprocketShipment, trackShiprocketAWB, extractShiprocketStatus } from "@/lib/shiprocket";
 
 export const dynamic = "force-dynamic";
 
@@ -70,8 +70,10 @@ export async function POST(request: Request) {
             const trackingData = trackRes.tracking_data || {};
             const activities = trackingData.shipment_track_activities || [];
             const latestActivity = activities[0] || {};
+            const parsedSR = extractShiprocketStatus(trackRes);
+
             const srStatusNum = Number(trackingData.shipment_status);
-            const srStatusText = (latestActivity.activity || trackingData.current_status || "").toLowerCase();
+            const srStatusText = (parsedSR.status || latestActivity.activity || trackingData.current_status || "").toLowerCase();
 
             let newStatus = order.status;
             if (srStatusNum === 7 || srStatusText.includes("delivered")) {
@@ -80,16 +82,17 @@ export async function POST(request: Request) {
               srStatusNum === 6 ||
               srStatusNum === 17 ||
               srStatusNum === 18 ||
-              srStatusText.includes("out for delivery")
+              srStatusText.includes("out for delivery") ||
+              srStatusText.includes("in transit")
             ) {
               newStatus = "Dispatched";
             } else if (srStatusNum === 8 || srStatusText.includes("cancel")) {
               newStatus = "Cancelled";
             }
 
-            const currentStatusText = latestActivity.activity || trackingData.current_status || order.currentStatusText;
-            const shiprocketStatus = trackingData.current_status || order.shiprocketStatus;
-            const etd = trackingData.etd || order.etd;
+            const currentStatusText = parsedSR.statusText || latestActivity.activity || order.currentStatusText;
+            const shiprocketStatus = parsedSR.status || order.shiprocketStatus;
+            const etd = parsedSR.edd || trackingData.etd || order.etd;
 
             let changed = false;
             if (newStatus !== order.status) {
@@ -107,6 +110,12 @@ export async function POST(request: Request) {
 
             if (shiprocketStatus && order.shiprocketStatus !== shiprocketStatus) {
               order.shiprocketStatus = shiprocketStatus;
+              changed = true;
+            }
+
+            if (parsedSR.courierName && (!order.courier || order.courier === "Shiprocket Express Partner")) {
+              order.courier = parsedSR.courierName;
+              order.courierName = parsedSR.courierName;
               changed = true;
             }
 
