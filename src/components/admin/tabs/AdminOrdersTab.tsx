@@ -746,28 +746,34 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
 
                       {/* Status & Logistics */}
                       <td className="py-3.5 px-3">
-                        <div className="space-y-1">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              ord.status === "Delivered"
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                : ord.status === "Verified"
-                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                                : ord.status === "Cancelled"
-                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                            }`}
-                          >
-                            {ord.status === "Delivered" && <CheckCircle2 className="h-2.5 w-2.5" />}
-                            {ord.status === "Dispatched" && <Truck className="h-2.5 w-2.5" />}
-                            {ord.status === "Assigned to Courier" && <Package className="h-2.5 w-2.5" />}
-                            {ord.status === "Verified" && <ShieldCheck className="h-2.5 w-2.5" />}
-                            {ord.status === "Pending Verification" && <Clock className="h-2.5 w-2.5" />}
-                            {ord.status === "Cancelled" && <Ban className="h-2.5 w-2.5" />}
-                            <span>{ord.status}</span>
-                          </span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+                              Status:
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                ord.status === "Delivered"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : ord.status === "Assigned to Courier" || ord.status === "Dispatched"
+                                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                  : ord.status === "Verified"
+                                  ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                  : ord.status === "Cancelled"
+                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                              }`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                              {ord.status === "Delivered" && <CheckCircle2 className="h-2.5 w-2.5" />}
+                              {ord.status === "Dispatched" && <Truck className="h-2.5 w-2.5" />}
+                              {ord.status === "Assigned to Courier" && <Package className="h-2.5 w-2.5" />}
+                              {ord.status === "Verified" && <ShieldCheck className="h-2.5 w-2.5" />}
+                              {ord.status === "Pending Verification" && <Clock className="h-2.5 w-2.5" />}
+                              {ord.status === "Cancelled" && <Ban className="h-2.5 w-2.5" />}
+                              <span>{ord.status}</span>
+                            </span>
+                          </div>
 
                           {ord.awb && (
                             <div className="mt-1 space-y-0.5">
@@ -798,13 +804,13 @@ export const AdminOrdersTab: React.FC<AdminOrdersTabProps> = ({
                           <div className="mt-1 flex items-center gap-1">
                             <span className="inline-flex items-center gap-1 rounded bg-sky-950/80 border border-sky-500/30 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300 font-mono shadow-sm">
                               <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-                              SR: {ord.shiprocketStatus}
+                              SR Live: {ord.shiprocketStatus}
                             </span>
                           </div>
                         )}
                         {ord.currentStatusText && ord.currentStatusText !== ord.shiprocketStatus && (
-                          <p className="text-[9px] text-zinc-400 mt-0.5 line-clamp-1 italic" title={ord.currentStatusText}>
-                            {ord.currentStatusText}
+                          <p className="text-[9px] text-zinc-300 mt-1 line-clamp-2 bg-white/[0.03] p-1 rounded border border-white/5" title={ord.currentStatusText}>
+                            📍 {ord.currentStatusText}
                           </p>
                         )}
 

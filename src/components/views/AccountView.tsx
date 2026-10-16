@@ -12,6 +12,23 @@ import { useStore, isDummyAddress } from "../../lib/store"
 import Icon from "../common/Icon"
 import ThemeToggle from "../providers/ThemeToggle"
 import { downloadOrderInvoice } from "../../utils/invoice"
+import {
+  CheckCircle2,
+  Clock,
+  Truck,
+  Package,
+  ShieldCheck,
+  Ban,
+  RotateCcw,
+  Copy,
+  ExternalLink,
+  ChevronRight,
+  AlertCircle,
+  MapPin,
+  Activity,
+  FileText,
+  X as LucideX,
+} from "lucide-react"
 
 gsap.registerPlugin(useGSAP)
 
@@ -112,13 +129,315 @@ function CancelOrderDialog({
   )
 }
 
+function PatronTrackOrderModal({
+  order,
+  onClose,
+  showToast,
+  onStatusRefreshed,
+}: {
+  order: any
+  onClose: () => void
+  showToast?: (msg: string) => void
+  onStatusRefreshed?: () => void
+}) {
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [liveCheckpoint, setLiveCheckpoint] = useState<string | null>(order.currentStatusText || null)
+  const [liveSRStatus, setLiveSRStatus] = useState<string | null>(order.shiprocketStatus || null)
+  const [activities, setActivities] = useState<any[]>([])
+
+  const orderId = order.orderNumber || order.id || "ORD"
+  const rawStatus = (order.status || "Pending Verification").toLowerCase()
+  const isDelivered = rawStatus === "delivered"
+  const isCancelled = rawStatus === "cancelled"
+  const isDispatched = rawStatus === "dispatched" || rawStatus === "shipped" || rawStatus === "in transit" || rawStatus === "on the way"
+  const isAssigned = Boolean(order.awb) || rawStatus === "assigned to courier" || rawStatus === "assigned"
+  const isVerified = rawStatus === "verified" || rawStatus === "packed" || rawStatus === "confirmed"
+
+  const step =
+    typeof order.step === "number"
+      ? order.step
+      : isDelivered
+      ? 4
+      : isDispatched
+      ? 3
+      : isAssigned
+      ? 2
+      : isVerified
+      ? 1
+      : 0
+
+  const handleFetchLiveTracking = async () => {
+    setIsSyncing(true)
+    try {
+      const res = await fetch(`/api/shipping/shiprocket/track?orderId=${encodeURIComponent(orderId)}`)
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setLiveCheckpoint(data.currentStatusText || data.status)
+        if (data.trackingData?.current_status) {
+          setLiveSRStatus(data.trackingData.current_status)
+        }
+        if (Array.isArray(data.activities) && data.activities.length > 0) {
+          setActivities(data.activities)
+        }
+        if (showToast) showToast(`Shiprocket tracking updated: ${data.currentStatusText || data.status}`)
+        if (onStatusRefreshed) onStatusRefreshed()
+      } else {
+        if (showToast) showToast(data.error || "Unable to sync tracking status")
+      }
+    } catch {
+      if (showToast) showToast("Error connecting to courier tracking network")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (order.awb || order.shiprocket_shipment_id) {
+      handleFetchLiveTracking()
+    }
+  }, [])
+
+  return (
+    <div
+      className="fixed inset-0 z-[85] flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-border bg-surface text-foreground shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+      >
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between border-b border-border px-5 py-4 bg-surface-2/60">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="font-display text-base sm:text-lg font-bold text-foreground">
+              Order #{orderId} Tracking
+            </h3>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                isDelivered
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  : isCancelled
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                  : isDispatched || isAssigned
+                  ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30"
+                  : isVerified
+                  ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+              }`}
+            >
+              {order.status || "Pending Verification"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-2 transition cursor-pointer"
+          >
+            <LucideX className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+          {/* Prominent Current Status Card */}
+          <div className="rounded-xl border border-border bg-surface-2/70 p-4 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Activity className="h-3.5 w-3.5 text-[#d4af37]" />
+                Live Order Status
+              </span>
+              {(order.awb || order.shiprocket_shipment_id) && (
+                <button
+                  type="button"
+                  onClick={handleFetchLiveTracking}
+                  disabled={isSyncing}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-background px-2.5 py-1 rounded-full border border-border hover:bg-surface-2 transition cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw className={`h-3 w-3 ${isSyncing ? "animate-spin text-[#d4af37]" : ""}`} />
+                  <span>{isSyncing ? "Syncing..." : "Sync Live Status"}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 font-bold text-sm text-foreground">
+                <span className={`w-2.5 h-2.5 rounded-full ${isDelivered ? "bg-emerald-500" : isCancelled ? "bg-rose-500" : "bg-[#d4af37] animate-pulse"}`} />
+                {order.status}
+              </span>
+              {(liveSRStatus || order.shiprocketStatus) && (
+                <span className="inline-flex items-center gap-1 rounded bg-sky-500/15 text-sky-600 dark:text-sky-300 font-mono font-bold px-2 py-0.5 text-[10px] border border-sky-500/30">
+                  <Truck className="h-3 w-3" />
+                  SR Live: {liveSRStatus || order.shiprocketStatus}
+                </span>
+              )}
+            </div>
+
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {liveCheckpoint || order.currentStatusText || (
+                isDelivered
+                  ? "Your artisanal garment has been successfully delivered."
+                  : isDispatched
+                  ? "Consignment is out for delivery with our courier partner."
+                  : isAssigned
+                  ? "Shipment is packed and awaiting courier partner pickup."
+                  : isVerified
+                  ? "Order verified by atelier concierge. Packaging in micro-batch atelier."
+                  : isCancelled
+                  ? `Order cancelled: ${order.cancelReason || "Payment refunded"}`
+                  : "Order received and queued for bespoke quality review."
+              )}
+            </p>
+
+            {order.etd && !isDelivered && !isCancelled && (
+              <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+                Estimated Delivery: <strong className="text-foreground">{order.etd}</strong>
+              </p>
+            )}
+          </div>
+
+          {/* Courier & AWB Details */}
+          {order.awb && !isCancelled && (
+            <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-foreground">
+                  {order.courier || order.courierName || "Shiprocket Express Partner"}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="font-mono text-xs font-bold text-foreground bg-background px-2 py-0.5 rounded border border-border">
+                    AWB: {order.awb}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(order.awb))
+                      if (showToast) showToast(`Copied AWB #${order.awb}`)
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition cursor-pointer"
+                    title="Copy AWB"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+
+              <a
+                href={`https://shiprocket.co/tracking/${order.awb}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
+              >
+                <span>Track on Shiprocket</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+
+          {/* Stepper Progress */}
+          {!isCancelled && (
+            <div className="rounded-xl border border-border bg-surface-2/40 p-4">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-3">
+                Fulfillment Milestones
+              </span>
+              <div className="relative flex items-center justify-between px-2">
+                <div className="absolute left-4 right-4 top-3 h-0.5 bg-border -z-0" />
+                <div
+                  className="absolute left-4 top-3 h-0.5 bg-foreground -z-0 transition-all duration-500"
+                  style={{ width: `${(Math.min(step, STEPS.length - 1) / (STEPS.length - 1)) * 100}%` }}
+                />
+
+                {STEPS.map((s, idx) => {
+                  const isDone = idx < step
+                  const isCurrent = idx === step
+                  return (
+                    <div key={s} className="flex flex-col items-center relative z-10">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all shadow-sm ${
+                          isCurrent
+                            ? "bg-foreground text-background ring-4 ring-foreground/20 scale-110"
+                            : isDone
+                            ? "bg-foreground text-background"
+                            : "bg-surface-2 text-muted-foreground border border-border"
+                        }`}
+                      >
+                        {isDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : idx + 1}
+                      </div>
+                      <span className={`text-[9px] mt-1 font-semibold ${isCurrent ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+                        {s}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Live Activity Checkpoints (if any) */}
+          {activities.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface-2/40 p-4 space-y-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                Live Checkpoint Log
+              </span>
+              <div className="space-y-2 border-l-2 border-border ml-2 pl-3">
+                {activities.map((act, i) => (
+                  <div key={i} className="relative text-xs">
+                    <div className="absolute -left-[17px] top-1 w-2 h-2 rounded-full bg-foreground" />
+                    <p className="font-semibold text-foreground">{act.activity || act.status}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {[act.location, act.date].filter(Boolean).join(" • ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t border-border px-5 py-3.5 bg-surface-2/60 flex items-center justify-between">
+          {order.awb && !isCancelled ? (
+            <button
+              type="button"
+              onClick={() => downloadOrderInvoice(orderId)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground hover:underline cursor-pointer"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Download Invoice (PDF)</span>
+            </button>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">Bespoke Artisan Care</span>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-foreground px-5 py-2 text-xs font-semibold text-background hover:opacity-90 transition cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OrderCard({
   order,
   onOpenCancel,
+  onOpenTracking,
+  showToast,
+  onStatusRefreshed,
 }: {
   order: any
   onOpenCancel?: (order: any) => void
+  onOpenTracking?: (order: any) => void
+  showToast?: (msg: string) => void
+  onStatusRefreshed?: () => void
 }) {
+  const [isSyncing, setIsSyncing] = useState(false)
+
   const items: any[] = Array.isArray(order.items) && order.items.length > 0
     ? order.items
     : [
@@ -171,7 +490,7 @@ function OrderCard({
   let statusLabel = order.status || "Pending Verification"
   if (isCancelled) statusLabel = "Cancelled"
   else if (isDelivered) statusLabel = "Delivered"
-  else if (isDispatched) statusLabel = "In Transit (Out for Delivery)"
+  else if (isDispatched) statusLabel = "In Transit"
   else if (isAssigned) statusLabel = "Courier Assigned"
   else if (isVerified) statusLabel = "Order Verified & Packed"
   else statusLabel = "Order Placed"
@@ -179,12 +498,32 @@ function OrderCard({
   // Cancellation rule: ONLY allowed while shipping is NOT assigned yet (no AWB and not assigned/dispatched/delivered)
   const canCancel = !order.awb && !isAssigned && !isDispatched && !isDelivered && !isCancelled
 
+  const handleQuickSync = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsSyncing(true)
+    try {
+      const res = await fetch(`/api/shipping/shiprocket/track?orderId=${encodeURIComponent(orderId)}`)
+      const data = await res.json()
+      if (res.ok && data.success) {
+        if (showToast) showToast(`Live status synced: ${data.currentStatusText || data.status}`)
+        if (onStatusRefreshed) onStatusRefreshed()
+      } else {
+        if (showToast) showToast(data.error || "Unable to sync tracking")
+      }
+    } catch {
+      if (showToast) showToast("Error syncing live tracking")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   return (
-    <article className="rounded-sm border border-border bg-surface p-4 md:p-5">
-      <div className="flex items-center justify-between gap-3">
+    <article className="rounded-xl border border-border bg-surface p-4 md:p-5 shadow-sm space-y-4">
+      {/* Top Header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">#{orderId}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-foreground font-mono">#{orderId}</p>
             {order.paymentMethod === "Cash on Delivery" ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 💵 Cash on Delivery {isDelivered ? "(Paid)" : "(Pay at Doorstep)"}
@@ -199,8 +538,9 @@ function OrderCard({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-sm text-muted-foreground">{dateStr}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{dateStr}</p>
         </div>
+
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
             isDelivered
@@ -218,8 +558,93 @@ function OrderCard({
         </span>
       </div>
 
+      {/* Prominent Current Status Card */}
+      <div className="rounded-xl border border-[#d4af37]/35 bg-gradient-to-r from-[#d4af37]/[0.08] via-surface-2/60 to-transparent p-3.5 sm:p-4 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-border/50 pb-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5 text-[#d4af37]" />
+              Order Current Status:
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-sm ${
+                isDelivered
+                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40"
+                  : isDispatched || isAssigned
+                  ? "bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/40"
+                  : isVerified
+                  ? "bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/40"
+                  : isCancelled
+                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40"
+                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+              {order.status || "Pending Verification"}
+            </span>
+
+            {order.shiprocketStatus && (
+              <span className="inline-flex items-center gap-1 rounded bg-sky-500/15 text-sky-600 dark:text-sky-300 font-mono font-bold px-2 py-0.5 text-[10px] border border-sky-500/30">
+                <Truck className="h-3 w-3" />
+                SR Live: {order.shiprocketStatus}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {(order.awb || order.shiprocket_shipment_id) && (
+              <button
+                type="button"
+                onClick={handleQuickSync}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-surface-2 hover:bg-surface border border-border px-2.5 py-1 rounded-lg transition cursor-pointer disabled:opacity-50"
+                title="Refresh latest tracking from courier partner"
+              >
+                <RotateCcw className={`h-3 w-3 text-[#d4af37] ${isSyncing ? "animate-spin" : ""}`} />
+                <span>{isSyncing ? "Syncing..." : "Sync Status"}</span>
+              </button>
+            )}
+
+            {onOpenTracking && (
+              <button
+                type="button"
+                onClick={() => onOpenTracking(order)}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground/20 px-3 py-1 rounded-lg border border-border transition cursor-pointer"
+              >
+                <span>Live Tracking Timeline</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <p className="text-muted-foreground leading-relaxed">
+            {order.currentStatusText || (
+              isDelivered
+                ? "Your artisanal garment has been successfully delivered and accepted."
+                : isDispatched
+                ? "Consignment is out for delivery with our delivery partner."
+                : isAssigned
+                ? "Shipment is packed and awaiting courier partner pickup."
+                : isVerified
+                ? "Order verified by atelier concierge. Garment being hand-prepared."
+                : isCancelled
+                ? `Order cancelled. Reason: ${order.cancelReason || "Cancelled upon request"}`
+                : "Order received and queued for bespoke quality review."
+            )}
+          </p>
+
+          {order.etd && !isDelivered && !isCancelled && (
+            <span className="text-[11px] text-muted-foreground shrink-0 font-medium">
+              Est. Delivery: <strong className="text-foreground">{order.etd}</strong>
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Ordered Items Breakdown */}
-      <div className="mt-4 divide-y divide-border/60 rounded-lg border border-border/50 bg-background/50 p-3">
+      <div className="divide-y divide-border/60 rounded-lg border border-border/50 bg-background/50 p-3">
         {items.map((it: any, idx: number) => {
           const itemProd = products.find((p) => p.id === (it.productId || it.id) || p.slug === (it.productId || it.id))
           const itemImage = it.image || itemProd?.images?.[0] || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"
@@ -259,7 +684,7 @@ function OrderCard({
       </div>
 
       {/* Financial Summary */}
-      <div className="mt-2.5 flex items-center justify-between text-xs text-muted-foreground px-1">
+      <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
         <span>{totalItemsCount} {totalItemsCount === 1 ? "shirt item" : "shirt items"} ordered</span>
         <div className="text-right">
           <span className="text-[11px] text-muted-foreground mr-1.5">Order Total:</span>
@@ -269,7 +694,7 @@ function OrderCard({
 
       {/* Delivery Address Details */}
       {(order.shippingAddress?.street || order.address) && (
-        <div className="mt-3.5 flex items-start gap-2.5 rounded-lg border border-border/50 bg-surface-2/40 p-3 text-xs text-muted-foreground">
+        <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-surface-2/40 p-3 text-xs text-muted-foreground">
           <span className="text-sm shrink-0 mt-0.5">📍</span>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground">
@@ -285,7 +710,7 @@ function OrderCard({
 
       {/* Progress Track Bar */}
       {!isCancelled && (
-        <div className="mt-5">
+        <div>
           <div className="relative h-1 rounded-full bg-border">
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-all duration-500"
@@ -304,16 +729,29 @@ function OrderCard({
 
       {/* Courier & AWB Tracking Block (Visible once AWB is assigned) */}
       {order.awb && !isCancelled && (
-        <div className="mt-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
             <span className="text-base">🚚</span>
             <div>
               <p className="text-xs font-semibold text-foreground">
                 {order.courier || order.courierName || "Shiprocket Courier Partner"}
               </p>
-              <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
-                AWB Tracking: <span className="font-semibold text-foreground">{order.awb}</span>
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="font-mono text-[11px] text-muted-foreground">AWB:</span>
+                <span className="font-mono text-xs font-bold text-foreground">{order.awb}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigator.clipboard.writeText(String(order.awb))
+                    if (showToast) showToast(`Copied AWB #${order.awb}`)
+                  }}
+                  className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer transition"
+                  title="Copy AWB Number"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -324,11 +762,7 @@ function OrderCard({
               className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
             >
               <span>Track on Shiprocket</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
+              <ExternalLink className="h-3 w-3" />
             </a>
           </div>
         </div>
@@ -336,7 +770,7 @@ function OrderCard({
 
       {/* Cancelled State Notice */}
       {isCancelled && (
-        <div className="mt-4 rounded-xl border border-[#b4321f]/20 bg-[#b4321f]/5 p-3 flex items-center justify-between text-xs text-[#b4321f]">
+        <div className="rounded-xl border border-[#b4321f]/20 bg-[#b4321f]/5 p-3 flex items-center justify-between text-xs text-[#b4321f]">
           <span>Order cancelled {order.cancelReason ? `(${order.cancelReason})` : "upon request"}</span>
           <span className="font-semibold uppercase tracking-wider text-[10px]">
             {order.paymentMethod === "Cash on Delivery" ? "Order Voided (No Charge)" : "Payment Refunded"}
@@ -345,7 +779,7 @@ function OrderCard({
       )}
 
       {/* Bottom Action Footer */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3.5">
         <p className="text-xs text-muted-foreground">
           {order.awb
             ? `Tracking #${order.awb}`
@@ -360,13 +794,10 @@ function OrderCard({
             <button
               type="button"
               onClick={() => onOpenCancel(order)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-100 dark:hover:bg-rose-900/50 active:scale-98"
+              className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-100 dark:hover:bg-rose-900/50 active:scale-98 cursor-pointer"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-              </svg>
-              Cancel Order
+              <Ban className="h-3 w-3" />
+              <span>Cancel Order</span>
             </button>
           )}
 
@@ -375,14 +806,10 @@ function OrderCard({
             <button
               type="button"
               onClick={() => downloadOrderInvoice(order.orderNumber || order.id)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-foreground transition-all hover:border-foreground hover:bg-surface active:scale-98 shadow-sm cursor-pointer"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Download Invoice (PDF)
+              <FileText className="h-3 w-3" />
+              <span>Download Invoice (PDF)</span>
             </button>
           ) : !isCancelled ? (
             <span className="text-[11px] text-muted-foreground italic px-2 py-1 rounded bg-surface-2/60">
@@ -555,6 +982,7 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [cancelDialogOrder, setCancelDialogOrder] = useState<any | null>(null)
+  const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null)
   const [isCancellingOrder, setIsCancellingOrder] = useState(false)
   const wishlist = useStore((s) => s.wishlist)
   const saved = products.filter((p) => wishlist.includes(p.id))
@@ -838,7 +1266,13 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                     )}
                   </div>
                   {orders.length > 0 ? (
-                    <OrderCard order={orders[0]} onOpenCancel={(ord) => setCancelDialogOrder(ord)} />
+                    <OrderCard
+                      order={orders[0]}
+                      onOpenCancel={(ord) => setCancelDialogOrder(ord)}
+                      onOpenTracking={(ord) => setTrackingModalOrder(ord)}
+                      showToast={showToast}
+                      onStatusRefreshed={fetchUserOrders}
+                    />
                   ) : (
                     <div className="rounded-sm border border-dashed border-border p-6 text-center">
                       <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
@@ -908,6 +1342,9 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
                       key={o.id || o.orderNumber}
                       order={o}
                       onOpenCancel={(ord) => setCancelDialogOrder(ord)}
+                      onOpenTracking={(ord) => setTrackingModalOrder(ord)}
+                      showToast={showToast}
+                      onStatusRefreshed={fetchUserOrders}
                     />
                   ))
                 ) : (
@@ -1226,6 +1663,15 @@ export function AccountView({ user, onUpdateUser, onLogout, addresses, onSaveAdd
           onClose={() => setCancelDialogOrder(null)}
           onConfirm={handleConfirmCancelPatronOrder}
           isCancelling={isCancellingOrder}
+        />
+      )}
+
+      {trackingModalOrder && (
+        <PatronTrackOrderModal
+          order={trackingModalOrder}
+          onClose={() => setTrackingModalOrder(null)}
+          showToast={showToast}
+          onStatusRefreshed={fetchUserOrders}
         />
       )}
     </div>

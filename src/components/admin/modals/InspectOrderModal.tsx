@@ -66,6 +66,32 @@ export function InspectOrderModal({
     order.paymentStatus !== "Refunded" &&
     (order.status === "Cancelled" || order.paymentStatus === "Refund Pending" || order.paymentStatus === "Paid")
 
+  const [isSyncingLive, setIsSyncingLive] = React.useState(false)
+  const [liveCheckpoint, setLiveCheckpoint] = React.useState<string | null>(order.currentStatusText || null)
+  const [liveSRStatus, setLiveSRStatus] = React.useState<string | null>(order.shiprocketStatus || null)
+
+  const handleSyncLive = async () => {
+    setIsSyncingLive(true)
+    try {
+      const res = await fetch(`/api/shipping/shiprocket/track?orderId=${encodeURIComponent(order.id)}`)
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setLiveCheckpoint(data.currentStatusText || data.status)
+        if (data.trackingData?.current_status) {
+          setLiveSRStatus(data.trackingData.current_status)
+        }
+        showToast(`Live status synced: ${data.currentStatusText || data.status}`)
+        if (onTrackLive) onTrackLive(order.id)
+      } else {
+        showToast(data.error || "Unable to sync live status")
+      }
+    } catch {
+      showToast("Error connecting to Shiprocket")
+    } finally {
+      setIsSyncingLive(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="w-full max-w-2xl my-auto max-h-[92vh] flex flex-col rounded-2xl border border-white/10 bg-[#14171d] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -75,17 +101,16 @@ export function InspectOrderModal({
             <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="font-serif text-lg sm:text-xl font-bold text-white">Order #{order.id}</h3>
               <span
-                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                  order.status === "Delivered"
+                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${order.status === "Delivered"
                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                     : order.status === "Assigned to Courier" || order.status === "Dispatched"
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : order.status === "Verified"
-                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                    : order.status === "Cancelled"
-                    ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                    : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                }`}
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                      : order.status === "Verified"
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                        : order.status === "Cancelled"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  }`}
               >
                 {order.status}
               </span>
@@ -108,6 +133,99 @@ export function InspectOrderModal({
 
         {/* Scrollable Modal Body: smoothly scrolls, never cuts off header or footer! */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Prominent Current Status & Logistics Activity Card */}
+          <div className="rounded-xl border border-[#d4af37]/30 bg-gradient-to-r from-[#d4af37]/[0.08] via-white/[0.03] to-transparent p-4 sm:p-5 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] flex items-center gap-1.5">
+                  <Activity className="h-3.5 w-3.5 text-[#d4af37]" />
+                  Order Current Status:
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${
+                    order.status === "Delivered"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                      : order.status === "Dispatched" || order.status === "Assigned to Courier"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                      : order.status === "Verified"
+                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
+                      : order.status === "Cancelled"
+                      ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                      : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                  {order.status}
+                </span>
+
+                {(liveSRStatus || order.shiprocketStatus) && (
+                  <span className="inline-flex items-center gap-1.5 rounded bg-sky-950/90 border border-sky-500/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sky-300">
+                    <Truck className="h-3 w-3 text-sky-400" />
+                    SR Live: {liveSRStatus || order.shiprocketStatus}
+                  </span>
+                )}
+              </div>
+
+              {order.awb && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncLive}
+                    disabled={isSyncingLive}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-zinc-200 transition cursor-pointer disabled:opacity-50"
+                    title="Refresh real-time tracking from Shiprocket"
+                  >
+                    <RotateCcw className={`h-3 w-3 text-[#d4af37] ${isSyncingLive ? "animate-spin" : ""}`} />
+                    <span>{isSyncingLive ? "Syncing..." : "Sync Live Status"}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <p className="text-zinc-200 font-medium leading-relaxed">
+                  {liveCheckpoint || order.currentStatusText || (
+                    order.status === "Delivered"
+                      ? "Order has been successfully delivered and accepted."
+                      : order.status === "Dispatched"
+                      ? "Consignment is in transit with courier delivery partner."
+                      : order.status === "Assigned to Courier"
+                      ? "AWB generated and shipment booked for courier pickup."
+                      : order.status === "Verified"
+                      ? "Order verified by admin and prepared for courier dispatch."
+                      : order.status === "Cancelled"
+                      ? `Order cancelled. Reason: ${order.cancelReason || "Cancelled by store"}`
+                      : "Order placed and awaiting atelier admin approval."
+                  )}
+                </p>
+                {order.etd && (
+                  <p className="text-[11px] text-zinc-400">
+                    Estimated Delivery: <strong className="text-white">{order.etd}</strong>
+                  </p>
+                )}
+              </div>
+
+              {order.awb && (
+                <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-lg shrink-0">
+                  <span className="text-[11px] text-zinc-400 font-medium">{order.courier || order.courierName || "Courier"}:</span>
+                  <span className="font-mono text-xs font-bold text-[#d4af37]">{order.awb}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(order.awb))
+                      showToast(`Copied AWB #${order.awb}`)
+                    }}
+                    className="text-zinc-400 hover:text-white p-0.5 cursor-pointer transition"
+                    title="Copy AWB Number"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Order Fulfillment Lifecycle Stepper */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center justify-between mb-3">
@@ -142,17 +260,16 @@ export function InspectOrderModal({
                   <div
                     className="absolute left-6 top-3.5 h-0.5 bg-gradient-to-r from-amber-400 via-[#d4af37] to-emerald-400 -z-0 transition-all duration-500"
                     style={{
-                      width: `${
-                        order.status === "Delivered"
+                      width: `${order.status === "Delivered"
                           ? "calc(100% - 3rem)"
                           : order.status === "Dispatched"
-                          ? "calc(75% - 2.25rem)"
-                          : order.status === "Assigned to Courier"
-                          ? "calc(50% - 1.5rem)"
-                          : order.status === "Verified"
-                          ? "calc(25% - 0.75rem)"
-                          : "0%"
-                      }`,
+                            ? "calc(75% - 2.25rem)"
+                            : order.status === "Assigned to Courier"
+                              ? "calc(50% - 1.5rem)"
+                              : order.status === "Verified"
+                                ? "calc(25% - 0.75rem)"
+                                : "0%"
+                        }`,
                     }}
                   />
 
@@ -168,25 +285,24 @@ export function InspectOrderModal({
                       order.status === "Delivered"
                         ? 4
                         : order.status === "Dispatched"
-                        ? 3
-                        : order.status === "Assigned to Courier"
-                        ? 2
-                        : order.status === "Verified"
-                        ? 1
-                        : 0
+                          ? 3
+                          : order.status === "Assigned to Courier"
+                            ? 2
+                            : order.status === "Verified"
+                              ? 1
+                              : 0
                     const isDone = s.stepIdx < currentIdx
                     const isCurrent = s.stepIdx === currentIdx
 
                     return (
                       <div key={s.label} className="flex flex-col items-center relative z-10">
                         <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${
-                            isCurrent
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${isCurrent
                               ? "bg-[#d4af37] text-black ring-4 ring-[#d4af37]/30 scale-110"
                               : isDone
-                              ? "bg-emerald-500 text-white"
-                              : "bg-[#1f242e] text-zinc-500 border border-white/10"
-                          }`}
+                                ? "bg-emerald-500 text-white"
+                                : "bg-[#1f242e] text-zinc-500 border border-white/10"
+                            }`}
                         >
                           {isDone ? (
                             <CheckCircle2 className="h-4 w-4" />
@@ -195,13 +311,12 @@ export function InspectOrderModal({
                           )}
                         </div>
                         <span
-                          className={`text-[10px] mt-1.5 font-bold ${
-                            isCurrent
+                          className={`text-[10px] mt-1.5 font-bold ${isCurrent
                               ? "text-[#d4af37]"
                               : isDone
-                              ? "text-zinc-200"
-                              : "text-zinc-500"
-                          }`}
+                                ? "text-zinc-200"
+                                : "text-zinc-500"
+                            }`}
                         >
                           {s.label}
                         </span>
@@ -225,33 +340,33 @@ export function InspectOrderModal({
                 <Phone className="h-3 w-3 text-[#d4af37]" />
                 <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a>
               </p>
-            <p className="text-xs text-zinc-400 flex items-center gap-1.5">
-              <Mail className="h-3 w-3 text-zinc-400" />
-              <a href={`mailto:${order.email}`} className="hover:underline">{order.email}</a>
-            </p>
+              <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+                <Mail className="h-3 w-3 text-zinc-400" />
+                <a href={`mailto:${order.email}`} className="hover:underline">{order.email}</a>
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Delivery Address</p>
+              <p className="text-xs text-zinc-200 leading-relaxed font-medium">
+                {order.address}
+              </p>
+              <p className="text-xs text-white font-semibold flex items-center gap-1.5 mt-1">
+                <MapPin className="h-3.5 w-3.5 text-[#d4af37]" />
+                {order.city} — PIN {order.pincode}
+              </p>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Shiprocket Serviceable PIN
+              </span>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Delivery Address</p>
-            <p className="text-xs text-zinc-200 leading-relaxed font-medium">
-              {order.address}
-            </p>
-            <p className="text-xs text-white font-semibold flex items-center gap-1.5 mt-1">
-              <MapPin className="h-3.5 w-3.5 text-[#d4af37]" />
-              {order.city} — PIN {order.pincode}
-            </p>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-              <CheckCircle2 className="h-2.5 w-2.5" />
-              Shiprocket Serviceable PIN
-            </span>
-          </div>
-        </div>
-
-        {/* Ordered Shirts Breakdown (All Items) */}
-        {(() => {
-          const modalItems = Array.isArray(order.items) && order.items.length > 0
-            ? order.items
-            : [
+          {/* Ordered Shirts Breakdown (All Items) */}
+          {(() => {
+            const modalItems = Array.isArray(order.items) && order.items.length > 0
+              ? order.items
+              : [
                 {
                   productId: order.id,
                   name: order.shirtName,
@@ -264,74 +379,73 @@ export function InspectOrderModal({
                 },
               ]
 
-          const totalItemsQty = modalItems.reduce((acc, it) => acc + (it.quantity || 1), 0)
+            const totalItemsQty = modalItems.reduce((acc, it) => acc + (it.quantity || 1), 0)
 
-          return (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Ordered Garments ({modalItems.length} {modalItems.length === 1 ? "design" : "designs"} • {totalItemsQty} total {totalItemsQty === 1 ? "pc" : "pcs"})
-                </p>
-                <span className="text-[10px] text-[#d4af37] font-semibold">Micro-Batch Atelier</span>
-              </div>
+            return (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    Ordered Garments ({modalItems.length} {modalItems.length === 1 ? "design" : "designs"} • {totalItemsQty} total {totalItemsQty === 1 ? "pc" : "pcs"})
+                  </p>
+                  <span className="text-[10px] text-[#d4af37] font-semibold">Micro-Batch Atelier</span>
+                </div>
 
-              <div className="divide-y divide-white/5 space-y-2.5">
-                {modalItems.map((item, idx) => (
-                  <div key={`${item.id || item.productId || idx}-${idx}`} className="flex items-center justify-between gap-4 pt-2.5 first:pt-0">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
-                        <Image
-                          src={item.image || order.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
-                          alt={item.name || order.shirtName}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-serif text-sm font-bold text-white">{item.name || order.shirtName}</p>
-                        <p className="text-[10px] font-mono text-zinc-400">SKU: {item.sku || order.sku}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-zinc-200">
-                            Size: {item.size || order.size}
-                          </span>
-                          <span className="text-[10px] text-zinc-400">Qty: {item.quantity || 1}</span>
-                          {item.color && <span className="text-[10px] text-zinc-400">• {item.color}</span>}
+                <div className="divide-y divide-white/5 space-y-2.5">
+                  {modalItems.map((item, idx) => (
+                    <div key={`${item.id || item.productId || idx}-${idx}`} className="flex items-center justify-between gap-4 pt-2.5 first:pt-0">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-black border border-white/10">
+                          <Image
+                            src={item.image || order.image || "/assets/products/Azure_Leaf_Hand-Embroidered_Shirt/Azure_Leaf_Hand-Embroidered_Shirt_main.jpg"}
+                            alt={item.name || order.shirtName}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-serif text-sm font-bold text-white">{item.name || order.shirtName}</p>
+                          <p className="text-[10px] font-mono text-zinc-400">SKU: {item.sku || order.sku}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-zinc-200">
+                              Size: {item.size || order.size}
+                            </span>
+                            <span className="text-[10px] text-zinc-400">Qty: {item.quantity || 1}</span>
+                            {item.color && <span className="text-[10px] text-zinc-400">• {item.color}</span>}
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className="font-serif text-base font-bold text-white">{formatINR((item.price || order.price) * (item.quantity || 1))}</p>
+                        <p className="text-[10px] text-zinc-400">{item.quantity || 1} × {formatINR(item.price || order.price)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-serif text-base font-bold text-white">{formatINR((item.price || order.price) * (item.quantity || 1))}</p>
-                      <p className="text-[10px] text-zinc-400">{item.quantity || 1} × {formatINR(item.price || order.price)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Order Financials */}
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Grand Total (incl. Taxes & Shipping)</span>
-                <span className="font-serif text-base font-bold text-[#d4af37]">{formatINR(order.total)}</span>
+                {/* Order Financials */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Grand Total (incl. Taxes & Shipping)</span>
+                  <span className="font-serif text-base font-bold text-[#d4af37]">{formatINR(order.total)}</span>
+                </div>
               </div>
-            </div>
-          )
-        })()}
+            )
+          })()}
 
-        {/* Payment & Logistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Payment & Logistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Payment Information</p>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-zinc-200">{order.paymentMethod}</span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                    order.paymentStatus === "Paid"
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${order.paymentStatus === "Paid"
                       ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
                       : order.paymentStatus === "Refunded"
-                      ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
-                      : order.paymentStatus === "Refund Pending"
-                      ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
-                      : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
-                  }`}
+                        ? "bg-blue-500/15 border border-blue-500/30 text-blue-400"
+                        : order.paymentStatus === "Refund Pending"
+                          ? "bg-rose-500/15 border border-rose-500/30 text-rose-400"
+                          : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                    }`}
                 >
                   {order.paymentStatus}
                 </span>
@@ -433,98 +547,98 @@ export function InspectOrderModal({
               )}
             </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Shiprocket Logistics</p>
-            {order.awb ? (
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-white">{order.courier || "Shiprocket Express"}</p>
-                  <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold">
-                    AWB: {order.awb}
-                  </span>
-                </div>
-                <div className="space-y-1.5">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Shiprocket Logistics</p>
+              {order.awb ? (
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Live Tracking Active
-                    </p>
-                    {order.etd && (
-                      <span className="text-[10px] text-zinc-400">
-                        Est: <strong className="text-zinc-200">{order.etd}</strong>
-                      </span>
+                    <p className="text-xs font-bold text-white">{order.courier || "Shiprocket Express"}</p>
+                    <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold">
+                      AWB: {order.awb}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Live Tracking Active
+                      </p>
+                      {order.etd && (
+                        <span className="text-[10px] text-zinc-400">
+                          Est: <strong className="text-zinc-200">{order.etd}</strong>
+                        </span>
+                      )}
+                    </div>
+                    {order.shiprocketStatus && (
+                      <div className="flex items-center gap-1.5 bg-sky-950/60 border border-sky-500/30 px-2 py-1 rounded-lg">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                        <span className="text-[10px] font-mono font-bold text-sky-300 uppercase">
+                          Shiprocket: {order.shiprocketStatus}
+                        </span>
+                      </div>
+                    )}
+                    {order.currentStatusText && order.currentStatusText !== order.shiprocketStatus && (
+                      <p className="text-[10px] text-zinc-300 italic px-1">
+                        {order.currentStatusText}
+                      </p>
                     )}
                   </div>
-                  {order.shiprocketStatus && (
-                    <div className="flex items-center gap-1.5 bg-sky-950/60 border border-sky-500/30 px-2 py-1 rounded-lg">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-                      <span className="text-[10px] font-mono font-bold text-sky-300 uppercase">
-                        Shiprocket: {order.shiprocketStatus}
-                      </span>
-                    </div>
-                  )}
-                  {order.currentStatusText && order.currentStatusText !== order.shiprocketStatus && (
-                    <p className="text-[10px] text-zinc-300 italic px-1">
-                      {order.currentStatusText}
-                    </p>
-                  )}
+
+                  {/* Official Shiprocket Downloads: STRICTLY visible only when AWB is assigned */}
+                  <div className="pt-2 border-t border-white/10 flex flex-wrap gap-2">
+                    {onDownloadLabel && (
+                      <button
+                        onClick={() => onDownloadLabel(order.id, order.shiprocket_shipment_id || undefined)}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition shadow"
+                        title="Download official Shiprocket shipping label (PDF)"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span>Download Label (PDF)</span>
+                      </button>
+                    )}
+
+                    {onDownloadInvoice && (
+                      <button
+                        onClick={() => onDownloadInvoice(order.id, order.shiprocket_order_id || undefined)}
+                        className="flex items-center gap-1.5 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition shadow"
+                        title="Download official Shiprocket tax invoice (PDF)"
+                      >
+                        <Receipt className="h-3.5 w-3.5" />
+                        <span>Download Invoice (PDF)</span>
+                      </button>
+                    )}
+
+                    {onTrackLive && (
+                      <button
+                        onClick={() => onTrackLive(order.id)}
+                        className="flex items-center gap-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition shadow"
+                        title="Sync live status from Shiprocket API"
+                      >
+                        <Activity className="h-3.5 w-3.5" />
+                        <span>Sync Live Status</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {/* Official Shiprocket Downloads: STRICTLY visible only when AWB is assigned */}
-                <div className="pt-2 border-t border-white/10 flex flex-wrap gap-2">
-                  {onDownloadLabel && (
-                    <button
-                      onClick={() => onDownloadLabel(order.id, order.shiprocket_shipment_id || undefined)}
-                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500 hover:text-black transition shadow"
-                      title="Download official Shiprocket shipping label (PDF)"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      <span>Download Label (PDF)</span>
-                    </button>
-                  )}
-
-                  {onDownloadInvoice && (
-                    <button
-                      onClick={() => onDownloadInvoice(order.id, order.shiprocket_order_id || undefined)}
-                      className="flex items-center gap-1.5 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 px-3 py-1.5 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition shadow"
-                      title="Download official Shiprocket tax invoice (PDF)"
-                    >
-                      <Receipt className="h-3.5 w-3.5" />
-                      <span>Download Invoice (PDF)</span>
-                    </button>
-                  )}
-
-                  {onTrackLive && (
-                    <button
-                      onClick={() => onTrackLive(order.id)}
-                      className="flex items-center gap-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition shadow"
-                      title="Sync live status from Shiprocket API"
-                    >
-                      <Activity className="h-3.5 w-3.5" />
-                      <span>Sync Live Status</span>
-                    </button>
-                  )}
+              ) : (
+                <div>
+                  <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    No Courier Assigned Yet
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    {order.status === "Pending Verification"
+                      ? "Requires Admin verification before shipping."
+                      : "Verified & ready to assign courier."}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 italic mt-1.5">
+                    ℹ️ Shipping label & tax invoice become available for download once assigned to Shiprocket with an AWB.
+                  </p>
                 </div>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  No Courier Assigned Yet
-                </p>
-                <p className="text-[10px] text-zinc-400 mt-1">
-                  {order.status === "Pending Verification"
-                    ? "Requires Admin verification before shipping."
-                    : "Verified & ready to assign courier."}
-                </p>
-                <p className="text-[10px] text-zinc-500 italic mt-1.5">
-                  ℹ️ Shipping label & tax invoice become available for download once assigned to Shiprocket with an AWB.
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
         {/* Sticky Bottom Actions Footer: ALWAYS visible, never cut off! */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 sm:px-6 py-3.5 bg-[#111419]/95 backdrop-blur z-10">
